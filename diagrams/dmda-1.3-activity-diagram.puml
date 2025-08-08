@@ -1,0 +1,47 @@
+@startuml DMDA-1.3 Activity Diagram
+
+title DMDA-1.3: Activity Diagram - Mã Dự án Tự sinh theo Logic
+
+start
+
+:User truy cập trang tạo dự án mới;
+
+:User nhập thông tin dự án;
+note right
+  Thông tin dự án đầy đủ
+  (chi tiết trong tài liệu chức năng tạo dự án)
+end note
+
+:User submit form tạo dự án;
+
+:System validate thông tin dự án;
+
+if (Thông tin hợp lệ?) then (có)
+  :System lấy thông tin để tạo mã dự án;
+  note right
+    Format: Năm-Phòng-Loại-STT
+    Ví dụ: 2024-IT-INV-001
+  end note
+  
+  :System tạo projectCode tự động;
+  
+  :System lưu dự án với đầy đủ thông tin;
+  
+  :System sync với Bitrix24 (nếu có);
+  
+  :System hiển thị thông báo thành công;
+  
+  :System redirect đến trang chi tiết dự án;
+  
+  :User xem dự án với projectCode;
+  
+else (không)
+  :System hiển thị lỗi validation;
+  
+  :User sửa thông tin và thử lại;
+  :User submit form tạo dự án;
+endif
+
+stop
+
+@enduml

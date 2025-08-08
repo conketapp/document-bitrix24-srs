@@ -1,0 +1,180 @@
+@startuml CP-5.5 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title CP-5.5: Hiển thị các Chỉ số Tài chính & Tiến độ Tổng hợp của Dự án - Activity Diagram
+
+start
+
+:Người dùng truy cập trang quản lý dự án;
+
+:Chọn dự án cần xem chỉ số;
+
+:Hiển thị trang chi tiết dự án;
+
+:Người dùng nhấn vào phần "Chỉ số Tài chính & Tiến độ";
+
+partition "Thu thập Dữ liệu Dự án" {
+  :Tải thông tin dự án;
+  :Tải ngân sách được duyệt;
+  :Tải kế hoạch vốn;
+  :Tải thông tin tiến độ;
+}
+
+partition "Thu thập Dữ liệu Chi phí" {
+  :Tải tất cả khoản mục chi phí của dự án;
+  :Lọc theo khoảng thời gian;
+  :Phân loại theo trạng thái thanh toán;
+  :Phân loại theo trạng thái thực hiện;
+}
+
+partition "Tính toán Chỉ số Tài chính" {
+  :Tính dự kiến giải ngân trong năm;
+  :Tính giải ngân thực tế đến hiện tại;
+  :Tính thực hiện thực tế đến hiện tại;
+  :Tính nghiệm thu thực tế đến hiện tại;
+  :Tính tỷ lệ hoàn thành;
+}
+
+partition "Tính toán Chỉ số Tiến độ" {
+  :Tính lũy kế giải ngân;
+  :Tính lũy kế thực hiện;
+  :Tính lũy kế nghiệm thu;
+  :Tính tỷ lệ hoàn thành dự kiến;
+}
+
+partition "Tính toán Chỉ số So sánh" {
+  :So sánh thực tế với kế hoạch;
+  :Tính tỷ lệ vượt/tiết kiệm;
+  :Tính hiệu quả sử dụng vốn;
+  :Tính tốc độ thực hiện;
+}
+
+partition "Hiển thị Chỉ số" {
+  :Hiển thị bảng tổng hợp chỉ số;
+  :Hiển thị biểu đồ trực quan;
+  :Hiển thị trend và dự báo;
+  :Hiển thị cảnh báo (nếu có);
+}
+
+partition "Chọn Chế độ Hiển thị" {
+  if (Chế độ hiển thị?) then (Một dự án)
+    :Hiển thị chi tiết một dự án;
+    :Hiển thị lịch sử chỉ số;
+    :Hiển thị drill-down chi tiết;
+  elseif (Nhiều dự án) then
+    :Hiển thị so sánh nhiều dự án;
+    :Hiển thị bảng xếp hạng;
+    :Hiển thị biểu đồ so sánh;
+  else (Dashboard)
+    :Hiển thị tổng quan tất cả dự án;
+    :Hiển thị chỉ số tổng hợp;
+    :Hiển thị cảnh báo quan trọng;
+  endif
+}
+
+partition "Lọc theo Thời gian" {
+  :Chọn khoảng thời gian;
+  if (Khoảng thời gian?) then (Năm hiện tại)
+    :Lọc dữ liệu theo năm hiện tại;
+  elseif (Quý) then
+    :Lọc dữ liệu theo quý;
+  elseif (Tháng) then
+    :Lọc dữ liệu theo tháng;
+  else (Tùy chỉnh)
+    :Lọc dữ liệu theo khoảng tùy chỉnh;
+  endif
+}
+
+partition "Tạo Biểu đồ Trực quan" {
+  :Tạo biểu đồ cột chỉ số tài chính;
+  :Tạo biểu đồ đường trend;
+  :Tạo biểu đồ tròn phân bổ;
+  :Tạo biểu đồ so sánh;
+}
+
+partition "Phân tích Trend" {
+  :Phân tích xu hướng chỉ số;
+  :Tính toán dự báo;
+  :Xác định điểm bất thường;
+  :Đề xuất hành động;
+}
+
+partition "Kiểm tra Cảnh báo" {
+  :Kiểm tra chỉ số vượt ngưỡng;
+  if (Có chỉ số vượt ngưỡng?) then (Có)
+    :Hiển thị cảnh báo;
+    :Gửi thông báo;
+    :Đề xuất hành động khắc phục;
+  else (Không)
+    :Bỏ qua cảnh báo;
+  endif
+}
+
+partition "Tùy chọn: Drill-down Chi tiết" {
+  if (Xem chi tiết chỉ số?) then (Có)
+    :Chọn chỉ số cần xem chi tiết;
+    :Hiển thị danh sách khoản mục chi phí;
+    :Hiển thị lịch sử thay đổi;
+    :Hiển thị phân tích nguyên nhân;
+  else (Không)
+    :Bỏ qua drill-down;
+  endif
+}
+
+partition "Tùy chọn: Xuất Báo cáo" {
+  if (Xuất báo cáo?) then (Có)
+    :Chọn định dạng xuất (Excel/PDF);
+    :Tạo báo cáo chỉ số;
+    :Bao gồm biểu đồ và bảng dữ liệu;
+    :Tải xuống file báo cáo;
+  else (Không)
+    :Bỏ qua xuất báo cáo;
+  endif
+}
+
+partition "Tùy chọn: Thiết lập Cảnh báo" {
+  if (Thiết lập cảnh báo?) then (Có)
+    :Chọn chỉ số cần cảnh báo;
+    :Thiết lập ngưỡng cảnh báo;
+    :Chọn người nhận cảnh báo;
+    :Lưu cấu hình cảnh báo;
+  else (Không)
+    :Bỏ qua thiết lập cảnh báo;
+  endif
+}
+
+partition "Tùy chọn: So sánh Dự án" {
+  if (So sánh với dự án khác?) then (Có)
+    :Chọn dự án để so sánh;
+    :Hiển thị bảng so sánh;
+    :Hiển thị biểu đồ so sánh;
+    :Phân tích hiệu quả;
+  else (Không)
+    :Bỏ qua so sánh;
+  endif
+}
+
+stop
+
+@enduml

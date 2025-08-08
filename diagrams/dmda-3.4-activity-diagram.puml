@@ -1,0 +1,104 @@
+@startuml DMDA-3.4 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-3.4: Activity Diagram - Từ chối Phê duyệt Dự án
+
+start
+
+:Người phê duyệt truy cập trang chi tiết dự án;
+
+:Kiểm tra quyền từ chối phê duyệt dự án;
+
+if (Có quyền từ chối?) then (Không)
+    :Hiển thị thông báo "Không có quyền từ chối";
+    stop
+else (Có)
+    :Kiểm tra trạng thái dự án;
+    
+    if (Dự án có thể từ chối?) then (Không)
+        :Hiển thị thông báo "Dự án không thể từ chối";
+        :Hiển thị lý do không thể từ chối;
+        stop
+    else (Có)
+        :Hiển thị nút "Từ chối Phê duyệt";
+        :Hiển thị thông tin dự án cần từ chối;
+        note right
+        **Thông tin Dự án:**
+        - Mã dự án
+        - Tên dự án
+        - Loại dự án
+        - Trạng thái hiện tại
+        - Người tạo dự án
+        - Ngày gửi phê duyệt
+        end note
+        
+        :Người phê duyệt nhấn "Từ chối Phê duyệt";
+        :Hiển thị form từ chối;
+        :Hiển thị danh sách lý do từ chối mẫu;
+        
+        :Người phê duyệt chọn lý do từ chối;
+        note right
+        **Lý do Từ chối:**
+        - Thông tin không đầy đủ
+        - Dữ liệu không chính xác
+        - Vượt quá ngân sách
+        - Không phù hợp với quy định
+        - Cần bổ sung tài liệu
+        - Lý do khác (tự nhập)
+        end note
+        
+        :Người phê duyệt nhập lý do chi tiết (bắt buộc);
+        
+        :Validation lý do từ chối;
+        
+        if (Lý do từ chối hợp lệ?) then (Không)
+            :Hiển thị lỗi "Lý do từ chối không được để trống";
+            :Yêu cầu nhập lý do từ chối;
+        else (OK)
+            :Hiển thị confirmation dialog;
+            :Hiển thị thông tin dự án sẽ từ chối;
+            :Hiển thị lý do từ chối đã nhập;
+            
+            :Người phê duyệt xác nhận từ chối;
+            
+            if (Xác nhận từ chối?) then (Có)
+                :Kiểm tra validation cuối cùng;
+                
+                if (Validation thành công?) then (Có)
+                    :Cập nhật trạng thái dự án thành "rejected";
+                    :Tạo bản ghi từ chối;
+                    :Ghi log từ chối;
+                    :Gửi thông báo cho người tạo dự án;
+                    :Đồng bộ với Bitrix24;
+                    :Hiển thị thông báo thành công;
+                    :Chuyển đến trang chi tiết dự án;
+                else (Validation thất bại)
+                    :Hiển thị lỗi validation;
+                    :Yêu cầu sửa lỗi;
+                endif
+            else (Không)
+                :Hủy thao tác từ chối;
+            endif
+        endif
+    endif
+endif
+
+:Người phê duyệt có thể xem lịch sử từ chối;
+
+if (Xem lịch sử từ chối?) then (Có)
+    :Hiển thị thông tin lịch sử từ chối;
+    note right
+    **Thông tin Lịch sử:**
+    - Người từ chối
+    - Ngày từ chối
+    - Lý do từ chối
+    - Trạng thái sau từ chối
+    end note
+else (Không)
+    :Tiếp tục quản lý dự án;
+endif
+
+stop
+
+@enduml

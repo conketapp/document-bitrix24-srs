@@ -1,0 +1,173 @@
+@startuml DMDA-4.5 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-4.5: Sequence Diagram - Phân quyền Truy cập và Thao tác Dự án Chi tiết
+
+actor "Quản trị viên" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Permission Service" as PS
+participant "Audit Service" as AS
+participant "Cache Service" as CS
+
+== Khởi tạo Trang Quản lý Phân quyền ==
+
+U -> F: Truy cập trang quản lý phân quyền
+F -> B: GET /api/permissions/management
+B -> D: Check admin permissions
+D --> B: Permission result
+
+alt Không có quyền quản lý phân quyền
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền quản lý phân quyền"
+else Có quyền quản lý phân quyền
+    B -> PS: Get permission management data
+    PS -> D: Query roles and permissions
+    D --> PS: Roles and permissions data
+    PS --> B: Management data
+    B --> F: Permission management interface
+    F --> U: Hiển thị giao diện quản lý phân quyền
+end
+
+== Quản lý Vai trò ==
+
+U -> F: Nhấn "Quản lý Vai trò"
+F -> B: GET /api/roles
+B -> D: Query all roles
+D --> B: Roles data
+B --> F: Roles list
+F --> U: Hiển thị danh sách vai trò
+
+U -> F: Tạo vai trò mới
+F -> B: POST /api/roles
+note right: { name: string, description: string, permissions: string[] }
+
+B -> B: Validate role data
+B -> D: Insert new role
+D --> B: Role created
+B -> D: Insert role_permissions
+D --> B: Role permissions created
+B -> AS: Log role creation
+AS --> B: Role creation logged
+B --> F: Role created successfully
+F --> U: Hiển thị thông báo tạo vai trò thành công
+
+== Quản lý Người dùng ==
+
+U -> F: Nhấn "Quản lý Người dùng"
+F -> B: GET /api/users/with-roles
+B -> D: Query users with their roles
+D --> B: Users and roles data
+B --> F: Users management interface
+F --> U: Hiển thị danh sách người dùng
+
+U -> F: Gán vai trò cho người dùng
+F -> B: PUT /api/users/{user_id}/roles
+note right: { role_ids: number[], action: 'assign' | 'remove' }
+
+B -> B: Validate role assignment
+B -> D: Update user_roles
+D --> B: User roles updated
+B -> AS: Log role assignment
+AS --> B: Role assignment logged
+B --> F: Role assignment successful
+F --> U: Hiển thị thông báo gán vai trò thành công
+
+== Quản lý Phân quyền Chi tiết ==
+
+U -> F: Nhấn "Ma trận Phân quyền"
+F -> B: GET /api/permissions/matrix
+B -> PS: Generate permission matrix
+PS -> D: Query all permissions and assignments
+D --> PS: Permission matrix data
+PS --> B: Permission matrix
+B --> F: Permission matrix interface
+F --> U: Hiển thị ma trận phân quyền
+
+U -> F: Thay đổi phân quyền chi tiết
+F -> B: PUT /api/permissions/{object_type}/{object_id}
+note right: { user_id: number, permissions: string[], action: 'grant' | 'revoke' }
+
+B -> B: Validate permission change
+B -> D: Update object_permissions
+D --> B: Permission updated
+B -> AS: Log permission change
+AS --> B: Permission change logged
+B -> CS: Clear permission cache
+CS --> B: Cache cleared
+B --> F: Permission change successful
+F --> U: Hiển thị thông báo thay đổi phân quyền thành công
+
+== Xem Lịch sử Phân quyền ==
+
+U -> F: Nhấn "Lịch sử Phân quyền"
+F -> B: GET /api/permissions/history
+B -> AS: Query permission change history
+AS -> D: Query permission audit logs
+D --> AS: Audit log data
+AS --> B: Permission history
+B --> F: Permission history
+F --> U: Hiển thị lịch sử thay đổi phân quyền
+
+== Kiểm tra Xung đột Phân quyền ==
+
+U -> F: Nhấn "Kiểm tra Xung đột"
+F -> B: GET /api/permissions/conflicts
+B -> PS: Check permission conflicts
+PS -> D: Query conflicting permissions
+D --> PS: Conflict data
+PS -> PS: Analyze conflicts
+PS --> B: Conflict analysis
+B --> F: Conflict report
+F --> U: Hiển thị báo cáo xung đột phân quyền
+
+== Áp dụng Phân quyền Real-time ==
+
+B -> PS: Apply permission changes
+PS -> CS: Update permission cache
+CS --> PS: Cache updated
+PS -> B: Permissions applied
+B -> F: Push permission updates
+F --> U: Cập nhật giao diện theo phân quyền mới
+
+== Kiểm tra Quyền Truy cập ==
+
+U -> F: Thực hiện hành động trên dự án
+F -> B: POST /api/projects/{id}/actions
+note right: { action_type: string, action_data: object }
+
+B -> PS: Check user permissions
+PS -> D: Query user permissions for project
+D --> PS: User permissions
+PS -> PS: Validate action permission
+PS --> B: Permission validation result
+
+alt Không có quyền thực hiện hành động
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền thực hiện"
+else Có quyền thực hiện hành động
+    B -> D: Execute action
+    D --> B: Action executed
+    B --> F: Action completed successfully
+    F --> U: Hiển thị thông báo thành công
+end
+
+== Xử lý Lỗi ==
+
+alt Lỗi quyền quản lý phân quyền
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền quản lý phân quyền"
+else Lỗi validation vai trò
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị lỗi validation
+else Lỗi xung đột phân quyền
+    B --> F: 409 Conflict
+    F --> U: Hiển thị thông báo "Xung đột phân quyền"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+@enduml

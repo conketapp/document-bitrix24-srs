@@ -1,0 +1,133 @@
+@startuml DMDA-3.4 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-3.4: Sequence Diagram - Từ chối Phê duyệt Dự án
+
+actor "Người phê duyệt" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Notification Service" as N
+participant "Bitrix24 API" as B24
+participant "Audit Service" as AS
+
+== Khởi tạo Trang Chi tiết Dự án ==
+
+U -> F: Truy cập trang chi tiết dự án
+F -> B: GET /api/projects/{id}
+B -> D: Query project data
+D --> B: Project data
+B --> F: Project data
+F --> U: Hiển thị thông tin dự án
+
+F -> F: Kiểm tra quyền từ chối
+F --> U: Hiển thị nút "Từ chối Phê duyệt" (nếu có quyền)
+
+== Từ chối Phê duyệt Dự án ==
+
+U -> F: Nhấn "Từ chối Phê duyệt"
+F -> B: GET /api/projects/{id}/can-reject
+B -> D: Check project status và user permissions
+D --> B: Rejection eligibility
+B --> F: Can reject project
+F --> U: Hiển thị form từ chối
+
+U -> F: Chọn lý do từ chối mẫu
+F -> B: GET /api/rejection-reasons/templates
+B -> D: Query rejection reason templates
+D --> B: Templates data
+B --> F: Rejection templates
+F --> U: Hiển thị danh sách lý do từ chối mẫu
+
+U -> F: Nhập lý do từ chối chi tiết
+F -> F: Validate rejection reason
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Nhấn "Xác nhận Từ chối"
+F -> B: POST /api/projects/{id}/reject
+note right: { rejector_id: number, rejection_reason: string, reason_code?: string }
+
+B -> B: Validate rejection request
+B -> D: Check final validation
+D --> B: Validation result
+
+alt Không có quyền từ chối
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền từ chối"
+else Dự án không thể từ chối
+    B --> F: 400 Bad Request - Invalid project status
+    F --> U: Hiển thị thông báo "Dự án không thể từ chối"
+else Lý do từ chối không hợp lệ
+    B --> F: 400 Bad Request - Invalid rejection reason
+    F --> U: Hiển thị thông báo "Lý do từ chối không được để trống"
+else Validation thành công
+    B -> D: Update project status to 'rejected'
+    D --> B: Project status updated
+    B -> D: Create rejection record
+    D --> B: Rejection record created
+    B -> D: Insert rejection history
+    D --> B: History record created
+    B -> AS: Log rejection action
+    AS --> B: Rejection logged
+    B -> N: Send rejection notification
+    N --> B: Notification sent
+    B -> B24: Sync with Bitrix24
+    B24 --> B: Sync completed
+    B --> F: Project rejected successfully
+    F --> U: Hiển thị thông báo thành công
+end
+
+== Xem Trạng thái Từ chối ==
+
+U -> F: Nhấn "Xem Trạng thái Từ chối"
+F -> B: GET /api/projects/{id}/rejection-status
+B -> D: Query rejection status
+D --> B: Rejection status data
+B --> F: Rejection status
+F --> U: Hiển thị trạng thái từ chối
+
+== Lịch sử Từ chối ==
+
+U -> F: Nhấn "Xem Lịch sử Từ chối"
+F -> B: GET /api/projects/{id}/rejection-history
+B -> D: Query rejection history
+D --> B: History data
+B --> F: Rejection history
+F --> U: Hiển thị lịch sử từ chối
+
+== Quản lý Template Lý do Từ chối ==
+
+U -> F: Nhấn "Quản lý Template Lý do"
+F -> B: GET /api/rejection-reasons/templates
+B -> D: Query all rejection templates
+D --> B: Templates data
+B --> F: Templates list
+F --> U: Hiển thị danh sách template
+
+U -> F: Thêm template mới
+F -> B: POST /api/rejection-reasons/templates
+note right: { reason_code: string, reason_text: string, category_id: number }
+
+B -> D: Insert new template
+D --> B: Template created
+B --> F: Template created successfully
+F --> U: Hiển thị thông báo tạo template thành công
+
+== Xử lý Lỗi ==
+
+alt Dự án không tồn tại
+    B --> F: 404 Not Found
+    F --> U: Hiển thị thông báo "Dự án không tồn tại"
+else Người từ chối không hợp lệ
+    B --> F: 400 Bad Request - Invalid rejector
+    F --> U: Hiển thị thông báo "Người từ chối không hợp lệ"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+else Lỗi Bitrix24 sync
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi đồng bộ với Bitrix24"
+end
+
+@enduml

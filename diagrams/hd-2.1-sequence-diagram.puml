@@ -1,0 +1,212 @@
+@startuml HD-2.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title HD-2.1: Sequence Diagram - Chỉnh sửa thông tin Hợp đồng
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Audit Service" as AS
+participant "Notification Service" as N
+participant "Document Service" as DS
+
+== Khởi tạo Trang Chỉnh sửa ==
+
+U -> F: Truy cập trang chi tiết hợp đồng
+F -> B: GET /api/contracts/{id}
+B -> D: Query contract details
+D --> B: Contract data
+B --> F: Contract information
+F --> U: Hiển thị thông tin hợp đồng
+
+U -> F: Nhấn "Chỉnh sửa"
+F -> B: GET /api/contracts/{id}/edit
+B -> D: Query contract for editing
+D --> B: Editable contract data
+B --> F: Edit form data
+F --> U: Hiển thị form chỉnh sửa
+
+== Chỉnh sửa Thông tin Cơ bản ==
+
+U -> F: Chỉnh sửa thông tin cơ bản
+F -> F: Real-time validation
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Nhập tên hợp đồng mới
+F -> B: POST /api/contracts/{id}/validate-basic
+note right: { contract_name: string, description: string }
+
+B -> B: Validate basic information
+B --> F: Basic validation result
+F --> U: Hiển thị kết quả validation
+
+== Chỉnh sửa Thông tin Tài chính ==
+
+U -> F: Chỉnh sửa thông tin tài chính
+F -> F: Real-time validation
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Thay đổi giá trị hợp đồng
+F -> B: POST /api/contracts/{id}/validate-financial
+note right: { contract_value: number, currency: string }
+
+B -> B: Validate financial information
+B -> B: Check if value change requires approval
+
+alt Thay đổi giá trị cần phê duyệt
+    B --> F: 403 Forbidden - Approval required
+    F --> U: Hiển thị thông báo "Cần phê duyệt để thay đổi giá trị"
+else Thay đổi giá trị được phép
+    B --> F: Financial validation result
+    F --> U: Hiển thị kết quả validation
+end
+
+== Chỉnh sửa Thông tin Thời gian ==
+
+U -> F: Chỉnh sửa thông tin thời gian
+F -> F: Real-time validation
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Thay đổi ngày hợp đồng
+F -> B: POST /api/contracts/{id}/validate-timeline
+note right: { start_date: date, end_date: date }
+
+B -> B: Validate date logic
+B -> B: Check date consistency
+
+alt Ngày không hợp lý
+    B --> F: 400 Bad Request - Invalid dates
+    F --> U: Hiển thị cảnh báo "Ngày không hợp lý"
+else Ngày hợp lý
+    B --> F: Timeline validation result
+    F --> U: Hiển thị kết quả validation
+end
+
+== Chỉnh sửa Thông tin Các bên ==
+
+U -> F: Chỉnh sửa thông tin các bên
+F -> B: POST /api/contracts/{id}/validate-parties
+note right: { manager_id: number, supervisor_id: number }
+
+B -> D: Validate party information
+D --> B: Party validation result
+B --> F: Party validation
+F --> U: Hiển thị kết quả validation
+
+== Chỉnh sửa Phụ lục ==
+
+U -> F: Nhấn "Chỉnh sửa phụ lục"
+F -> B: GET /api/contracts/{id}/appendices
+B -> D: Query contract appendices
+D --> B: Appendices data
+B --> F: Appendices list
+F --> U: Hiển thị danh sách phụ lục
+
+U -> F: Chỉnh sửa phụ lục
+F -> B: PUT /api/contracts/{id}/appendices/{appendix_id}
+note right: { appendix_data: object }
+
+B -> B: Validate appendix data
+B -> D: Update contract_appendices
+D --> B: Appendix updated
+B -> AS: Log appendix change
+AS --> B: Change logged
+B --> F: Appendix updated successfully
+F --> U: Hiển thị thông báo cập nhật phụ lục thành công
+
+== Cập nhật Tài liệu ==
+
+U -> F: Upload tài liệu mới
+F -> B: POST /api/contracts/{id}/documents/upload
+note right: Multipart form data với file
+
+B -> DS: Process document upload
+DS -> DS: Validate file format và size
+DS --> B: Document processed
+B -> D: Insert contract_documents
+D --> B: Document saved
+B -> AS: Log document change
+AS --> B: Change logged
+B --> F: Document uploaded successfully
+F --> U: Hiển thị thông báo upload thành công
+
+== Lưu Thay đổi ==
+
+U -> F: Nhấn "Lưu nháp"
+F -> B: PUT /api/contracts/{id}/draft
+note right: { contract_changes: object }
+
+B -> B: Validate all changes
+B -> D: Update contracts (status = 'draft')
+D --> B: Contract updated
+B -> D: Insert contract_versions
+D --> B: Version created
+B -> AS: Log contract changes
+AS --> B: Changes logged
+B --> F: Contract saved as draft
+F --> U: Hiển thị thông báo "Đã lưu nháp"
+
+U -> F: Nhấn "Hoàn thành"
+F -> B: PUT /api/contracts/{id}
+note right: { contract_changes: object }
+
+B -> B: Final validation
+B -> D: Update contracts
+D --> B: Contract updated
+B -> D: Insert contract_versions
+D --> B: Version created
+B -> AS: Log all changes
+AS --> B: Changes logged
+B -> N: Send change notification
+N --> B: Notification sent
+B --> F: Contract updated successfully
+F --> U: Hiển thị thông báo thành công
+
+== Preview và Xác nhận ==
+
+U -> F: Nhấn "Xem trước thay đổi"
+F -> B: GET /api/contracts/{id}/preview-changes
+B -> D: Query original vs current contract
+D --> B: Contract comparison data
+B -> B: Generate change preview
+B --> F: Change preview
+F --> U: Hiển thị preview thay đổi
+
+U -> F: Xác nhận thay đổi
+F -> B: PUT /api/contracts/{id}/confirm-changes
+B -> D: Update contract status
+D --> B: Status updated
+B --> F: Changes confirmed
+F --> U: Hiển thị thông báo xác nhận
+
+== Hoàn tác Thay đổi ==
+
+U -> F: Nhấn "Hoàn tác"
+F -> B: POST /api/contracts/{id}/rollback
+note right: { version_id: number }
+
+B -> D: Query previous version
+D --> B: Previous version data
+B -> D: Restore contract to previous version
+D --> B: Contract restored
+B -> AS: Log rollback action
+AS --> B: Rollback logged
+B --> F: Contract rolled back successfully
+F --> U: Hiển thị thông báo hoàn tác thành công
+
+== Xử lý Lỗi ==
+
+alt Validation lỗi
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị lỗi validation
+else Không có quyền chỉnh sửa
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền chỉnh sửa"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+@enduml

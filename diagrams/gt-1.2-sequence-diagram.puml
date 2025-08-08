@@ -1,0 +1,112 @@
+@startuml GT-1.2 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title GT-1.2: Sequence Diagram - Kết nối API lấy thông tin gói thầu
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "National Tender Portal API" as NTP
+participant "Rate Limiter" as RL
+participant "Data Validator" as DV
+
+== Khởi tạo Form ==
+
+U -> F: Truy cập form tạo/chỉnh sửa gói thầu
+F -> B: GET /api/tender-packages/form
+B --> F: Form data
+F --> U: Hiển thị form với trường nhập URL/mã ID
+
+== Nhập Thông tin Gói thầu ==
+
+U -> F: Nhập URL hoặc mã ID gói thầu
+F -> F: Validation URL format
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Nhấn "Lấy thông tin từ Cổng"
+F --> U: Hiển thị loading indicator
+
+== Kết nối API ==
+
+F -> B: POST /api/tender-packages/fetch-from-portal
+note right: { url: string, tender_id: string }
+
+B -> RL: Check rate limit
+RL --> B: Rate limit status
+
+alt Rate limit exceeded
+    B --> F: 429 Too Many Requests
+    F --> U: Hiển thị thông báo "Vượt quá giới hạn truy cập"
+else Rate limit OK
+    B -> NTP: GET /api/tender/{tender_id}
+    note right: Request với API key và headers
+    
+    alt API connection failed
+        NTP --> B: Connection Error
+        B --> F: 500 Internal Server Error
+        F --> U: Hiển thị lỗi kết nối
+    else API response received
+        NTP --> B: Tender data from portal
+        
+        B -> DV: Validate response data
+        DV --> B: Validation result
+        
+        alt Data invalid
+            B --> F: 400 Bad Request
+            F --> U: Hiển thị lỗi "Dữ liệu không hợp lệ"
+        else Data valid
+            B -> B: Parse và map dữ liệu
+            B -> B: Transform data format
+            B --> F: Mapped tender data
+            F --> U: Auto-fill form fields
+            
+            U -> F: Xem lại và chỉnh sửa thông tin
+            F -> F: Allow manual editing
+            F --> U: Hiển thị preview dữ liệu
+            
+            U -> F: Nhấn "Lưu thông tin"
+            F -> B: PUT /api/tender-packages/{id}/update-from-portal
+            note right: Gửi dữ liệu đã chỉnh sửa
+            
+            B -> D: Update tender_packages
+            D --> B: Update success
+            B -> D: Insert api_call_logs
+            D --> B: Log created
+            B -> D: Backup original portal data
+            D --> B: Backup success
+            
+            B --> F: Tender data updated successfully
+            F --> U: Hiển thị thông báo thành công
+        end
+    end
+end
+
+== Cập nhật Gói thầu Hiện có ==
+
+U -> F: Nhấn "Cập nhật từ Cổng"
+F -> B: POST /api/tender-packages/{id}/sync-from-portal
+B -> NTP: GET /api/tender/{tender_id}
+NTP --> B: Updated tender data
+B -> D: Update tender_packages with new data
+D --> B: Update success
+B -> D: Log sync action
+D --> B: Log created
+B --> F: Sync completed
+F --> U: Hiển thị thông báo "Đã cập nhật từ Cổng"
+
+== Xử lý Lỗi ==
+
+alt Invalid URL format
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị lỗi "URL không hợp lệ"
+else API timeout
+    B --> F: 408 Request Timeout
+    F --> U: Hiển thị lỗi "Hết thời gian kết nối"
+else Portal data not found
+    B --> F: 404 Not Found
+    F --> U: Hiển thị lỗi "Không tìm thấy gói thầu"
+end
+
+@enduml

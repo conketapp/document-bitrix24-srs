@@ -1,0 +1,105 @@
+@startuml CP-1.3 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title CP-1.3: Cập nhật Trạng thái Thanh toán - Activity Diagram
+
+start
+
+:Người dùng truy cập trang quản lý chi phí;
+
+:Chọn khoản mục chi phí cần cập nhật;
+
+:Hiển thị thông tin chi tiết khoản mục chi phí;
+
+:Người dùng nhấn nút "Cập nhật trạng thái";
+
+:Hiển thị form cập nhật trạng thái thanh toán;
+
+partition "Cập nhật Trạng thái Thực hiện" {
+  :Chọn trạng thái "Đã thực hiện";
+  if (Đã thực hiện = Có?) then (Có)
+    :Nhập ngày thực hiện;
+    :Nhập ghi chú thực hiện;
+  else (Không)
+    :Xóa ngày thực hiện nếu có;
+  endif
+}
+
+partition "Cập nhật Trạng thái Nghiệm thu" {
+  :Chọn trạng thái "Đã nghiệm thu";
+  if (Đã nghiệm thu = Có?) then (Có)
+    :Nhập ngày nghiệm thu;
+    :Nhập ghi chú nghiệm thu;
+  else (Không)
+    :Xóa ngày nghiệm thu nếu có;
+  endif
+}
+
+partition "Cập nhật Thông tin Thanh toán" {
+  :Nhập ngày hoàn thành thanh toán thực tế;
+  :Nhập số tiền đã thanh toán;
+  :Chọn phương thức thanh toán;
+  :Nhập số chứng từ thanh toán;
+}
+
+partition "Tính toán Trạng thái Tự động" {
+  :Hệ thống kiểm tra ngày thực tế;
+  
+  if (Có ngày hoàn thành thanh toán?) then (Có)
+    :Trạng thái = "Đã thanh toán";
+  else (Không)
+    if (Chưa đến thời hạn dự kiến?) then (Có)
+      :Trạng thái = "Chưa đến hạn";
+    else (Không)
+      :Trạng thái = "Quá hạn";
+    endif
+  endif
+}
+
+partition "Lưu và Cập nhật" {
+  :Hệ thống lưu thông tin cập nhật;
+  :Ghi log lịch sử thay đổi;
+  :Cập nhật trạng thái thanh toán;
+  :Hiển thị thông báo thành công;
+}
+
+partition "Cập nhật Giao diện" {
+  :Cập nhật hiển thị trạng thái với màu sắc;
+  :Cập nhật danh sách chi phí;
+  :Hiển thị thông tin thanh toán mới;
+}
+
+partition "Tạo Báo cáo (Tùy chọn)" {
+  if (Người dùng muốn xuất báo cáo?) then (Có)
+    :Tạo báo cáo trạng thái thanh toán;
+    :Xuất file báo cáo;
+    :Gửi báo cáo qua email;
+  else (Không)
+    :Bỏ qua tạo báo cáo;
+  endif
+}
+
+stop
+
+@enduml

@@ -1,0 +1,101 @@
+@startuml DMDA-2.3 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-2.3: Sequence Diagram - Xóa Dự án
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Bitrix24" as B24
+participant "Notification Service" as N
+
+== Kiểm tra Quyền và Trạng thái ==
+
+U -> F: Chọn dự án cần xóa
+F -> B: GET /api/projects/{id}
+B -> D: Query project data
+D --> B: Project data
+B --> F: Project data
+
+F -> F: Kiểm tra quyền xóa
+F -> F: Kiểm tra trạng thái dự án
+
+alt Trạng thái = draft/pending_approval
+    F --> U: Hiển thị nút "Xóa"
+else Trạng thái khác
+    F --> U: Hiển thị thông báo "Không thể xóa"
+end
+
+== Quy trình Xóa Dự án ==
+
+U -> F: Nhấn "Xóa"
+F --> U: Hiển thị confirmation dialog
+
+U -> F: Nhập lý do xóa
+F -> F: Validation lý do
+
+alt Lý do không hợp lệ
+    F --> U: Hiển thị lỗi validation
+else Lý do hợp lệ
+    U -> F: Xác nhận xóa
+    F -> B: DELETE /api/projects/{id}
+    note right: { delete_reason: string }
+    
+    B -> B: Validation quyền và trạng thái
+    B -> D: Update projects SET deleted_at = NOW()
+    D --> B: Update success
+    B -> D: Update projects SET deleted_by = user_id
+    D --> B: Update success
+    B -> D: Update projects SET delete_reason = reason
+    D --> B: Update success
+    B -> D: Update projects SET status = 'deleted'
+    D --> B: Update success
+    
+    B -> D: Delete project_edit_requests WHERE project_id = id
+    D --> B: Delete success
+    B -> D: Delete project_change_logs WHERE project_id = id
+    D --> B: Delete success
+    
+    B -> D: Insert project_change_logs
+    note right: action_type = 'delete', delete_reason = reason
+    D --> B: Log created
+    
+    B -> B24: DELETE /api/deals/{bitrix24_id}
+    B24 --> B: Delete success
+    
+    B -> N: Send notification
+    N --> B: Notification sent
+    
+    B --> F: Project deleted successfully
+    F --> U: Hiển thị thông báo thành công
+    F -> F: Cập nhật danh sách dự án
+    F --> U: Cập nhật UI
+end
+
+== Xử lý Lỗi ==
+
+alt Không có quyền xóa
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xóa"
+else Dự án đã phê duyệt
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo "Dự án đã phê duyệt, không thể xóa"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+== Undo Functionality (Tùy chọn) ==
+
+U -> F: Nhấn "Hoàn tác" (trong 30 giây)
+F -> B: POST /api/projects/{id}/restore
+B -> D: Update projects SET deleted_at = NULL
+D --> B: Restore success
+B -> D: Update projects SET status = original_status
+D --> B: Update success
+B --> F: Project restored
+F --> U: Hiển thị thông báo "Đã hoàn tác xóa"
+
+@enduml

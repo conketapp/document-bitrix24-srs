@@ -1,0 +1,209 @@
+@startuml CP-5.3 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title CP-5.3: Tổng hợp & Báo cáo Chi phí theo Dự án/Gói thầu/Hợp đồng - Sequence Diagram
+
+actor "Cán bộ\nQuản lý" as User
+participant "Giao diện\nBáo cáo" as UI
+participant "Report\nController" as Controller
+participant "Report\nService" as Service
+participant "Cost Item\nRepository" as Repository
+participant "Project\nRepository" as ProjectRepo
+participant "Contract\nRepository" as ContractRepo
+participant "Budget\nService" as BudgetService
+participant "Chart\nService" as ChartService
+participant "Export\nService" as ExportService
+participant "Email\nService" as EmailService
+participant "Database" as DB
+
+User -> UI: Truy cập trang báo cáo chi phí
+UI -> Controller: GET /api/cost-reports
+Controller -> Service: getReportTypes()
+Service --> Controller: Report types configuration
+Controller --> UI: Hiển thị giao diện báo cáo
+
+User -> UI: Chọn loại báo cáo và đối tượng
+note right of User
+  - Loại báo cáo: Dự án/Gói thầu/Hợp đồng/So sánh
+  - Đối tượng: Chọn cụ thể hoặc nhiều đối tượng
+  - Bộ lọc: Thời gian, trạng thái, danh mục
+end note
+
+UI -> Controller: POST /api/cost-reports/generate
+note right of UI
+{
+  "report_type": "project",
+  "target_ids": [123, 124, 125],
+  "filters": {
+    "date_from": "2024-01-01",
+    "date_to": "2024-12-31",
+    "status": "approved",
+    "category": "all"
+  },
+  "include_charts": true,
+  "include_details": true
+}
+end note
+
+Controller -> Service: generateCostReport(reportData)
+Service -> Service: validateReportRequest(reportData)
+Service -> Service: parseReportCriteria(reportData)
+
+alt Báo cáo theo dự án
+  Service -> ProjectRepo: getProjectsByIds(targetIds)
+  ProjectRepo -> DB: SELECT * FROM projects WHERE id IN (?)
+  DB --> ProjectRepo: Projects data
+  ProjectRepo --> Service: Projects list
+  
+  Service -> Repository: getCostItemsByProjects(targetIds, filters)
+  Repository -> DB: SELECT * FROM cost_items WHERE project_id IN (?) AND filters
+  DB --> Repository: Cost items by projects
+  Repository --> Service: Cost items data
+  
+elseif Báo cáo theo gói thầu
+  Service -> ContractRepo: getTenderPackagesByIds(targetIds)
+  ContractRepo -> DB: SELECT * FROM tender_packages WHERE id IN (?)
+  DB --> ContractRepo: Tender packages data
+  ContractRepo --> Service: Tender packages list
+  
+  Service -> Repository: getCostItemsByTenderPackages(targetIds, filters)
+  Repository -> DB: SELECT * FROM cost_items WHERE tender_package_id IN (?) AND filters
+  DB --> Repository: Cost items by tender packages
+  Repository --> Service: Cost items data
+  
+else Báo cáo theo hợp đồng
+  Service -> ContractRepo: getContractsByIds(targetIds)
+  ContractRepo -> DB: SELECT * FROM contracts WHERE id IN (?)
+  DB --> ContractRepo: Contracts data
+  ContractRepo --> Service: Contracts list
+  
+  Service -> Repository: getCostItemsByContracts(targetIds, filters)
+  Repository -> DB: SELECT * FROM cost_items WHERE contract_id IN (?) AND filters
+  DB --> Repository: Cost items by contracts
+  Repository --> Service: Cost items data
+end
+
+Service -> Service: aggregateCostData(costItems)
+Service -> Service: calculateTotals(costItems)
+Service -> Service: categorizeByStatus(costItems)
+Service -> Service: categorizeByCategory(costItems)
+
+Service -> BudgetService: compareWithBudget(targetIds, totalCost)
+BudgetService -> DB: SELECT * FROM project_budgets WHERE project_id IN (?)
+DB --> BudgetService: Budget data
+BudgetService -> BudgetService: calculateVariance(actualCost, budget)
+BudgetService --> Service: Budget comparison data
+
+Service -> ChartService: generateCharts(aggregatedData)
+ChartService -> ChartService: createBarChart(totalCosts)
+ChartService -> ChartService: createPieChart(categoryDistribution)
+ChartService -> ChartService: createLineChart(trendData)
+ChartService -> ChartService: createComparisonChart(comparisonData)
+ChartService --> Service: Chart data
+
+Service -> Service: generateDetailedReport(costItems, aggregatedData)
+Service -> Service: createSummaryTable(aggregatedData)
+Service -> Service: createDetailTable(costItems)
+
+Service --> Controller: Complete report data
+Controller --> UI: Hiển thị báo cáo với biểu đồ
+
+User -> UI: Xuất báo cáo
+UI -> Controller: POST /api/cost-reports/export
+note right of UI
+{
+  "format": "excel",
+  "report_data": {...},
+  "include_charts": true,
+  "include_details": true
+}
+end note
+
+Controller -> ExportService: exportReport(exportData)
+ExportService -> ExportService: generateExcelReport(reportData)
+ExportService -> ExportService: addChartsToExcel(chartData)
+ExportService -> ExportService: addSummarySheet(summaryData)
+ExportService -> ExportService: addDetailSheet(detailData)
+ExportService --> Controller: Excel file
+Controller --> UI: Tải xuống file Excel
+
+User -> UI: Gửi báo cáo qua email (tùy chọn)
+UI -> Controller: POST /api/cost-reports/send-email
+note right of UI
+{
+  "recipients": ["manager@company.com"],
+  "subject": "Báo cáo chi phí dự án",
+  "message": "Đính kèm báo cáo chi phí theo yêu cầu",
+  "report_data": {...}
+}
+end note
+
+Controller -> EmailService: sendReportEmail(emailData)
+EmailService -> ExportService: generateReportForEmail(reportData)
+ExportService --> EmailService: Report file
+EmailService -> EmailService: createEmailMessage(emailData)
+EmailService -> EmailService: attachReportFile(reportFile)
+EmailService -> EmailService: sendEmail(recipients, emailMessage)
+EmailService --> Controller: Email sent successfully
+Controller --> UI: Thông báo gửi email thành công
+
+User -> UI: Lưu báo cáo (tùy chọn)
+UI -> Controller: POST /api/cost-reports/save
+note right of UI
+{
+  "report_name": "Báo cáo chi phí dự án Q1 2024",
+  "report_config": {...},
+  "is_template": false
+}
+end note
+
+Controller -> Service: saveReport(userId, reportData)
+Service -> DB: INSERT INTO saved_reports (...)
+DB --> Service: Report saved
+Service --> Controller: Report saved successfully
+Controller --> UI: Thông báo lưu báo cáo thành công
+
+User -> UI: Xem chi tiết khoản mục (tùy chọn)
+UI -> Controller: GET /api/cost-items/{id}
+Controller -> Service: getCostItemDetails(id)
+Service -> Repository: findById(id)
+Repository -> DB: SELECT * FROM cost_items WHERE id = ?
+DB --> Repository: Cost item details
+Repository --> Service: Cost item details
+Service --> Controller: Cost item response
+Controller --> UI: Hiển thị chi tiết khoản mục
+
+User -> UI: Tạo kế hoạch dựa trên báo cáo (tùy chọn)
+UI -> Controller: POST /api/cost-reports/create-plan
+note right of UI
+{
+  "report_analysis": {...},
+  "plan_type": "budget_optimization",
+  "target_savings": 10
+}
+end note
+
+Controller -> Service: createPlanFromReport(planData)
+Service -> Service: analyzeCostTrends(reportData)
+Service -> Service: identifyOptimizationOpportunities(analysis)
+Service -> Service: generatePlanRecommendations(opportunities)
+Service --> Controller: Plan recommendations
+Controller --> UI: Hiển thị kế hoạch đề xuất
+
+@enduml

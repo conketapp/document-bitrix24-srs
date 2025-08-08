@@ -1,0 +1,208 @@
+@startuml CP-5.5 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title CP-5.5: Hiển thị các Chỉ số Tài chính & Tiến độ Tổng hợp của Dự án - Sequence Diagram
+
+actor "Cán bộ\nQuản lý Dự án" as User
+participant "Giao diện\nQuản lý Dự án" as UI
+participant "Project\nController" as Controller
+participant "Project\nService" as Service
+participant "Cost Item\nRepository" as CostRepo
+participant "Project\nRepository" as ProjectRepo
+participant "Budget\nService" as BudgetService
+participant "Indicator\nService" as IndicatorService
+participant "Chart\nService" as ChartService
+participant "Alert\nService" as AlertService
+participant "Database" as DB
+
+User -> UI: Truy cập trang quản lý dự án
+UI -> Controller: GET /api/projects
+Controller -> Service: getProjects()
+Service -> ProjectRepo: findAll()
+ProjectRepo -> DB: SELECT * FROM projects
+DB --> ProjectRepo: Projects data
+ProjectRepo --> Service: Projects list
+Service --> Controller: Projects response
+Controller --> UI: Hiển thị danh sách dự án
+
+User -> UI: Chọn dự án cần xem chỉ số
+UI -> Controller: GET /api/projects/{id}
+Controller -> Service: getProjectById(id)
+Service -> ProjectRepo: findById(id)
+ProjectRepo -> DB: SELECT * FROM projects WHERE id = ?
+DB --> ProjectRepo: Project data
+ProjectRepo --> Service: Project details
+Service --> Controller: Project response
+Controller --> UI: Hiển thị chi tiết dự án
+
+User -> UI: Nhấn vào phần "Chỉ số Tài chính & Tiến độ"
+UI -> Controller: GET /api/projects/{id}/indicators
+Controller -> Service: getProjectIndicators(id)
+Service -> ProjectRepo: getProjectBudget(id)
+ProjectRepo -> DB: SELECT * FROM project_budgets WHERE project_id = ?
+DB --> ProjectRepo: Project budget data
+ProjectRepo --> Service: Project budget
+
+Service -> CostRepo: getCostItemsByProject(id)
+CostRepo -> DB: SELECT * FROM cost_items WHERE project_id = ?
+DB --> CostRepo: Cost items data
+CostRepo --> Service: Cost items
+
+Service -> IndicatorService: calculateFinancialIndicators(projectId, costItems, budget)
+IndicatorService -> IndicatorService: calculateExpectedDisbursement(costItems, budget)
+IndicatorService -> IndicatorService: calculateActualDisbursement(costItems)
+IndicatorService -> IndicatorService: calculateActualImplementation(costItems)
+IndicatorService -> IndicatorService: calculateActualAcceptance(costItems)
+IndicatorService -> IndicatorService: calculateCompletionRatio(actual, expected)
+IndicatorService --> Service: Financial indicators
+
+Service -> IndicatorService: calculateProgressIndicators(projectId, costItems)
+IndicatorService -> IndicatorService: calculateCumulativeDisbursement(costItems)
+IndicatorService -> IndicatorService: calculateCumulativeImplementation(costItems)
+IndicatorService -> IndicatorService: calculateCumulativeAcceptance(costItems)
+IndicatorService -> IndicatorService: calculateExpectedCompletionRatio(costItems, budget)
+IndicatorService --> Service: Progress indicators
+
+Service -> IndicatorService: calculateComparisonIndicators(actual, planned)
+IndicatorService -> IndicatorService: calculateVarianceRatio(actual, planned)
+IndicatorService -> IndicatorService: calculateEfficiencyRatio(actual, planned)
+IndicatorService -> IndicatorService: calculatePerformanceIndex(actual, planned)
+IndicatorService --> Service: Comparison indicators
+
+Service -> ChartService: generateIndicatorCharts(indicators)
+ChartService -> ChartService: createFinancialChart(financialIndicators)
+ChartService -> ChartService: createProgressChart(progressIndicators)
+ChartService -> ChartService: createComparisonChart(comparisonIndicators)
+ChartService -> ChartService: createTrendChart(historicalData)
+ChartService --> Service: Chart data
+
+Service -> AlertService: checkIndicatorAlerts(indicators)
+AlertService -> AlertService: checkThresholdViolations(indicators)
+AlertService -> AlertService: generateAlerts(violations)
+AlertService --> Service: Alert notifications
+
+Service --> Controller: Complete indicators data
+Controller --> UI: Hiển thị chỉ số với biểu đồ
+
+User -> UI: Lọc theo khoảng thời gian
+UI -> Controller: GET /api/projects/{id}/indicators
+note right of UI
+{
+  "time_range": "current_year",
+  "period": "quarterly"
+}
+end note
+
+Controller -> Service: getProjectIndicators(id, timeRange)
+Service -> CostRepo: getCostItemsByProjectAndTime(id, timeRange)
+CostRepo -> DB: SELECT * FROM cost_items WHERE project_id = ? AND date BETWEEN ? AND ?
+DB --> CostRepo: Filtered cost items
+CostRepo --> Service: Filtered cost items
+Service -> IndicatorService: recalculateIndicators(filteredCostItems)
+IndicatorService --> Service: Updated indicators
+Service --> Controller: Updated indicators response
+Controller --> UI: Cập nhật chỉ số theo thời gian
+
+User -> UI: Xem drill-down chi tiết
+UI -> Controller: GET /api/projects/{id}/indicators/drill-down
+note right of UI
+{
+  "indicator_type": "financial",
+  "indicator_name": "actual_disbursement"
+}
+end note
+
+Controller -> Service: getIndicatorDrillDown(projectId, indicatorType)
+Service -> CostRepo: getCostItemsForIndicator(projectId, indicatorType)
+CostRepo -> DB: SELECT * FROM cost_items WHERE project_id = ? AND payment_status = ?
+DB --> CostRepo: Detailed cost items
+CostRepo --> Service: Detailed cost items
+Service --> Controller: Drill-down data
+Controller --> UI: Hiển thị chi tiết chỉ số
+
+User -> UI: So sánh với dự án khác
+UI -> Controller: POST /api/projects/compare-indicators
+note right of UI
+{
+  "project_ids": [123, 124, 125],
+  "indicators": ["financial", "progress"],
+  "time_range": "current_year"
+}
+end note
+
+Controller -> Service: compareProjectIndicators(projectIds, indicators)
+Service -> ProjectRepo: getProjectsByIds(projectIds)
+ProjectRepo -> DB: SELECT * FROM projects WHERE id IN (?)
+DB --> ProjectRepo: Projects data
+ProjectRepo --> Service: Projects list
+
+loop Cho mỗi dự án
+  Service -> CostRepo: getCostItemsByProject(projectId)
+  CostRepo -> DB: SELECT * FROM cost_items WHERE project_id = ?
+  DB --> CostRepo: Cost items for project
+  CostRepo --> Service: Cost items
+  Service -> IndicatorService: calculateIndicatorsForProject(projectId, costItems)
+  IndicatorService --> Service: Project indicators
+end
+
+Service -> IndicatorService: compareIndicators(projectsIndicators)
+IndicatorService -> IndicatorService: calculateRankings(projectsIndicators)
+IndicatorService -> IndicatorService: identifyBestPerformers(projectsIndicators)
+IndicatorService --> Service: Comparison results
+
+Service --> Controller: Comparison data
+Controller --> UI: Hiển thị so sánh dự án
+
+User -> UI: Xuất báo cáo chỉ số
+UI -> Controller: POST /api/projects/{id}/indicators/export
+note right of UI
+{
+  "format": "excel",
+  "include_charts": true,
+  "include_details": true
+}
+end note
+
+Controller -> Service: exportProjectIndicators(projectId, exportData)
+Service -> IndicatorService: getIndicatorsForExport(projectId)
+IndicatorService --> Service: Indicators data
+Service -> ChartService: generateChartsForExport(indicators)
+ChartService --> Service: Chart data
+Service -> Service: generateIndicatorReport(indicators, charts)
+Service --> Controller: Report file
+Controller --> UI: Tải xuống báo cáo chỉ số
+
+User -> UI: Thiết lập cảnh báo chỉ số
+UI -> Controller: POST /api/projects/{id}/indicators/alerts
+note right of UI
+{
+  "indicator_name": "completion_ratio",
+  "threshold": 80,
+  "alert_type": "below_threshold",
+  "recipients": ["manager@company.com"]
+}
+end note
+
+Controller -> AlertService: setupIndicatorAlert(projectId, alertConfig)
+AlertService -> DB: INSERT INTO indicator_alerts (...)
+DB --> AlertService: Alert configured
+AlertService --> Controller: Alert setup successful
+Controller --> UI: Thông báo thiết lập cảnh báo thành công
+
+@enduml

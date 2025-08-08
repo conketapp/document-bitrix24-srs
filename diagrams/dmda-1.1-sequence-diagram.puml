@@ -1,0 +1,61 @@
+@startuml DMDA-1.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+skinparam sequenceFontName Arial
+
+title DMDA-1.1: Sequence Diagram - Tạo Danh mục Dự án theo Năm và Phân loại
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+
+U -> F: Truy cập trang Danh mục dự án
+F -> F: Hiển thị giao diện với filter
+
+U -> F: Chọn năm từ dropdown
+note right
+  Chỉ có các năm cụ thể
+  (2024, 2025, v.v.)
+  Không có option "Tất cả"
+end note
+
+U -> F: Chọn loại dự án từ dropdown
+note right
+  Có các option:
+  - Dự án đầu tư
+  - Mua sắm tài sản
+  - Thuê dịch vụ
+  - Bảo trì
+  - Tất cả
+end note
+
+F -> B: GET /api/projects?year={year}&category_id={category_id}
+B -> D: Query projects với filter
+D -> B: Trả về danh sách dự án
+B -> F: Response với dữ liệu dự án
+
+F -> B: GET /api/project-categories
+B -> D: Query project categories
+D -> B: Trả về danh sách categories
+B -> F: Response với dữ liệu categories
+
+F -> F: Hiển thị danh sách dự án đã lọc
+note right
+  - Tên dự án
+  - Năm thực hiện
+  - Loại dự án
+  - Trạng thái
+  - Ngày bắt đầu
+  - Ngày kết thúc
+  - Ngân sách
+end note
+
+U -> F: Tương tác với danh sách
+note right
+  - Xem chi tiết
+  - Phân trang
+  - Sắp xếp
+end note
+
+@enduml

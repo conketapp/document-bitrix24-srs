@@ -1,0 +1,89 @@
+@startuml
+!theme plain
+skinparam classAttributeIconSize 0
+
+class User {
+  -id: int
+  -username: string
+  -email: string
+  -password: string
+  -createdAt: datetime
+  -updatedAt: datetime
+  +login()
+  +logout()
+  +updateProfile()
+  +changePassword()
+}
+
+class Product {
+  -id: int
+  -name: string
+  -description: text
+  -price: decimal
+  -stock: int
+  -categoryId: int
+  -createdAt: datetime
+  -updatedAt: datetime
+  +create()
+  +update()
+  +delete()
+  +checkStock()
+}
+
+class Category {
+  -id: int
+  -name: string
+  -description: text
+  -parentId: int
+  -createdAt: datetime
+  -updatedAt: datetime
+  +create()
+  +update()
+  +delete()
+  +getSubcategories()
+}
+
+class Order {
+  -id: int
+  -userId: int
+  -totalAmount: decimal
+  -status: string
+  -shippingAddress: text
+  -createdAt: datetime
+  -updatedAt: datetime
+  +placeOrder()
+  +cancelOrder()
+  +updateStatus()
+  +calculateTotal()
+}
+
+class OrderItem {
+  -id: int
+  -orderId: int
+  -productId: int
+  -quantity: int
+  -unitPrice: decimal
+  +calculateSubtotal()
+}
+
+class Payment {
+  -id: int
+  -orderId: int
+  -amount: decimal
+  -method: string
+  -status: string
+  -transactionId: string
+  -createdAt: datetime
+  +processPayment()
+  +refund()
+}
+
+' Relationships
+User ||--o{ Order : places
+Category ||--o{ Product : contains
+Order ||--o{ OrderItem : includes
+Product ||--o{ OrderItem : referenced_by
+Order ||--|| Payment : has
+Category ||--o{ Category : parent_child
+
+@enduml

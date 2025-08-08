@@ -1,0 +1,111 @@
+@startuml DMDA-4.4 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-4.4: Activity Diagram - Báo cáo Thống kê Dự án Tổng quan
+
+start
+
+:Người dùng truy cập trang báo cáo thống kê;
+
+:Kiểm tra quyền xem báo cáo;
+
+if (Có quyền xem báo cáo?) then (Không)
+    :Hiển thị thông báo "Không có quyền xem báo cáo";
+    stop
+else (Có)
+    :Hiển thị dashboard tổng quan;
+    note right
+    **Dashboard tổng quan:**
+    - Tổng số dự án
+    - Phân bố theo trạng thái
+    - Phân bố theo loại dự án
+    - Thống kê ngân sách
+    - KPI chính
+    end note
+    
+    :Hệ thống tải dữ liệu thống kê;
+    
+    :Hiển thị các biểu đồ và bảng thống kê;
+    note right
+    **Các loại biểu đồ:**
+    - Biểu đồ tròn (phân bố trạng thái)
+    - Biểu đồ cột (so sánh loại dự án)
+    - Biểu đồ đường (xu hướng theo thời gian)
+    - Biểu đồ donut (phân bố ngân sách)
+    end note
+    
+    :Người dùng có thể lọc báo cáo;
+    
+    if (Lọc báo cáo?) then (Có)
+        :Chọn bộ lọc (năm, loại dự án, trạng thái);
+        :Chọn khoảng thời gian;
+        :Chọn người phụ trách;
+        :Hệ thống cập nhật dữ liệu theo bộ lọc;
+        :Hiển thị báo cáo đã lọc;
+    else (Không)
+        :Tiếp tục xem báo cáo tổng quan;
+    endif
+    
+    :Người dùng có thể drill-down vào chi tiết;
+    
+    if (Xem chi tiết?) then (Có)
+        :Nhấn vào biểu đồ hoặc bảng;
+        :Hiển thị dữ liệu chi tiết;
+        note right
+        **Dữ liệu chi tiết:**
+        - Danh sách dự án cụ thể
+        - Thông tin chi tiết từng dự án
+        - Phân tích sâu hơn
+        - So sánh với kỳ trước
+        end note
+    else (Không)
+        :Tiếp tục xem báo cáo tổng quan;
+    endif
+    
+    :Người dùng có thể xuất báo cáo;
+    
+    if (Xuất báo cáo?) then (Có)
+        :Chọn định dạng xuất (Excel, PDF, PNG);
+        :Chọn phạm vi dữ liệu;
+        :Hệ thống tạo file báo cáo;
+        :Cung cấp file cho người dùng;
+    else (Không)
+        :Tiếp tục xem báo cáo;
+    endif
+    
+    :Người dùng có thể so sánh dữ liệu;
+    
+    if (So sánh dữ liệu?) then (Có)
+        :Chọn khoảng thời gian so sánh;
+        :Chọn loại so sánh (năm, quý, tháng);
+        :Hệ thống tạo báo cáo so sánh;
+        :Hiển thị biểu đồ so sánh;
+    else (Không)
+        :Tiếp tục xem báo cáo;
+    endif
+    
+    :Người dùng có thể tùy chỉnh dashboard;
+    
+    if (Tùy chỉnh dashboard?) then (Có)
+        :Kiểm tra quyền tùy chỉnh;
+        
+        if (Có quyền tùy chỉnh?) then (Có)
+            :Hiển thị form tùy chỉnh;
+            :Cho phép thêm/xóa biểu đồ;
+            :Cho phép thay đổi vị trí biểu đồ;
+            :Lưu cấu hình dashboard;
+        else (Không có quyền)
+            :Hiển thị thông báo "Không có quyền tùy chỉnh";
+        endif
+    else (Không)
+        :Tiếp tục xem báo cáo;
+    endif
+    
+    :Hệ thống tự động cập nhật dữ liệu;
+    :Hiển thị thông báo "Dữ liệu đã được cập nhật";
+endif
+
+stop
+
+@enduml

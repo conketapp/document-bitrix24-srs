@@ -1,0 +1,160 @@
+@startuml CP-5.3 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title CP-5.3: Tổng hợp & Báo cáo Chi phí theo Dự án/Gói thầu/Hợp đồng - Activity Diagram
+
+start
+
+:Người dùng truy cập trang báo cáo chi phí;
+
+:Hiển thị giao diện báo cáo chi phí;
+
+partition "Chọn Loại Báo cáo" {
+  :Chọn loại báo cáo;
+  if (Loại báo cáo?) then (Theo Dự án)
+    :Báo cáo chi phí theo dự án;
+  elseif (Theo Gói thầu) then
+    :Báo cáo chi phí theo gói thầu;
+  elseif (Theo Hợp đồng) then
+    :Báo cáo chi phí theo hợp đồng;
+  else (So sánh)
+    :Báo cáo so sánh chi phí;
+  endif
+}
+
+partition "Chọn Đối tượng Báo cáo" {
+  :Chọn dự án/gói thầu/hợp đồng cụ thể;
+  :Chọn nhiều đối tượng để so sánh;
+  :Chọn tất cả đối tượng;
+}
+
+partition "Thiết lập Bộ lọc" {
+  :Chọn khoảng thời gian;
+  :Chọn trạng thái chi phí;
+  :Chọn danh mục chi phí;
+  :Chọn nhà cung cấp;
+  :Chọn người phụ trách;
+}
+
+partition "Tính toán Tổng hợp" {
+  :Tính tổng chi phí theo đối tượng;
+  :Tính chi phí theo danh mục;
+  :Tính chi phí đã thanh toán;
+  :Tính chi phí còn lại;
+  :Tính tỷ lệ hoàn thành;
+}
+
+partition "Phân tích Chi tiết" {
+  :Phân tích chi phí theo thời gian;
+  :Phân tích chi phí theo nhà cung cấp;
+  :Phân tích chi phí theo trạng thái;
+  :Phân tích xu hướng chi phí;
+}
+
+partition "So sánh với Ngân sách" {
+  if (Có ngân sách?) then (Có)
+    :So sánh chi phí thực tế với ngân sách;
+    :Tính tỷ lệ vượt/tiết kiệm;
+    :Hiển thị cảnh báo vượt ngân sách;
+  else (Không)
+    :Bỏ qua so sánh ngân sách;
+  endif
+}
+
+partition "Tạo Biểu đồ Trực quan" {
+  :Tạo biểu đồ cột tổng chi phí;
+  :Tạo biểu đồ tròn phân bổ chi phí;
+  :Tạo biểu đồ đường xu hướng;
+  :Tạo biểu đồ so sánh;
+}
+
+partition "Tạo Báo cáo Chi tiết" {
+  :Tạo bảng tổng hợp chi phí;
+  :Tạo danh sách chi tiết từng khoản mục;
+  :Tạo bảng phân tích theo thời gian;
+  :Tạo bảng so sánh giữa các đối tượng;
+}
+
+partition "Xuất Báo cáo" {
+  if (Định dạng xuất?) then (Excel)
+    :Tạo file Excel với nhiều sheet;
+    :Bao gồm biểu đồ và bảng dữ liệu;
+    :Tự động định dạng và tính toán;
+  elseif (PDF) then
+    :Tạo file PDF với layout đẹp;
+    :Bao gồm biểu đồ và bảng dữ liệu;
+    :Có thể in hoặc chia sẻ;
+  else (HTML)
+    :Tạo trang web tương tác;
+    :Có thể drill-down chi tiết;
+    :Có thể tương tác với biểu đồ;
+  endif
+}
+
+partition "Gửi Báo cáo" {
+  if (Gửi qua email?) then (Có)
+    :Nhập địa chỉ email người nhận;
+    :Chọn định dạng file đính kèm;
+    :Gửi email với file báo cáo;
+  else (Không)
+    :Bỏ qua gửi email;
+  endif
+}
+
+partition "Lưu Báo cáo" {
+  if (Lưu báo cáo?) then (Có)
+    :Nhập tên báo cáo;
+    :Chọn thư mục lưu trữ;
+    :Lưu cấu hình báo cáo;
+    :Lưu template báo cáo;
+  else (Không)
+    :Bỏ qua lưu báo cáo;
+  endif
+}
+
+partition "Tùy chọn: Drill-down Chi tiết" {
+  if (Xem chi tiết khoản mục?) then (Có)
+    :Chọn khoản mục chi phí cụ thể;
+    :Hiển thị thông tin chi tiết;
+    :Xem lịch sử thay đổi;
+    :Xem tài liệu đính kèm;
+  else (Không)
+    :Bỏ qua xem chi tiết;
+  endif
+}
+
+partition "Tùy chọn: Lập Kế hoạch" {
+  if (Lập kế hoạch dựa trên báo cáo?) then (Có)
+    :Phân tích xu hướng chi phí;
+    :Dự báo chi phí tương lai;
+    :Đề xuất kế hoạch tiết kiệm;
+    :Tạo kế hoạch ngân sách;
+  else (Không)
+    :Bỏ qua lập kế hoạch;
+  endif
+}
+
+stop
+
+@enduml

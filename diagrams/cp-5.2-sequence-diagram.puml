@@ -1,0 +1,180 @@
+@startuml CP-5.2 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title CP-5.2: Tìm kiếm & Lọc Chi phí Đa tiêu chí - Sequence Diagram
+
+actor "Cán bộ\nChi phí" as User
+participant "Giao diện\nTìm kiếm" as UI
+participant "Search\nController" as Controller
+participant "Search\nService" as Service
+participant "Cost Item\nRepository" as Repository
+participant "Filter\nService" as FilterService
+participant "Permission\nService" as PermissionService
+participant "Export\nService" as ExportService
+participant "Database" as DB
+
+User -> UI: Truy cập trang tìm kiếm chi phí
+UI -> Controller: GET /api/cost-items/search
+Controller -> Service: getSearchForm()
+Service --> Controller: Search form configuration
+Controller --> UI: Hiển thị form tìm kiếm
+
+User -> UI: Nhập từ khóa tìm kiếm
+note right of User
+  - Mã chi phí
+  - Tên chi phí
+  - Mô tả chi phí
+  - Từ khóa chung
+end note
+
+UI -> Controller: POST /api/cost-items/search
+note right of UI
+{
+  "keyword": "thiết bị văn phòng",
+  "filters": {
+    "category": "Thiết bị",
+    "status": "approved",
+    "date_from": "2024-01-01",
+    "date_to": "2024-12-31",
+    "amount_min": 10000000,
+    "amount_max": 100000000,
+    "project_id": 123,
+    "supplier": "Công ty ABC"
+  }
+}
+end note
+
+Controller -> Service: searchCostItems(searchCriteria)
+Service -> Service: parseSearchCriteria(searchCriteria)
+Service -> Service: validateSearchCriteria(searchCriteria)
+
+Service -> PermissionService: checkUserPermissions(userId)
+PermissionService -> DB: SELECT * FROM user_permissions WHERE user_id = ?
+DB --> PermissionService: User permissions
+PermissionService --> Service: User permissions
+
+Service -> Repository: searchCostItems(searchCriteria, userPermissions)
+Repository -> Repository: buildSearchQuery(searchCriteria)
+
+alt Có từ khóa tìm kiếm
+  Repository -> DB: SELECT * FROM cost_items WHERE (cost_code LIKE ? OR cost_name LIKE ? OR description LIKE ?) AND user_permissions
+else Không có từ khóa
+  Repository -> DB: SELECT * FROM cost_items WHERE user_permissions
+end
+
+DB --> Repository: Search results
+Repository --> Service: Cost items matching criteria
+
+Service -> FilterService: applyFilters(searchResults, filters)
+FilterService -> FilterService: filterByCategory(results, category)
+FilterService -> FilterService: filterByStatus(results, status)
+FilterService -> FilterService: filterByDateRange(results, dateFrom, dateTo)
+FilterService -> FilterService: filterByAmountRange(results, minAmount, maxAmount)
+FilterService -> FilterService: filterByProject(results, projectId)
+FilterService -> FilterService: filterBySupplier(results, supplier)
+FilterService --> Service: Filtered results
+
+Service -> Service: sortResults(filteredResults, sortCriteria)
+Service -> Service: paginateResults(sortedResults, page, limit)
+
+Service --> Controller: Search results with pagination
+Controller --> UI: Hiển thị kết quả tìm kiếm
+
+User -> UI: Lưu bộ lọc (tùy chọn)
+UI -> Controller: POST /api/search-filters/save
+note right of UI
+{
+  "filter_name": "Bộ lọc thiết bị văn phòng",
+  "search_criteria": {...},
+  "is_public": false
+}
+end note
+
+Controller -> Service: saveSearchFilter(userId, filterData)
+Service -> DB: INSERT INTO saved_search_filters (...)
+DB --> Service: Filter saved
+Service --> Controller: Filter saved successfully
+Controller --> UI: Thông báo lưu bộ lọc thành công
+
+User -> UI: Xem chi tiết khoản mục chi phí
+UI -> Controller: GET /api/cost-items/{id}
+Controller -> Service: getCostItemById(id)
+Service -> Repository: findById(id)
+Repository -> DB: SELECT * FROM cost_items WHERE id = ?
+DB --> Repository: Cost item details
+Repository --> Service: Cost item details
+Service --> Controller: Cost item response
+Controller --> UI: Hiển thị chi tiết chi phí
+
+User -> UI: Xuất kết quả tìm kiếm (tùy chọn)
+UI -> Controller: POST /api/cost-items/search/export
+note right of UI
+{
+  "format": "excel",
+  "search_criteria": {...},
+  "include_details": true
+}
+end note
+
+Controller -> ExportService: exportSearchResults(exportData)
+ExportService -> Service: getSearchResultsForExport(searchCriteria)
+Service -> Repository: searchCostItems(searchCriteria)
+Repository -> DB: SELECT * FROM cost_items WHERE search_criteria
+DB --> Repository: Export data
+Repository --> Service: Export data
+Service --> ExportService: Search results for export
+
+ExportService -> ExportService: generateExcelReport(exportData)
+ExportService --> Controller: Excel file
+Controller --> UI: Tải xuống file Excel
+
+User -> UI: Xem bộ lọc đã lưu (tùy chọn)
+UI -> Controller: GET /api/search-filters/saved
+Controller -> Service: getSavedFilters(userId)
+Service -> DB: SELECT * FROM saved_search_filters WHERE user_id = ?
+DB --> Service: Saved filters
+Service --> Controller: Saved filters response
+Controller --> UI: Hiển thị danh sách bộ lọc đã lưu
+
+User -> UI: Sử dụng bộ lọc đã lưu
+UI -> Controller: POST /api/cost-items/search
+note right of UI
+{
+  "saved_filter_id": 123,
+  "additional_criteria": {...}
+}
+end note
+
+Controller -> Service: loadSavedFilter(filterId)
+Service -> DB: SELECT * FROM saved_search_filters WHERE id = ?
+DB --> Service: Saved filter criteria
+Service --> Controller: Saved filter loaded
+Controller --> UI: Áp dụng bộ lọc đã lưu
+
+User -> UI: Xem thống kê tìm kiếm (tùy chọn)
+UI -> Controller: GET /api/cost-items/search/statistics
+Controller -> Service: getSearchStatistics(searchCriteria)
+Service -> Repository: getSearchStatistics(searchCriteria)
+Repository -> DB: SELECT COUNT(*) as total, SUM(total_amount) as total_amount FROM cost_items WHERE search_criteria
+DB --> Repository: Search statistics
+Repository --> Service: Search statistics
+Service --> Controller: Statistics response
+Controller --> UI: Hiển thị thống kê tìm kiếm
+
+@enduml

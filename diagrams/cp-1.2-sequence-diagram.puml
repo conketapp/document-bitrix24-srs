@@ -1,0 +1,258 @@
+@startuml CP-1.2 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title CP-1.2: Sequence Diagram - Liên kết khoản mục chi phí với Dự án, Gói thầu và Hợp đồng
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Cost Service" as CS
+participant "Project Service" as PS
+participant "Tender Service" as TS
+participant "Contract Service" as CTS
+participant "Link Service" as LS
+
+== Khởi tạo Trang Quản lý Chi phí ==
+
+U -> F: Truy cập trang quản lý chi phí
+F -> B: GET /api/costs/management
+B -> B: Check cost linking permissions
+B -> D: Query cost items
+D --> B: Cost items
+B --> F: Cost management interface
+F --> U: Hiển thị danh sách chi phí
+
+== Chọn Chi phí ==
+
+U -> F: Chọn chi phí cần liên kết
+F -> B: GET /api/costs/{cost_id}
+B -> D: Query cost details
+D --> B: Cost details
+B --> F: Cost information
+F --> U: Hiển thị thông tin chi phí
+
+== Hiển thị Form Liên kết ==
+
+U -> F: Nhấn "Liên kết"
+F -> B: GET /api/costs/{cost_id}/link-form
+B -> D: Query available entities
+D --> B: Available entities
+B -> PS: Query active projects
+PS --> B: Active projects
+B -> TS: Query active tenders
+TS --> B: Active tenders
+B -> CTS: Query active contracts
+CTS --> B: Active contracts
+B --> F: Link form interface
+F --> U: Hiển thị form liên kết
+
+== Chọn Loại Đối tượng ==
+
+U -> F: Chọn loại đối tượng
+F -> B: POST /api/costs/select-entity-type
+note right: { entity_type: string }
+
+B -> LS: Process entity type selection
+LS -> LS: Configure entity list
+LS --> B: Entity type configured
+B --> F: Updated entity list
+F --> U: Hiển thị danh sách đối tượng
+
+== Tìm kiếm Đối tượng ==
+
+U -> F: Tìm kiếm đối tượng
+F -> B: POST /api/costs/search-entities
+note right: { search_term: string, entity_type: string, filters: object }
+
+B -> LS: Search entities
+LS -> D: Query entities by criteria
+D --> LS: Search results
+LS --> B: Entity search results
+B --> F: Search results
+F --> U: Hiển thị kết quả tìm kiếm
+
+== Chọn Đối tượng ==
+
+U -> F: Chọn đối tượng
+F -> B: POST /api/costs/select-entity
+note right: { entity_id: string, entity_type: string }
+
+B -> LS: Process entity selection
+LS -> LS: Validate entity status
+LS -> LS: Check entity permissions
+LS --> B: Entity validation result
+
+alt Entity không hợp lệ
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo lỗi đối tượng
+else Entity hợp lệ
+    B -> D: Query entity details
+    D --> B: Entity details
+    B --> F: Entity details
+    F --> U: Hiển thị thông tin chi tiết đối tượng
+end
+
+== Thiết lập Phân bổ Chi phí ==
+
+U -> F: Thiết lập phân bổ chi phí
+F -> B: POST /api/costs/set-allocation
+note right: { allocation_type: string, allocation_value: number }
+
+B -> LS: Process cost allocation
+LS -> LS: Validate allocation rules
+LS -> LS: Calculate allocation amounts
+LS --> B: Allocation result
+
+alt Phân bổ không hợp lệ
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo lỗi phân bổ
+else Phân bổ hợp lệ
+    B --> F: Allocation configured
+    F --> U: Hiển thị thông báo phân bổ thành công
+end
+
+== Tạo Liên kết ==
+
+U -> F: Nhấn "Tạo liên kết"
+F -> B: POST /api/costs/create-link
+note right: { cost_id: string, entity_id: string, allocation: object }
+
+B -> LS: Create cost-entity link
+LS -> D: Save link to database
+D --> LS: Link saved
+LS -> D: Update cost statistics
+D --> LS: Statistics updated
+LS --> B: Link created
+B --> F: Link creation result
+F --> U: Hiển thị thông báo liên kết thành công
+
+== Thêm Đối tượng Khác ==
+
+U -> F: Thêm đối tượng khác
+F -> B: POST /api/costs/add-entity
+note right: { cost_id: string, additional_entities: object[] }
+
+B -> LS: Add additional entities
+LS -> LS: Validate total allocation
+LS -> LS: Check allocation limits
+LS --> B: Additional entities result
+
+alt Tổng phân bổ > 100%
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị cảnh báo phân bổ vượt quá
+else Phân bổ hợp lệ
+    B -> D: Save additional links
+    D --> B: Additional links saved
+    B --> F: Additional entities added
+    F --> U: Hiển thị thông báo thêm thành công
+end
+
+== Preview Liên kết ==
+
+U -> F: Nhấn "Preview"
+F -> B: GET /api/costs/{cost_id}/link-preview
+B -> LS: Generate link preview
+LS -> LS: Calculate total allocations
+LS -> LS: Prepare display data
+LS --> B: Preview data
+B --> F: Link preview
+F --> U: Hiển thị preview liên kết
+
+== Xác nhận Liên kết ==
+
+U -> F: Nhấn "Xác nhận"
+F -> B: POST /api/costs/confirm-links
+note right: { cost_id: string, links: object[] }
+
+B -> LS: Confirm all links
+LS -> D: Finalize link creation
+D --> LS: Links finalized
+LS -> D: Create link version
+D --> LS: Version created
+LS --> B: Links confirmed
+B --> F: Confirmation result
+F --> U: Hiển thị thông báo xác nhận thành công
+
+== Xem Lịch sử Liên kết ==
+
+U -> F: Nhấn "Xem lịch sử"
+F -> B: GET /api/costs/{cost_id}/link-history
+B -> D: Query link history
+D --> B: Link history
+B --> F: Link history
+F --> U: Hiển thị lịch sử liên kết
+
+== Thay đổi Liên kết ==
+
+U -> F: Nhấn "Thay đổi liên kết"
+F -> B: GET /api/costs/{cost_id}/edit-links
+B -> D: Query current links
+D --> B: Current links
+B --> F: Edit link form
+F --> U: Hiển thị form chỉnh sửa liên kết
+
+U -> F: Chỉnh sửa thông tin liên kết
+F -> B: POST /api/costs/update-links
+note right: { cost_id: string, updated_links: object[] }
+
+B -> LS: Update cost links
+LS -> D: Update link data
+D --> LS: Links updated
+LS -> D: Log link changes
+D --> LS: Changes logged
+LS --> B: Links updated
+B --> F: Update result
+F --> U: Hiển thị thông báo cập nhật thành công
+
+== Xem Báo cáo Chi phí ==
+
+U -> F: Nhấn "Xem báo cáo"
+F -> B: GET /api/costs/reports/by-entity
+note right: { entity_type: string, entity_id: string }
+
+B -> CS: Generate cost report
+CS -> CS: Aggregate cost data
+CS -> CS: Calculate totals
+CS --> B: Report data
+B --> F: Cost report
+F --> U: Hiển thị báo cáo chi phí
+
+== Xuất Báo cáo ==
+
+U -> F: Nhấn "Xuất báo cáo"
+F -> B: POST /api/costs/export-report
+note right: { format: string, report_data: object }
+
+B -> CS: Export cost report
+CS -> CS: Generate report file
+CS -> CS: Format report data
+CS --> B: Export file
+B --> F: Export file
+F --> U: Cung cấp link download
+
+== Ghi Log ==
+
+B -> D: Log link activities
+D --> B: Activities logged
+B -> D: Update link metrics
+D --> B: Metrics updated
+
+== Xử lý Lỗi ==
+
+alt Không có quyền liên kết chi phí
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền liên kết chi phí"
+else Đối tượng không tồn tại
+    B --> F: 404 Not Found
+    F --> U: Hiển thị thông báo "Đối tượng không tồn tại"
+else Phân bổ không hợp lệ
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo lỗi phân bổ
+else Lỗi tạo liên kết
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi tạo liên kết
+end
+
+@enduml

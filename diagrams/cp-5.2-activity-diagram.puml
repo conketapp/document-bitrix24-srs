@@ -1,0 +1,146 @@
+@startuml CP-5.2 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title CP-5.2: Tìm kiếm & Lọc Chi phí Đa tiêu chí - Activity Diagram
+
+start
+
+:Người dùng truy cập trang quản lý chi phí;
+
+:Hiển thị giao diện tìm kiếm và lọc;
+
+partition "Nhập Tiêu chí Tìm kiếm" {
+  :Người dùng nhập từ khóa tìm kiếm;
+  if (Có từ khóa?) then (Có)
+    :Nhập từ khóa vào ô tìm kiếm;
+    :Hệ thống phân tích từ khóa;
+  else (Không)
+    :Bỏ qua tìm kiếm từ khóa;
+  endif
+}
+
+partition "Chọn Bộ lọc Cơ bản" {
+  :Chọn danh mục chi phí;
+  :Chọn loại chi phí;
+  :Chọn trạng thái chi phí;
+  :Chọn trạng thái thanh toán;
+  :Chọn trạng thái phê duyệt;
+}
+
+partition "Chọn Bộ lọc Thời gian" {
+  :Chọn khoảng thời gian tạo;
+  :Chọn khoảng thời gian cập nhật;
+  :Chọn khoảng thời gian bắt đầu;
+  :Chọn khoảng thời gian kết thúc;
+}
+
+partition "Chọn Bộ lọc Tài chính" {
+  :Nhập khoảng tổng chi phí;
+  :Nhập khoảng số tiền đã thanh toán;
+  :Nhập khoảng số tiền còn lại;
+  :Chọn đơn vị tiền tệ;
+}
+
+partition "Chọn Bộ lọc Liên quan" {
+  :Chọn dự án liên quan;
+  :Chọn hợp đồng liên quan;
+  :Chọn gói thầu liên quan;
+  :Chọn nhà cung cấp;
+}
+
+partition "Chọn Bộ lọc Người thực hiện" {
+  :Chọn người tạo;
+  :Chọn người phê duyệt;
+  :Chọn người cập nhật cuối;
+}
+
+partition "Kết hợp Tiêu chí" {
+  :Hệ thống kết hợp tất cả tiêu chí;
+  :Tạo query tìm kiếm phức hợp;
+  :Áp dụng logic AND/OR cho các tiêu chí;
+}
+
+partition "Thực hiện Tìm kiếm" {
+  :Hệ thống thực hiện tìm kiếm;
+  :Tìm kiếm trong database;
+  :Áp dụng các bộ lọc;
+  :Tính toán kết quả;
+}
+
+partition "Kiểm tra Quyền Truy cập" {
+  :Hệ thống kiểm tra quyền người dùng;
+  if (Có quyền xem?) then (Có)
+    :Hiển thị kết quả tìm kiếm;
+  else (Không)
+    :Lọc kết quả theo quyền;
+    :Hiển thị kết quả đã lọc;
+  endif
+}
+
+partition "Sắp xếp và Phân trang" {
+  :Sắp xếp kết quả theo tiêu chí;
+  :Phân trang kết quả;
+  :Tính toán tổng số kết quả;
+  :Hiển thị thông tin phân trang;
+}
+
+partition "Hiển thị Kết quả" {
+  :Hiển thị danh sách kết quả;
+  :Hiển thị số lượng kết quả tìm được;
+  :Hiển thị thông tin tóm tắt;
+  :Hiển thị các hành động nhanh;
+}
+
+partition "Tùy chọn: Lưu Bộ lọc" {
+  if (Người dùng muốn lưu bộ lọc?) then (Có)
+    :Nhập tên bộ lọc;
+    :Lưu bộ lọc vào hệ thống;
+    :Hiển thị thông báo lưu thành công;
+  else (Không)
+    :Bỏ qua lưu bộ lọc;
+  endif
+}
+
+partition "Tùy chọn: Xuất Kết quả" {
+  if (Người dùng muốn xuất kết quả?) then (Có)
+    :Chọn định dạng xuất (Excel/PDF);
+    :Tạo file xuất;
+    :Tải xuống file;
+  else (Không)
+    :Bỏ qua xuất kết quả;
+  endif
+}
+
+partition "Tùy chọn: Xem Chi tiết" {
+  if (Người dùng muốn xem chi tiết?) then (Có)
+    :Chọn khoản mục chi phí;
+    :Hiển thị trang chi tiết;
+  else (Không)
+    :Bỏ qua xem chi tiết;
+  endif
+}
+
+stop
+
+@enduml

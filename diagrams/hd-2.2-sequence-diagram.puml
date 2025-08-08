@@ -1,0 +1,181 @@
+@startuml HD-2.2 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title HD-2.2: Sequence Diagram - Xóa Hợp đồng
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Audit Service" as AS
+participant "Notification Service" as N
+
+== Khởi tạo Trang Chi tiết Hợp đồng ==
+
+U -> F: Truy cập trang chi tiết hợp đồng
+F -> B: GET /api/contracts/{id}
+B -> D: Query contract details
+D --> B: Contract data
+B -> B: Check user permissions
+B --> F: Contract information with permissions
+F --> U: Hiển thị thông tin hợp đồng và nút "Xóa"
+
+== Bắt đầu Quá trình Xóa ==
+
+U -> F: Nhấn "Xóa" hợp đồng
+F -> B: GET /api/contracts/{id}/delete-info
+B -> D: Query contract for deletion
+D --> B: Contract deletion data
+B -> B: Check delete permissions
+B --> F: Delete confirmation dialog data
+F --> U: Hiển thị hộp thoại xác nhận xóa
+
+== Xác nhận Xóa ==
+
+U -> F: Xác nhận xóa
+F -> B: POST /api/contracts/{id}/delete
+note right: { delete_reason: string, force_delete: boolean }
+
+B -> B: Validate delete request
+B -> D: Check contract status
+D --> B: Contract status
+
+alt Hợp đồng đã ký
+    B --> F: 400 Bad Request - Contract signed
+    F --> U: Hiển thị thông báo "Hợp đồng đã ký không thể xóa"
+else Hợp đồng chưa ký
+    B -> D: Query contract dependencies
+    D --> B: Dependencies data
+    
+    alt Có dependencies quan trọng
+        B --> F: 409 Conflict - Dependencies found
+        F --> U: Hiển thị cảnh báo dependencies
+        U -> F: Chọn xóa cưỡng chế
+        F -> B: POST /api/contracts/{id}/force-delete
+        B -> D: Update related records
+        D --> B: Related records updated
+    else Không có dependencies
+        B -> D: Perform soft delete
+        D --> B: Contract soft deleted
+    end
+    
+    B -> D: Update contract status to 'deleted'
+    D --> B: Status updated
+    B -> D: Insert delete_log
+    D --> B: Delete log created
+    B -> AS: Log delete action
+    AS --> B: Delete action logged
+    B -> N: Send delete notification
+    N --> B: Notification sent
+    B --> F: Contract deleted successfully
+    F --> U: Hiển thị thông báo xóa thành công
+end
+
+== Bulk Delete ==
+
+U -> F: Chọn nhiều hợp đồng để xóa
+F -> B: POST /api/contracts/bulk-delete
+note right: { contract_ids: number[], delete_reason: string }
+
+B -> B: Validate bulk delete request
+B -> D: Query all contracts for deletion
+D --> B: Contracts data
+
+loop For each contract
+    B -> B: Check contract status
+    B -> D: Check dependencies
+    D --> B: Dependencies for contract
+    
+    alt Contract can be deleted
+        B -> D: Soft delete contract
+        D --> B: Contract soft deleted
+    else Contract cannot be deleted
+        B -> B: Add to failed list
+    end
+end
+
+B -> D: Insert bulk_delete_log
+D --> B: Bulk delete log created
+B -> AS: Log bulk delete action
+AS --> B: Bulk delete action logged
+B -> N: Send bulk delete notifications
+N --> B: Notifications sent
+B --> F: Bulk delete results
+F --> U: Hiển thị kết quả xóa hàng loạt
+
+== Khôi phục Hợp đồng ==
+
+U -> F: Truy cập thùng rác
+F -> B: GET /api/contracts/deleted
+B -> D: Query deleted contracts
+D --> B: Deleted contracts data
+B --> F: Deleted contracts list
+F --> U: Hiển thị danh sách hợp đồng đã xóa
+
+U -> F: Chọn hợp đồng để khôi phục
+F -> B: POST /api/contracts/{id}/restore
+note right: { restore_reason: string }
+
+B -> B: Check restore time limit (30 days)
+B -> D: Query deleted contract
+D --> B: Deleted contract data
+
+alt Trong thời gian cho phép khôi phục
+    B -> D: Restore contract status
+    D --> B: Contract restored
+    B -> D: Update contract visibility
+    D --> B: Visibility updated
+    B -> D: Insert restore_log
+    D --> B: Restore log created
+    B -> AS: Log restore action
+    AS --> B: Restore action logged
+    B -> N: Send restore notification
+    N --> B: Notification sent
+    B --> F: Contract restored successfully
+    F --> U: Hiển thị thông báo khôi phục thành công
+else Quá thời gian cho phép
+    B --> F: 400 Bad Request - Restore time expired
+    F --> U: Hiển thị thông báo "Không thể khôi phục"
+end
+
+== Xóa Vĩnh viễn ==
+
+U -> F: Chọn xóa vĩnh viễn
+F -> B: POST /api/contracts/{id}/permanent-delete
+note right: { permanent_delete_reason: string }
+
+B -> B: Check permanent delete time limit (90 days)
+B -> D: Query deleted contract
+D --> B: Deleted contract data
+
+alt Trong thời gian cho phép xóa vĩnh viễn
+    B -> D: Delete contract permanently
+    D --> B: Contract permanently deleted
+    B -> D: Delete related records
+    D --> B: Related records deleted
+    B -> D: Insert permanent_delete_log
+    D --> B: Permanent delete log created
+    B -> AS: Log permanent delete action
+    AS --> B: Permanent delete action logged
+    B --> F: Contract permanently deleted
+    F --> U: Hiển thị thông báo xóa vĩnh viễn thành công
+else Quá thời gian cho phép
+    B --> F: 400 Bad Request - Permanent delete time expired
+    F --> U: Hiển thị thông báo "Không thể xóa vĩnh viễn"
+end
+
+== Xử lý Lỗi ==
+
+alt Không có quyền xóa
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xóa"
+else Hợp đồng không tồn tại
+    B --> F: 404 Not Found
+    F --> U: Hiển thị thông báo "Hợp đồng không tồn tại"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+@enduml

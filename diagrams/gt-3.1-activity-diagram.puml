@@ -1,0 +1,83 @@
+@startuml GT-3.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title GT-3.1: Activity Diagram - Đính kèm Tài liệu liên quan đến Gói thầu
+
+start
+
+:Người dùng truy cập trang chi tiết gói thầu;
+
+:Hiển thị khu vực tài liệu đính kèm;
+
+:Người dùng chọn tải lên tài liệu;
+
+:Kiểm tra quyền đính kèm tài liệu;
+
+if (Có quyền đính kèm?) then (Không)
+    :Hiển thị thông báo "Không có quyền đính kèm";
+    stop
+else (Có)
+    :Người dùng chọn file hoặc kéo thả file;
+    
+    :Kiểm tra định dạng file;
+    
+    if (Định dạng file hợp lệ?) then (Không)
+        :Hiển thị lỗi "Định dạng file không được hỗ trợ";
+        :Yêu cầu chọn file khác;
+    else (OK)
+        :Kiểm tra kích thước file;
+        
+        if (Kích thước file hợp lệ?) then (Không)
+            :Hiển thị lỗi "File quá lớn";
+            :Yêu cầu chọn file nhỏ hơn;
+        else (OK)
+            :Kiểm tra dung lượng lưu trữ;
+            
+            if (Còn dung lượng lưu trữ?) then (Không)
+                :Hiển thị lỗi "Hết dung lượng lưu trữ";
+                :Gợi ý xóa file cũ;
+            else (OK)
+                :Quét virus file;
+                
+                if (File an toàn?) then (Không)
+                    :Hiển thị cảnh báo "File có thể chứa virus";
+                    :Từ chối upload;
+                else (OK)
+                    :Người dùng chọn loại tài liệu;
+                    note right
+                    **Các loại tài liệu:**
+                    - Quyết định phê duyệt
+                    - Hồ sơ mời thầu
+                    - Hợp đồng
+                    - Tài liệu khác
+                    end note
+                    
+                    :Người dùng nhập mô tả tài liệu;
+                    
+                    :Tải lên file lên server;
+                    :Hiển thị progress indicator;
+                    
+                    :Lưu thông tin tài liệu vào database;
+                    :Tạo backup file;
+                    :Cập nhật metadata;
+                    
+                    :Hiển thị thông báo thành công;
+                    :Cập nhật danh sách tài liệu;
+                endif
+            endif
+        endif
+    endif
+endif
+
+:Người dùng xem danh sách tài liệu;
+
+:Người dùng có thể tìm kiếm và lọc tài liệu;
+
+:Người dùng có thể xem trước hoặc tải xuống tài liệu;
+
+:Người dùng có thể xóa hoặc thay thế tài liệu;
+
+stop
+
+@enduml

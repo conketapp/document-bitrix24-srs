@@ -1,0 +1,116 @@
+@startuml DMDA-4.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-4.1: Activity Diagram - Ghi nhận Lịch sử Thao tác Dự án (Log)
+
+start
+
+:Người dùng thực hiện hành động trên dự án;
+note right
+**Các hành động được ghi log:**
+- Tạo dự án
+- Cập nhật dự án
+- Gửi phê duyệt
+- Phê duyệt dự án
+- Từ chối dự án
+- Yêu cầu chỉnh sửa
+- Dừng dự án
+- Khôi phục dự án
+- Hoàn thành dự án
+- Hủy dự án
+end note
+
+:Hệ thống phát hiện hành động;
+
+:Hệ thống thu thập thông tin hành động;
+note right
+**Thông tin thu thập:**
+- ID dự án
+- ID người dùng
+- Loại hành động
+- Chi tiết hành động
+- IP address
+- User agent
+- Timestamp
+end note
+
+:Hệ thống kiểm tra quyền ghi log;
+
+if (Có quyền ghi log?) then (Không)
+    :Ghi log lỗi quyền truy cập;
+    :Thông báo lỗi cho người dùng;
+else (Có)
+    :Hệ thống tạo bản ghi log;
+    :Lưu thông tin hành động vào database;
+    
+    if (Lưu log thành công?) then (Có)
+        :Cập nhật trạng thái dự án (nếu cần);
+        :Gửi thông báo cho các bên liên quan;
+        :Hiển thị thông báo thành công cho người dùng;
+    else (Thất bại)
+        :Ghi log lỗi hệ thống;
+        :Thông báo lỗi cho người dùng;
+        :Thử lại ghi log (nếu có thể);
+    endif
+endif
+
+:Người dùng có thể xem lịch sử hoạt động;
+
+if (Xem lịch sử hoạt động?) then (Có)
+    :Truy cập trang lịch sử dự án;
+    :Hệ thống tải dữ liệu log;
+    :Hiển thị danh sách hoạt động theo thời gian;
+    note right
+    **Thông tin hiển thị:**
+    - Thời gian thực hiện
+    - Người thực hiện
+    - Loại hành động
+    - Chi tiết hành động
+    - Trạng thái trước/sau
+    end note
+else (Không)
+    :Tiếp tục thực hiện hành động khác;
+endif
+
+:Người dùng có thể lọc và tìm kiếm log;
+
+if (Lọc/tìm kiếm log?) then (Có)
+    :Chọn bộ lọc (loại hành động, người thực hiện, thời gian);
+    :Nhập từ khóa tìm kiếm;
+    :Hệ thống thực hiện tìm kiếm;
+    :Hiển thị kết quả lọc;
+else (Không)
+    :Tiếp tục xem lịch sử;
+endif
+
+:Người dùng có thể xuất log;
+
+if (Xuất log?) then (Có)
+    :Chọn định dạng xuất (Excel, PDF, CSV);
+    :Chọn phạm vi dữ liệu;
+    :Hệ thống tạo file xuất;
+    :Cung cấp file cho người dùng;
+else (Không)
+    :Tiếp tục quản lý log;
+endif
+
+:Người dùng có thể xem chi tiết log;
+
+if (Xem chi tiết log?) then (Có)
+    :Nhấn vào bản ghi log;
+    :Hiển thị thông tin chi tiết;
+    note right
+    **Thông tin chi tiết:**
+    - Thông tin đầy đủ về hành động
+    - Dữ liệu trước/sau thay đổi
+    - Context của hành động
+    - Metadata bổ sung
+    end note
+else (Không)
+    :Tiếp tục quản lý log;
+endif
+
+stop
+
+@enduml

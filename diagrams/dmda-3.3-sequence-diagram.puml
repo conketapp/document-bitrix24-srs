@@ -1,0 +1,103 @@
+@startuml DMDA-3.3 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-3.3: Sequence Diagram - Phê duyệt Dự án
+
+actor "Người phê duyệt" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Notification Service" as N
+participant "Bitrix24 API" as B24
+participant "Audit Service" as AS
+
+== Khởi tạo Trang Chi tiết Dự án ==
+
+U -> F: Truy cập trang chi tiết dự án
+F -> B: GET /api/projects/{id}
+B -> D: Query project data
+D --> B: Project data
+B --> F: Project data
+F --> U: Hiển thị thông tin dự án
+
+F -> F: Kiểm tra quyền phê duyệt
+F --> U: Hiển thị nút "Phê duyệt" (nếu có quyền)
+
+== Phê duyệt Dự án ==
+
+U -> F: Nhấn "Phê duyệt"
+F -> B: GET /api/projects/{id}/can-approve
+B -> D: Check project status và user permissions
+D --> B: Approval eligibility
+B --> F: Can approve project
+F --> U: Hiển thị form phê duyệt
+
+U -> F: Nhập comment (tùy chọn)
+F -> F: Validate form data
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Nhấn "Xác nhận Phê duyệt"
+F -> B: POST /api/projects/{id}/approve
+note right: { approver_id: number, approval_notes?: string }
+
+B -> B: Validate approval request
+B -> D: Check final validation
+D --> B: Validation result
+
+alt Không có quyền phê duyệt
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền phê duyệt"
+else Dự án không thể phê duyệt
+    B --> F: 400 Bad Request - Invalid project status
+    F --> U: Hiển thị thông báo "Dự án không thể phê duyệt"
+else Validation thành công
+    B -> D: Update project status to 'approved'
+    D --> B: Project status updated
+    B -> D: Create approval record
+    D --> B: Approval record created
+    B -> AS: Log approval action
+    AS --> B: Approval logged
+    B -> N: Send approval notification
+    N --> B: Notification sent
+    B -> B24: Sync with Bitrix24
+    B24 --> B: Sync completed
+    B --> F: Project approved successfully
+    F --> U: Hiển thị thông báo thành công
+end
+
+== Xem Trạng thái Phê duyệt ==
+
+U -> F: Nhấn "Xem Trạng thái Phê duyệt"
+F -> B: GET /api/projects/{id}/approval-status
+B -> D: Query approval status
+D --> B: Approval status data
+B --> F: Approval status
+F --> U: Hiển thị trạng thái phê duyệt
+
+== Lịch sử Phê duyệt ==
+
+U -> F: Nhấn "Xem Lịch sử Phê duyệt"
+F -> B: GET /api/projects/{id}/approval-history
+B -> D: Query approval history
+D --> B: History data
+B --> F: Approval history
+F --> U: Hiển thị lịch sử phê duyệt
+
+== Xử lý Lỗi ==
+
+alt Dự án không tồn tại
+    B --> F: 404 Not Found
+    F --> U: Hiển thị thông báo "Dự án không tồn tại"
+else Người phê duyệt không hợp lệ
+    B --> F: 400 Bad Request - Invalid approver
+    F --> U: Hiển thị thông báo "Người phê duyệt không hợp lệ"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+else Lỗi Bitrix24 sync
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi đồng bộ với Bitrix24"
+end
+
+@enduml

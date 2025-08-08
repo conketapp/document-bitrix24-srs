@@ -1,0 +1,106 @@
+@startuml DMDA-4.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-4.2: Activity Diagram - Chế độ Xem Kanban cho Danh mục Dự án
+
+start
+
+:Người dùng truy cập trang danh mục dự án;
+
+:Hiển thị chế độ xem mặc định (danh sách);
+
+:Người dùng chọn chế độ xem Kanban;
+
+:Hệ thống tải dữ liệu dự án theo trạng thái;
+note right
+**Các cột Kanban:**
+- Bản nháp (Draft)
+- Chờ phê duyệt (Pending Approval)
+- Đã phê duyệt (Approved)
+- Đã từ chối (Rejected)
+- Đang thực hiện (In Progress)
+- Hoàn thành (Completed)
+end note
+
+:Hệ thống hiển thị bảng Kanban;
+:Hiển thị các cột trạng thái;
+:Hiển thị thẻ dự án trong từng cột;
+
+:Người dùng có thể kéo thả thẻ dự án;
+
+if (Kéo thả thẻ dự án?) then (Có)
+    :Kiểm tra quyền kéo thả;
+    
+    if (Có quyền kéo thả?) then (Có)
+        :Người dùng kéo thẻ dự án;
+        :Hiển thị preview thẻ đang kéo;
+        :Hiển thị vùng thả hợp lệ;
+        
+        :Người dùng thả thẻ vào cột mới;
+        :Hệ thống kiểm tra tính hợp lệ của thay đổi trạng thái;
+        
+        if (Thay đổi trạng thái hợp lệ?) then (Có)
+            :Cập nhật trạng thái dự án;
+            :Lưu lịch sử kéo thả;
+            :Ghi log thay đổi trạng thái;
+            :Cập nhật giao diện Kanban;
+            :Hiển thị thông báo thành công;
+        else (Không hợp lệ)
+            :Trả thẻ về vị trí ban đầu;
+            :Hiển thị thông báo lỗi;
+        endif
+    else (Không có quyền)
+        :Hiển thị thông báo "Không có quyền kéo thả";
+    endif
+else (Không)
+    :Tiếp tục xem bảng Kanban;
+endif
+
+:Người dùng có thể lọc và tìm kiếm;
+
+if (Lọc/tìm kiếm dự án?) then (Có)
+    :Chọn bộ lọc (loại dự án, người tạo, thời gian);
+    :Nhập từ khóa tìm kiếm;
+    :Hệ thống thực hiện lọc;
+    :Cập nhật hiển thị thẻ dự án trong các cột;
+else (Không)
+    :Tiếp tục xem bảng Kanban;
+endif
+
+:Người dùng có thể xem chi tiết dự án;
+
+if (Xem chi tiết dự án?) then (Có)
+    :Nhấn vào thẻ dự án;
+    :Mở modal hoặc chuyển trang chi tiết;
+    :Hiển thị thông tin đầy đủ của dự án;
+else (Không)
+    :Tiếp tục quản lý bảng Kanban;
+endif
+
+:Người dùng có thể thực hiện hành động nhanh;
+
+if (Thực hiện hành động nhanh?) then (Có)
+    :Nhấn nút hành động trên thẻ;
+    :Hiển thị menu hành động;
+    :Chọn hành động cần thực hiện;
+    :Thực hiện hành động;
+    :Cập nhật trạng thái thẻ;
+else (Không)
+    :Tiếp tục quản lý bảng Kanban;
+endif
+
+:Người dùng có thể chuyển đổi chế độ xem;
+
+if (Chuyển đổi chế độ xem?) then (Có)
+    :Nhấn nút chuyển đổi;
+    :Lưu cấu hình xem hiện tại;
+    :Chuyển sang chế độ xem khác;
+    :Tải dữ liệu theo chế độ xem mới;
+else (Không)
+    :Tiếp tục sử dụng chế độ xem hiện tại;
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,153 @@
+@startuml CP-2.1 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title CP-2.1: Chỉnh sửa thông tin khoản mục chi phí - Activity Diagram
+
+start
+
+:Người dùng truy cập trang quản lý chi phí;
+
+:Chọn khoản mục chi phí cần chỉnh sửa;
+
+:Hiển thị thông tin chi tiết khoản mục chi phí;
+
+:Người dùng nhấn nút "Chỉnh sửa";
+
+partition "Kiểm tra Quyền Chỉnh sửa" {
+  :Hệ thống kiểm tra quyền chỉnh sửa;
+  if (Có quyền chỉnh sửa?) then (Có)
+    :Chuyển sang chế độ chỉnh sửa;
+  else (Không)
+    :Hiển thị thông báo không có quyền;
+    stop
+  endif
+}
+
+partition "Hiển thị Form Chỉnh sửa" {
+  :Tải thông tin hiện tại vào form;
+  :Hiển thị các trường có thể chỉnh sửa;
+  :Ẩn các trường không được phép chỉnh sửa;
+  :Hiển thị nút "Lưu" và "Hủy";
+}
+
+partition "Chỉnh sửa Thông tin Cơ bản" {
+  :Chỉnh sửa tên chi phí;
+  :Chỉnh sửa mô tả chi phí;
+  :Chọn danh mục chi phí;
+  :Chọn danh mục con;
+}
+
+partition "Chỉnh sửa Thông tin Tài chính" {
+  :Chỉnh sửa tổng chi phí;
+  :Chỉnh sửa số tiền VAT;
+  :Chỉnh sửa tỷ lệ VAT;
+  :Chọn đơn vị tiền tệ;
+}
+
+partition "Chỉnh sửa Thông tin Thời gian" {
+  :Chỉnh sửa ngày bắt đầu dự kiến;
+  :Chỉnh sửa ngày kết thúc dự kiến;
+  :Chỉnh sửa ngày bắt đầu thực tế;
+  :Chỉnh sửa ngày kết thúc thực tế;
+}
+
+partition "Chỉnh sửa Thông tin Liên quan" {
+  :Chọn dự án liên quan;
+  :Chọn gói thầu;
+  :Chọn hợp đồng;
+  :Chỉnh sửa thông tin nhà cung cấp;
+}
+
+partition "Chỉnh sửa Thông tin Bổ sung" {
+  :Chọn mức độ ưu tiên;
+  :Chọn mức độ rủi ro;
+  :Chỉnh sửa ghi chú;
+  :Thêm/xóa thẻ;
+}
+
+partition "Kiểm tra Validation" {
+  :Hệ thống kiểm tra dữ liệu nhập;
+  if (Dữ liệu hợp lệ?) then (Có)
+    :Tiếp tục quá trình;
+  else (Không)
+    :Hiển thị lỗi validation;
+    :Yêu cầu sửa lỗi;
+    :Quay lại form chỉnh sửa;
+  endif
+}
+
+partition "Kiểm tra Quy tắc Nghiệp vụ" {
+  :Kiểm tra quy tắc nghiệp vụ;
+  if (Vi phạm quy tắc nghiệp vụ?) then (Có)
+    :Hiển thị cảnh báo;
+    :Yêu cầu xác nhận;
+    if (Người dùng xác nhận?) then (Có)
+      :Tiếp tục;
+    else (Không)
+      :Hủy chỉnh sửa;
+      stop
+    endif
+  else (Không)
+    :Tiếp tục;
+  endif
+}
+
+partition "Lưu Thay đổi" {
+  :Người dùng nhấn nút "Lưu";
+  :Hệ thống lưu thông tin đã chỉnh sửa;
+  :Ghi log lịch sử thay đổi;
+  :Cập nhật timestamp chỉnh sửa;
+}
+
+partition "Kiểm tra Yêu cầu Phê duyệt" {
+  :Kiểm tra xem có cần phê duyệt không;
+  if (Cần phê duyệt?) then (Có)
+    :Tạo yêu cầu phê duyệt;
+    :Gửi thông báo cho người phê duyệt;
+    :Chuyển trạng thái sang "Chờ phê duyệt";
+  else (Không)
+    :Cập nhật trạng thái thành "Đã chỉnh sửa";
+  endif
+}
+
+partition "Cập nhật Giao diện" {
+  :Hiển thị thông báo thành công;
+  :Cập nhật thông tin trên giao diện;
+  :Cập nhật danh sách chi phí;
+  :Hiển thị lịch sử thay đổi;
+}
+
+partition "Tùy chọn: Chỉnh sửa Inline" {
+  if (Người dùng muốn chỉnh sửa inline?) then (Có)
+    :Kích hoạt chế độ chỉnh sửa inline;
+    :Cho phép chỉnh sửa từng trường;
+    :Lưu tự động khi thay đổi;
+  else (Không)
+    :Bỏ qua chỉnh sửa inline;
+  endif
+}
+
+stop
+
+@enduml

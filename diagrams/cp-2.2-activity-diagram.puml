@@ -1,0 +1,160 @@
+@startuml CP-2.2 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title CP-2.2: Xóa khoản mục chi phí - Activity Diagram
+
+start
+
+:Người dùng truy cập trang quản lý chi phí;
+
+:Chọn khoản mục chi phí cần xóa;
+
+:Hiển thị thông tin chi tiết khoản mục chi phí;
+
+:Người dùng nhấn nút "Xóa";
+
+partition "Kiểm tra Quyền Xóa" {
+  :Hệ thống kiểm tra quyền xóa;
+  if (Có quyền xóa?) then (Có)
+    :Tiếp tục quá trình xóa;
+  else (Không)
+    :Hiển thị thông báo không có quyền;
+    stop
+  endif
+}
+
+partition "Kiểm tra Ràng buộc" {
+  :Kiểm tra ràng buộc với dự án;
+  :Kiểm tra ràng buộc với hợp đồng;
+  :Kiểm tra ràng buộc với thanh toán;
+  :Kiểm tra trạng thái phê duyệt;
+  
+  if (Có ràng buộc?) then (Có)
+    :Hiển thị thông báo ràng buộc;
+    :Yêu cầu giải quyết ràng buộc trước;
+    stop
+  else (Không)
+    :Tiếp tục quá trình xóa;
+  endif
+}
+
+partition "Hiển thị Hộp thoại Xác nhận" {
+  :Hiển thị thông tin chi tiết khoản mục chi phí;
+  :Hiển thị cảnh báo về hậu quả xóa;
+  :Yêu cầu nhập lý do xóa;
+  :Hiển thị nút "Xóa" và "Hủy";
+}
+
+partition "Xác nhận Xóa" {
+  if (Người dùng xác nhận xóa?) then (Có)
+    :Tiếp tục quá trình xóa;
+  else (Không)
+    :Hủy thao tác xóa;
+    stop
+  endif
+}
+
+partition "Chọn Loại Xóa" {
+  :Chọn loại xóa (Soft delete/Hard delete);
+  if (Loại xóa?) then (Soft delete)
+    :Đánh dấu là đã xóa;
+    :Giữ lại dữ liệu trong database;
+    :Có thể khôi phục sau;
+  else (Hard delete)
+    :Xóa vĩnh viễn khỏi database;
+    :Không thể khôi phục;
+  endif
+}
+
+partition "Thực hiện Xóa" {
+  :Lưu thông tin xóa vào log;
+  :Ghi lại người thực hiện và thời gian;
+  :Ghi lại lý do xóa;
+  
+  if (Soft delete?) then (Có)
+    :Cập nhật trạng thái is_deleted = true;
+    :Cập nhật thời gian xóa;
+    :Cập nhật người xóa;
+  else (Hard delete)
+    :Xóa hoàn toàn khỏi database;
+    :Xóa các bản ghi liên quan;
+  endif
+}
+
+partition "Cập nhật Liên quan" {
+  :Cập nhật số lượng khoản mục chi phí;
+  :Cập nhật tổng chi phí;
+  :Cập nhật thống kê;
+  :Cập nhật dashboard;
+}
+
+partition "Gửi Thông báo" {
+  :Gửi thông báo cho người quản lý;
+  :Gửi email thông báo (nếu cần);
+  :Cập nhật notification trong hệ thống;
+}
+
+partition "Hiển thị Kết quả" {
+  :Hiển thị thông báo xóa thành công;
+  :Cập nhật danh sách chi phí;
+  :Chuyển về trang danh sách;
+}
+
+partition "Tùy chọn: Khôi phục (Soft delete)" {
+  if (Là soft delete và muốn khôi phục?) then (Có)
+    :Hiển thị danh sách đã xóa;
+    :Chọn khoản mục cần khôi phục;
+    :Nhập lý do khôi phục;
+    :Khôi phục khoản mục chi phí;
+    :Cập nhật trạng thái;
+    :Hiển thị thông báo khôi phục thành công;
+  else (Không)
+    :Bỏ qua khôi phục;
+  endif
+}
+
+partition "Tùy chọn: Xem Lịch sử Xóa" {
+  if (Muốn xem lịch sử xóa?) then (Có)
+    :Hiển thị danh sách lịch sử xóa;
+    :Cho phép lọc theo thời gian;
+    :Cho phép lọc theo người thực hiện;
+    :Hiển thị chi tiết từng lần xóa;
+  else (Không)
+    :Bỏ qua xem lịch sử;
+  endif
+}
+
+partition "Tùy chọn: Xuất Báo cáo" {
+  if (Muốn xuất báo cáo xóa?) then (Có)
+    :Tạo báo cáo lịch sử xóa;
+    :Xuất file Excel/PDF;
+    :Gửi báo cáo qua email;
+  else (Không)
+    :Bỏ qua xuất báo cáo;
+  endif
+}
+
+stop
+
+@enduml

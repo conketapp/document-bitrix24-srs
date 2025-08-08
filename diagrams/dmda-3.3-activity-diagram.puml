@@ -1,0 +1,81 @@
+@startuml DMDA-3.3 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-3.3: Activity Diagram - Phê duyệt Dự án
+
+start
+
+:Người phê duyệt truy cập trang chi tiết dự án;
+
+:Kiểm tra quyền phê duyệt dự án;
+
+if (Có quyền phê duyệt?) then (Không)
+    :Hiển thị thông báo "Không có quyền phê duyệt";
+    stop
+else (Có)
+    :Kiểm tra trạng thái dự án;
+    
+    if (Dự án có thể phê duyệt?) then (Không)
+        :Hiển thị thông báo "Dự án không thể phê duyệt";
+        :Hiển thị lý do không thể phê duyệt;
+        stop
+    else (Có)
+        :Hiển thị nút "Phê duyệt";
+        :Hiển thị thông tin dự án cần phê duyệt;
+        note right
+        **Thông tin Dự án:**
+        - Mã dự án
+        - Tên dự án
+        - Loại dự án
+        - Trạng thái hiện tại
+        - Người tạo dự án
+        - Ngày gửi phê duyệt
+        end note
+        
+        :Người phê duyệt nhấn "Phê duyệt";
+        :Hiển thị confirmation dialog;
+        :Hiển thị thông tin dự án sẽ phê duyệt;
+        
+        :Người phê duyệt nhập comment (tùy chọn);
+        :Người phê duyệt xác nhận phê duyệt;
+        
+        if (Xác nhận phê duyệt?) then (Có)
+            :Kiểm tra validation cuối cùng;
+            
+            if (Validation thành công?) then (Có)
+                :Cập nhật trạng thái dự án thành "approved";
+                :Tạo bản ghi phê duyệt;
+                :Ghi log phê duyệt;
+                :Gửi thông báo cho người tạo dự án;
+                :Đồng bộ với Bitrix24;
+                :Hiển thị thông báo thành công;
+                :Chuyển đến trang chi tiết dự án;
+            else (Validation thất bại)
+                :Hiển thị lỗi validation;
+                :Yêu cầu sửa lỗi;
+            endif
+        else (Không)
+            :Hủy thao tác phê duyệt;
+        endif
+    endif
+endif
+
+:Người phê duyệt có thể xem lịch sử phê duyệt;
+
+if (Xem lịch sử phê duyệt?) then (Có)
+    :Hiển thị thông tin lịch sử phê duyệt;
+    note right
+    **Thông tin Lịch sử:**
+    - Người phê duyệt
+    - Ngày phê duyệt
+    - Trạng thái phê duyệt
+    - Comment (nếu có)
+    end note
+else (Không)
+    :Tiếp tục quản lý dự án;
+endif
+
+stop
+
+@enduml

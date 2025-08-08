@@ -1,0 +1,233 @@
+@startuml HD-5.3 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title HD-5.3: Sequence Diagram - Xuất Dữ liệu Hợp đồng ra Excel
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Export Service" as ES
+participant "Excel Generator" as EG
+participant "Email Service" as EMS
+participant "File Storage" as FS
+
+== Khởi tạo Trang Xuất ==
+
+U -> F: Truy cập danh sách hợp đồng
+F -> B: GET /api/contracts
+B -> B: Check export permissions
+B -> D: Query contract list
+D --> B: Contract data
+B --> F: Contract list with export button
+F --> U: Hiển thị danh sách hợp đồng
+
+== Mở Dialog Xuất ==
+
+U -> F: Nhấn "Xuất Excel"
+F -> B: GET /api/contracts/export/options
+B -> D: Query export templates
+D --> B: Export templates
+B -> D: Query available columns
+D --> B: Available columns
+B --> F: Export options dialog
+F --> U: Hiển thị dialog tùy chọn xuất
+
+== Cấu hình Xuất ==
+
+U -> F: Chọn phạm vi xuất
+F -> B: POST /api/contracts/export/configure
+note right: { scope: string, format: string, template: string, columns: string[] }
+
+B -> B: Validate export configuration
+B -> D: Query contracts based on scope
+D --> B: Contract data for export
+B -> ES: Process export request
+ES -> ES: Validate export parameters
+ES --> B: Export configuration validated
+B --> F: Configuration accepted
+F --> U: Hiển thị thông báo cấu hình hợp lệ
+
+== Thu thập Dữ liệu ==
+
+U -> F: Nhấn "Bắt đầu xuất"
+F -> B: POST /api/contracts/export/start
+note right: { export_config: object }
+
+B -> ES: Start export process
+ES -> D: Query contract details
+D --> ES: Contract details
+ES -> D: Query financial data
+D --> ES: Financial data
+ES -> D: Query related documents
+D --> ES: Document data
+ES -> D: Query activity history
+D --> ES: Activity history
+ES --> B: All data collected
+B --> F: Data collection completed
+F --> U: Hiển thị tiến trình thu thập dữ liệu
+
+== Xử lý Dữ liệu ==
+
+B -> ES: Process collected data
+ES -> ES: Aggregate contract data
+ES -> ES: Format financial information
+ES -> ES: Organize document references
+ES -> ES: Structure activity history
+ES --> B: Processed data ready
+B --> F: Data processing completed
+F --> U: Hiển thị tiến trình xử lý dữ liệu
+
+== Tạo File Excel ==
+
+B -> EG: Generate Excel file
+note right: { processed_data: object, template: string, format: string }
+
+EG -> EG: Create workbook
+EG -> EG: Create Summary sheet
+EG -> EG: Create Details sheet
+EG -> EG: Create Financial sheet
+EG -> EG: Create Documents sheet
+EG -> EG: Apply template styling
+EG -> EG: Format headers and columns
+EG -> EG: Apply color coding
+EG -> EG: Set column widths
+EG -> EG: Add data validation
+EG --> B: Excel file generated
+B --> F: File generation completed
+F --> U: Hiển thị tiến trình tạo file
+
+== Kiểm tra Kích thước File ==
+
+B -> EG: Check file size
+EG --> B: File size information
+
+alt File size > 50MB
+    B --> F: File size warning
+    F --> U: Hiển thị cảnh báo kích thước file
+    
+    U -> F: Xác nhận tiếp tục
+    F -> B: POST /api/contracts/export/continue
+    B -> EG: Continue with large file
+    EG --> B: Large file generated
+else File size <= 50MB
+    B -> EG: Proceed with normal file
+    EG --> B: Normal file generated
+end
+
+== Lưu File ==
+
+B -> FS: Save generated file
+FS -> FS: Compress file if needed
+FS --> B: File saved successfully
+B -> D: Log export history
+D --> B: Export logged
+B --> F: Export completed
+F --> U: Hiển thị thông báo xuất hoàn thành
+
+== Nhận File ==
+
+U -> F: Chọn cách nhận file
+
+alt Tải xuống ngay
+    F -> B: GET /api/contracts/export/download
+    B -> FS: Get file download link
+    FS --> B: Download link
+    B --> F: Download link
+    F --> U: Cung cấp link tải xuống
+    
+    U -> F: Tải file
+    F -> FS: Download file
+    FS --> F: File content
+    F --> U: File downloaded
+else Gửi email
+    U -> F: Nhập email
+    F -> B: POST /api/contracts/export/email
+    note right: { email: string, file_id: string }
+    
+    B -> EMS: Send file via email
+    EMS -> EMS: Attach file to email
+    EMS -> EMS: Send email
+    EMS --> B: Email sent
+    B --> F: Email sent successfully
+    F --> U: Hiển thị thông báo gửi email thành công
+end
+
+== Lên lịch Xuất Tự động ==
+
+U -> F: Nhấn "Lên lịch xuất"
+F -> B: GET /api/contracts/export/schedule
+B -> D: Query existing schedules
+D --> B: Schedule data
+B --> F: Schedule interface
+F --> U: Hiển thị form lên lịch
+
+U -> F: Cấu hình lịch xuất
+F -> B: POST /api/contracts/export/schedule
+note right: { frequency: string, time: string, email: string, config: object }
+
+B -> D: Save export schedule
+D --> B: Schedule saved
+B --> F: Schedule created successfully
+F --> U: Hiển thị thông báo lên lịch thành công
+
+== Xem Lịch sử Xuất ==
+
+U -> F: Nhấn "Lịch sử xuất"
+F -> B: GET /api/contracts/export/history
+B -> D: Query export history
+D --> B: Export history data
+B --> F: Export history
+F --> U: Hiển thị lịch sử xuất
+
+U -> F: Tải lại file đã xuất
+F -> B: GET /api/contracts/export/history/{id}/download
+B -> FS: Get historical file
+FS --> B: Historical file
+B --> F: Historical file
+F --> U: Cung cấp file lịch sử
+
+== Quản lý Template ==
+
+U -> F: Nhấn "Quản lý template"
+F -> B: GET /api/contracts/export/templates
+B -> D: Query export templates
+D --> B: Template data
+B --> F: Template management interface
+F --> U: Hiển thị quản lý template
+
+U -> F: Tạo template mới
+F -> B: POST /api/contracts/export/templates
+note right: { name: string, config: object, is_public: boolean }
+
+B -> D: Save new template
+D --> B: Template saved
+B --> F: Template created successfully
+F --> U: Hiển thị thông báo tạo template thành công
+
+== Dọn dẹp ==
+
+B -> FS: Clean up temporary files
+FS --> B: Cleanup completed
+B -> D: Update export statistics
+D --> B: Statistics updated
+B -> B: Log export completion
+
+== Xử lý Lỗi ==
+
+alt Không có quyền xuất
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xuất"
+else Lỗi tạo file
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi tạo file
+else Lỗi gửi email
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi gửi email
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi database
+end
+
+@enduml

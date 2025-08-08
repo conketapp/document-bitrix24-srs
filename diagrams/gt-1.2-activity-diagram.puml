@@ -1,0 +1,55 @@
+@startuml GT-1.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title GT-1.2: Activity Diagram - Kết nối API lấy thông tin gói thầu
+
+start
+
+:Người dùng truy cập form tạo/chỉnh sửa gói thầu;
+
+:Hiển thị form với trường nhập URL/mã ID gói thầu;
+
+:Người dùng nhập URL hoặc mã ID gói thầu;
+
+:Người dùng nhấn "Lấy thông tin từ Cổng";
+
+:Hiển thị loading indicator;
+
+:Kiểm tra kết nối API;
+
+if (Kết nối API thành công?) then (Không)
+    :Hiển thị lỗi kết nối;
+    :Gợi ý kiểm tra lại URL/mã ID;
+else (OK)
+    :Gửi request đến Cổng thông tin đấu thầu Quốc gia;
+    
+    if (API response thành công?) then (Không)
+        :Hiển thị lỗi API response;
+        :Gợi ý kiểm tra lại thông tin;
+    else (OK)
+        :Parse và validate dữ liệu từ API;
+        
+        if (Dữ liệu hợp lệ?) then (Không)
+            :Hiển thị lỗi dữ liệu không hợp lệ;
+            :Gợi ý kiểm tra lại thông tin;
+        else (OK)
+            :Map dữ liệu từ API sang form fields;
+            :Auto-fill thông tin vào form;
+            :Hiển thị preview dữ liệu;
+            :Cho phép người dùng chỉnh sửa;
+            
+            :Người dùng xem lại và chỉnh sửa thông tin;
+            :Người dùng nhấn "Lưu thông tin";
+            
+            :Lưu dữ liệu vào database;
+            :Backup dữ liệu gốc từ Cổng;
+            :Log API call và response;
+            :Hiển thị thông báo thành công;
+        endif
+    endif
+endif
+
+stop
+
+@enduml

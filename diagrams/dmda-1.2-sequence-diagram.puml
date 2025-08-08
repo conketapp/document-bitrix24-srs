@@ -1,0 +1,62 @@
+@startuml DMDA-1.2 Sequence Diagram
+
+title DMDA-1.2: Sequence Diagram - Tự động Phân biệt Dự án Chuyển tiếp và Dự án Mới
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Bitrix24 API" as B24
+
+U -> F: Truy cập danh mục dự án
+F -> F: Hiển thị giao diện với filter
+
+U -> F: Chọn năm và loại dự án
+F -> B: GET /api/projects?year={year}&category_id={category_id}
+B -> D: Query projects với filter
+D -> B: Trả về danh sách dự án
+
+B -> B: Tự động phân loại từng dự án
+note right
+  Logic phân loại:
+  - Dự án Mới: start_date.year = current_year
+  - Dự án Chuyển tiếp: start_date.year < current_year 
+    AND status ≠ "completed"
+end note
+
+B -> D: UPDATE projects SET project_type = {type}
+D -> B: Confirm update
+
+B -> B24: Sync project_type với Bitrix24
+note right
+  Mapping: project_type → custom field
+  Real-time sync
+end note
+B24 -> B: Confirm sync
+
+B -> F: Response với dữ liệu dự án + project_type
+F -> F: Hiển thị danh sách với badge
+note right
+  Badge types:
+  - "Dự án Mới"
+  - "Dự án Chuyển tiếp"
+end note
+
+U -> F: Filter theo loại dự án
+F -> B: GET /api/projects?project_type={type}
+B -> D: Query projects với project_type filter
+D -> B: Trả về dự án đã filter
+B -> F: Response với dữ liệu đã filter
+F -> F: Hiển thị danh sách đã filter
+
+U -> F: Hover để xem tooltip
+F -> F: Hiển thị tooltip giải thích logic
+
+U -> F: Xem chi tiết dự án
+F -> B: GET /api/projects/{id}
+B -> D: Query project details
+D -> B: Trả về chi tiết dự án
+B -> F: Response với project details
+F -> F: Hiển thị chi tiết với badge
+
+@enduml

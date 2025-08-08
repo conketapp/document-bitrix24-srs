@@ -1,0 +1,175 @@
+@startuml HD-5.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title HD-5.2: Activity Diagram - Tìm kiếm & Lọc Hợp đồng Đa tiêu chí
+
+start
+
+:Người dùng truy cập trang tìm kiếm hợp đồng;
+
+:Kiểm tra quyền xem danh sách hợp đồng;
+
+if (Có quyền xem danh sách hợp đồng?) then (Không)
+    :Hiển thị thông báo "Không có quyền xem danh sách hợp đồng";
+    stop
+else (Có)
+    :Hiển thị giao diện tìm kiếm và lọc;
+    
+    :Người dùng nhập tiêu chí tìm kiếm;
+    note right
+    **Các tiêu chí tìm kiếm:**
+    - Mã hợp đồng
+    - Tên hợp đồng
+    - Mô tả hợp đồng
+    - Loại hợp đồng
+    - Gói thầu liên quan
+    - Dự án
+    - Danh mục
+    end note
+    
+    :Người dùng thiết lập bộ lọc;
+    note right
+    **Các bộ lọc:**
+    - Khoảng giá trị hợp đồng
+    - Trạng thái thanh toán
+    - Phân bổ ngân sách
+    - Trạng thái hợp đồng
+    - Khoảng ngày ký
+    - Khoảng ngày hiệu lực
+    - Khoảng ngày hết hạn
+    - Người quản lý
+    - Người giám sát
+    - Người tạo
+    - Người cập nhật
+    end note
+    
+    :Hệ thống thực hiện tìm kiếm;
+    note right
+    **Quá trình tìm kiếm:**
+    - Phân tích từ khóa
+    - Áp dụng fuzzy matching
+    - Kết hợp với bộ lọc
+    - Tối ưu hóa query
+    end note
+    
+    :Hệ thống thực hiện lọc;
+    note right
+    **Quá trình lọc:**
+    - Áp dụng các bộ lọc
+    - Kết hợp nhiều tiêu chí
+    - Xử lý khoảng giá trị
+    - Xử lý khoảng thời gian
+    end note
+    
+    :Hệ thống tính toán kết quả;
+    note right
+    **Tính toán kết quả:**
+    - Đếm số lượng kết quả
+    - Sắp xếp theo relevance
+    - Phân trang kết quả
+    - Tối ưu hóa hiệu suất
+    end note
+    
+    :Hiển thị kết quả tìm kiếm;
+    note right
+    **Hiển thị kết quả:**
+    - Danh sách hợp đồng
+    - Thông tin cơ bản
+    - Số lượng kết quả
+    - Tùy chọn sắp xếp
+    end note
+    
+    :Người dùng có thể xem preview;
+    
+    if (Xem preview hợp đồng?) then (Có)
+        :Hiển thị thông tin chi tiết hợp đồng;
+        :Hiển thị trong modal hoặc popup;
+        :Cho phép xem nhanh thông tin quan trọng;
+    else (Không)
+        :Tiếp tục xem danh sách;
+    endif
+    
+    :Người dùng có thể sắp xếp kết quả;
+    
+    if (Sắp xếp kết quả?) then (Có)
+        :Chọn tiêu chí sắp xếp;
+        :Sắp xếp theo mã hợp đồng;
+        :Sắp xếp theo tên hợp đồng;
+        :Sắp xếp theo giá trị hợp đồng;
+        :Sắp xếp theo ngày ký;
+        :Sắp xếp theo trạng thái;
+        :Sắp xếp theo người quản lý;
+        :Cập nhật hiển thị kết quả;
+    else (Không)
+        :Tiếp tục xem kết quả;
+    endif
+    
+    :Người dùng có thể lưu bộ lọc;
+    
+    if (Lưu bộ lọc?) then (Có)
+        :Nhập tên bộ lọc;
+        :Chọn quyền chia sẻ (riêng tư/công khai);
+        :Lưu bộ lọc vào database;
+        :Hiển thị thông báo lưu thành công;
+    else (Không)
+        :Tiếp tục sử dụng bộ lọc hiện tại;
+    endif
+    
+    :Người dùng có thể tải bộ lọc đã lưu;
+    
+    if (Tải bộ lọc đã lưu?) then (Có)
+        :Hiển thị danh sách bộ lọc đã lưu;
+        :Cho phép chọn bộ lọc cá nhân;
+        :Cho phép chọn bộ lọc chia sẻ;
+        :Áp dụng bộ lọc đã chọn;
+        :Cập nhật giao diện tìm kiếm;
+    else (Không)
+        :Tiếp tục sử dụng bộ lọc hiện tại;
+    endif
+    
+    :Người dùng có thể xuất kết quả;
+    
+    if (Xuất kết quả?) then (Có)
+        :Chọn định dạng xuất (Excel, PDF);
+        :Chọn thông tin cần xuất;
+        :Tạo file xuất;
+        :Cung cấp file cho người dùng;
+    else (Không)
+        :Tiếp tục xem kết quả;
+    endif
+    
+    :Người dùng có thể tìm kiếm nâng cao;
+    
+    if (Tìm kiếm nâng cao?) then (Có)
+        :Hiển thị form tìm kiếm nâng cao;
+        :Cho phép kết hợp nhiều tiêu chí;
+        :Cho phép tìm kiếm theo logic (AND/OR);
+        :Cho phép tìm kiếm theo khoảng thời gian;
+        :Cho phép tìm kiếm theo khoảng giá trị;
+        :Thực hiện tìm kiếm nâng cao;
+        :Hiển thị kết quả tìm kiếm nâng cao;
+    else (Không)
+        :Tiếp tục tìm kiếm cơ bản;
+    endif
+    
+    :Người dùng có thể phân trang;
+    
+    if (Chuyển trang?) then (Có)
+        :Chọn số lượng kết quả mỗi trang;
+        :Chuyển đến trang tiếp theo;
+        :Chuyển đến trang trước đó;
+        :Chuyển đến trang cụ thể;
+        :Cập nhật hiển thị kết quả;
+    else (Không)
+        :Tiếp tục xem trang hiện tại;
+    endif
+    
+    :Hệ thống lưu lịch sử tìm kiếm;
+    :Cập nhật thống kê tìm kiếm;
+    :Tối ưu hóa cache kết quả;
+endif
+
+stop
+
+@enduml

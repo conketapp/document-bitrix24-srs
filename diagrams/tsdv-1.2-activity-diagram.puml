@@ -1,0 +1,239 @@
+@startuml TSDV-1.2 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title TSDV-1.2: Chỉnh sửa thông tin Tài sản/Dịch vụ - Activity Diagram
+
+start
+
+:Người dùng truy cập trang quản lý tài sản/dịch vụ;
+
+:Chọn tài sản/dịch vụ cần chỉnh sửa;
+
+:Hiển thị thông tin chi tiết tài sản/dịch vụ;
+
+:Người dùng nhấn nút "Chỉnh sửa";
+
+partition "Kiểm tra Quyền Chỉnh sửa" {
+  :Hệ thống kiểm tra quyền chỉnh sửa;
+  if (Có quyền chỉnh sửa?) then (Có)
+    :Tiếp tục quá trình chỉnh sửa;
+  else (Không)
+    :Hiển thị thông báo không có quyền;
+    stop
+  endif
+}
+
+partition "Hiển thị Form Chỉnh sửa" {
+  :Tải thông tin hiện tại của tài sản/dịch vụ;
+  :Hiển thị form chỉnh sửa với dữ liệu hiện tại;
+  :Cho phép chỉnh sửa các trường thông tin;
+}
+
+partition "Chỉnh sửa Thông tin Cơ bản" {
+  :Chỉnh sửa tên tài sản/dịch vụ;
+  :Chỉnh sửa mô tả chi tiết;
+  :Chỉnh sửa danh mục chính;
+  :Chỉnh sửa danh mục con;
+  :Chỉnh sửa thông tin bổ sung;
+}
+
+partition "Chỉnh sửa Thông tin Tài sản (nếu là Tài sản)" {
+  if (Là tài sản?) then (Có)
+    :Chỉnh sửa model/specifications;
+    :Chỉnh sửa serial number;
+    :Chỉnh sửa ngày mua;
+    :Chỉnh sửa chi phí mua;
+    :Chỉnh sửa thông tin bảo hành;
+    :Chỉnh sửa vị trí lưu trữ;
+    :Chỉnh sửa nhà sản xuất;
+    :Chỉnh sửa nhà cung cấp;
+  else (Không)
+    :Bỏ qua thông tin tài sản;
+  endif
+}
+
+partition "Chỉnh sửa Thông tin Dịch vụ (nếu là Dịch vụ)" {
+  if (Là dịch vụ?) then (Có)
+    :Chỉnh sửa mô tả dịch vụ;
+    :Chỉnh sửa service level agreement;
+    :Chỉnh sửa ngày bắt đầu dịch vụ;
+    :Chỉnh sửa ngày kết thúc dịch vụ;
+    :Chỉnh sửa chi phí dịch vụ;
+    :Chỉnh sửa nhà cung cấp dịch vụ;
+    :Chỉnh sửa tần suất thanh toán;
+    :Chỉnh sửa metrics hiệu suất;
+  else (Không)
+    :Bỏ qua thông tin dịch vụ;
+  endif
+}
+
+partition "Chỉnh sửa Người phụ trách" {
+  :Chọn người phụ trách mới từ danh sách;
+  :Kiểm tra quyền của người phụ trách mới;
+  :Nhập thông tin liên hệ mới;
+  :Nhập ghi chú phụ trách mới;
+}
+
+partition "Chỉnh sửa Trạng thái" {
+  :Chọn trạng thái mới;
+  if (Trạng thái mới?) then (Đang sử dụng)
+    :Trạng thái = "Đang sử dụng";
+  elseif (Đang bảo trì) then
+    :Trạng thái = "Đang bảo trì";
+  elseif (Ngừng sử dụng) then
+    :Trạng thái = "Ngừng sử dụng";
+  elseif (Đã thanh lý) then
+    :Trạng thái = "Đã thanh lý";
+  else (Khác)
+    :Trạng thái = "Khác";
+  endif
+}
+
+partition "Quản lý Tài liệu Đính kèm" {
+  if (Thêm tài liệu mới?) then (Có)
+    :Tải lên file tài liệu mới;
+    :Nhập mô tả tài liệu;
+    :Chọn loại tài liệu;
+    :Lưu tài liệu vào hệ thống;
+  else (Không)
+    :Bỏ qua thêm tài liệu;
+  endif
+  
+  if (Xóa tài liệu?) then (Có)
+    :Chọn tài liệu cần xóa;
+    :Xác nhận xóa tài liệu;
+    :Xóa tài liệu khỏi hệ thống;
+  else (Không)
+    :Bỏ qua xóa tài liệu;
+  endif
+  
+  if (Chỉnh sửa tài liệu?) then (Có)
+    :Chọn tài liệu cần chỉnh sửa;
+    :Chỉnh sửa mô tả tài liệu;
+    :Cập nhật thông tin tài liệu;
+  else (Không)
+    :Bỏ qua chỉnh sửa tài liệu;
+  endif
+}
+
+partition "Kiểm tra Thay đổi Quan trọng" {
+  :Hệ thống kiểm tra các thay đổi quan trọng;
+  if (Có thay đổi quan trọng?) then (Có)
+    :Đánh dấu cần phê duyệt;
+    :Tạo yêu cầu phê duyệt;
+  else (Không)
+    :Bỏ qua phê duyệt;
+  endif
+}
+
+partition "Kiểm tra Validation" {
+  :Kiểm tra thông tin bắt buộc;
+  :Kiểm tra định dạng dữ liệu;
+  :Kiểm tra quy tắc nghiệp vụ;
+  :Kiểm tra xung đột dữ liệu;
+  if (Dữ liệu hợp lệ?) then (Có)
+    :Tiếp tục quá trình lưu;
+  else (Không)
+    :Hiển thị lỗi validation;
+    :Yêu cầu sửa lỗi;
+    :Quay lại form chỉnh sửa;
+  endif
+}
+
+partition "Lưu Thay đổi" {
+  :Lưu thông tin đã chỉnh sửa vào database;
+  :Ghi lịch sử thay đổi;
+  :Cập nhật timestamp chỉnh sửa;
+  :Cập nhật người chỉnh sửa;
+}
+
+partition "Gửi Thông báo" {
+  if (Có thay đổi quan trọng?) then (Có)
+    :Gửi thông báo cho người quản lý;
+    :Gửi thông báo cho người phụ trách mới;
+    :Gửi email thông báo thay đổi;
+  else (Không)
+    :Bỏ qua gửi thông báo;
+  endif
+}
+
+partition "Cập nhật Liên quan" {
+  :Cập nhật danh sách tài sản/dịch vụ;
+  :Cập nhật thống kê;
+  :Cập nhật dashboard;
+  :Cập nhật báo cáo liên quan;
+}
+
+partition "Hiển thị Kết quả" {
+  :Hiển thị thông báo chỉnh sửa thành công;
+  :Hiển thị thông tin đã cập nhật;
+  :Chuyển đến trang chi tiết;
+}
+
+partition "Tùy chọn: Xem Lịch sử Thay đổi" {
+  if (Xem lịch sử thay đổi?) then (Có)
+    :Hiển thị danh sách lịch sử thay đổi;
+    :Cho phép lọc theo thời gian;
+    :Cho phép lọc theo loại thay đổi;
+    :Hiển thị chi tiết từng thay đổi;
+  else (Không)
+    :Bỏ qua xem lịch sử;
+  endif
+}
+
+partition "Tùy chọn: Hoàn tác Thay đổi" {
+  if (Hoàn tác thay đổi?) then (Có)
+    :Chọn thay đổi cần hoàn tác;
+    :Xác nhận hoàn tác;
+    :Khôi phục dữ liệu trước đó;
+    :Ghi lịch sử hoàn tác;
+  else (Không)
+    :Bỏ qua hoàn tác;
+  endif
+}
+
+partition "Tùy chọn: Xuất Thông tin" {
+  if (Xuất thông tin?) then (Có)
+    :Chọn định dạng xuất (Excel/PDF);
+    :Tạo file xuất với thông tin đã chỉnh sửa;
+    :Bao gồm lịch sử thay đổi;
+    :Tải xuống file;
+  else (Không)
+    :Bỏ qua xuất thông tin;
+  endif
+}
+
+partition "Tùy chọn: Lưu Bản nháp" {
+  if (Lưu bản nháp?) then (Có)
+    :Lưu thông tin chỉnh sửa dưới dạng bản nháp;
+    :Hiển thị thông báo lưu bản nháp;
+    :Cho phép hoàn thiện sau;
+  else (Không)
+    :Bỏ qua lưu bản nháp;
+  endif
+}
+
+stop
+
+@enduml

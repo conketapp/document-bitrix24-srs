@@ -1,0 +1,161 @@
+@startuml TSDV-3.1 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title TSDV-3.1: Theo dõi lịch sử sử dụng, bảo hành, bảo dưỡng của Tài sản - Activity Diagram
+
+start
+
+:Người dùng truy cập trang quản lý tài sản;
+
+:Chọn tài sản cần xem lịch sử;
+
+:Hiển thị trang chi tiết tài sản;
+
+:Người dùng nhấn vào phần "Lịch sử";
+
+partition "Hiển thị Lịch sử Tài sản" {
+  :Tải danh sách sự kiện của tài sản;
+  :Sắp xếp sự kiện theo thời gian;
+  :Hiển thị timeline lịch sử;
+  :Hiển thị thông tin tóm tắt;
+}
+
+partition "Thêm Sự kiện Mới" {
+  if (Người dùng muốn thêm sự kiện?) then (Có)
+    :Nhấn nút "Thêm sự kiện";
+    :Hiển thị form thêm sự kiện;
+    
+    partition "Nhập Thông tin Sự kiện" {
+      :Chọn loại sự kiện;
+      :Nhập ngày thực hiện;
+      :Nhập mô tả sự kiện;
+      :Nhập người thực hiện;
+      :Nhập chi phí liên quan (nếu có);
+    }
+    
+    partition "Phân loại Sự kiện" {
+      if (Loại sự kiện?) then (Sử dụng)
+        :Ghi nhận sự kiện sử dụng;
+      elseif (Bảo dưỡng) then
+        :Ghi nhận sự kiện bảo dưỡng;
+      elseif (Bảo hành) then
+        :Ghi nhận sự kiện bảo hành;
+      elseif (Sửa chữa) then
+        :Ghi nhận sự kiện sửa chữa;
+      elseif (Kiểm tra) then
+        :Ghi nhận sự kiện kiểm tra;
+      else (Khác)
+        :Ghi nhận sự kiện tùy chỉnh;
+      endif
+    }
+    
+    partition "Đính kèm Tài liệu" {
+      if (Có file đính kèm?) then (Có)
+        :Tải lên file đính kèm;
+        :Nhập mô tả file;
+        :Lưu file vào hệ thống;
+      else (Không)
+        :Bỏ qua đính kèm file;
+      endif
+    }
+    
+    :Lưu sự kiện vào database;
+    :Cập nhật timeline;
+    :Hiển thị thông báo thành công;
+  else (Không)
+    :Bỏ qua thêm sự kiện;
+  endif
+}
+
+partition "Chỉnh sửa Sự kiện" {
+  if (Người dùng muốn chỉnh sửa sự kiện?) then (Có)
+    :Chọn sự kiện cần chỉnh sửa;
+    :Hiển thị form chỉnh sửa;
+    :Cập nhật thông tin sự kiện;
+    :Lưu thay đổi;
+    :Cập nhật timeline;
+  else (Không)
+    :Bỏ qua chỉnh sửa;
+  endif
+}
+
+partition "Xóa Sự kiện" {
+  if (Người dùng muốn xóa sự kiện?) then (Có)
+    :Chọn sự kiện cần xóa;
+    :Hiển thị hộp thoại xác nhận;
+    if (Xác nhận xóa?) then (Có)
+      :Xóa sự kiện khỏi database;
+      :Cập nhật timeline;
+      :Hiển thị thông báo thành công;
+    else (Không)
+      :Hủy xóa sự kiện;
+    endif
+  else (Không)
+    :Bỏ qua xóa sự kiện;
+  endif
+}
+
+partition "Lọc và Tìm kiếm" {
+  if (Người dùng muốn lọc/tìm kiếm?) then (Có)
+    :Chọn tiêu chí lọc;
+    :Nhập từ khóa tìm kiếm;
+    :Áp dụng bộ lọc;
+    :Hiển thị kết quả đã lọc;
+  else (Không)
+    :Bỏ qua lọc/tìm kiếm;
+  endif
+}
+
+partition "Tính toán Thống kê" {
+  :Tính tổng chi phí bảo dưỡng;
+  :Tính tổng chi phí sửa chữa;
+  :Tính tần suất sự kiện;
+  :Tính tuổi thọ tài sản;
+  :Hiển thị báo cáo thống kê;
+}
+
+partition "Thiết lập Cảnh báo" {
+  if (Người dùng muốn thiết lập cảnh báo?) then (Có)
+    :Chọn loại cảnh báo;
+    :Thiết lập thời gian cảnh báo;
+    :Chọn người nhận cảnh báo;
+    :Lưu cấu hình cảnh báo;
+  else (Không)
+    :Bỏ qua thiết lập cảnh báo;
+  endif
+}
+
+partition "Xuất Báo cáo" {
+  if (Người dùng muốn xuất báo cáo?) then (Có)
+    :Chọn định dạng xuất (Excel/PDF);
+    :Tạo báo cáo lịch sử;
+    :Tải xuống file báo cáo;
+  else (Không)
+    :Bỏ qua xuất báo cáo;
+  endif
+}
+
+stop
+
+@enduml

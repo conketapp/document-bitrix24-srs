@@ -1,0 +1,206 @@
+@startuml HD-4.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title HD-4.1: Sequence Diagram - Hiển thị Tổng giá trị Hợp đồng, Lũy kế Chi phí Thực hiện và Giá trị Chưa Hoàn thành
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Cost Module" as CM
+participant "Calculation Service" as CS
+participant "Chart Service" as CHS
+participant "Notification Service" as N
+
+== Khởi tạo Dashboard Tài chính ==
+
+U -> F: Truy cập trang chi tiết hợp đồng
+F -> B: GET /api/contracts/{id}
+B -> D: Query contract details
+D --> B: Contract data
+B -> B: Check financial view permissions
+B --> F: Contract information with permissions
+F --> U: Hiển thị thông tin hợp đồng
+
+U -> F: Nhấn "Dashboard Tài chính"
+F -> B: GET /api/contracts/{id}/financial-dashboard
+B -> D: Query contract financial data
+D --> B: Contract financial data
+B -> CM: GET /api/costs/contract/{id}/summary
+CM -> D: Query linked costs
+D --> CM: Costs data
+CM --> B: Cost summary data
+B -> CS: Calculate financial indicators
+CS -> CS: Calculate cumulative values
+CS --> B: Financial indicators
+B --> F: Financial dashboard data
+F --> U: Hiển thị dashboard tài chính
+
+== Tính toán Chỉ số Tài chính ==
+
+B -> CS: Calculate implementation value
+CS -> CM: GET /api/costs/contract/{id}/implementation
+CM -> D: Query costs with "implemented" status
+D --> CM: Implementation costs data
+CM --> CS: Implementation costs
+CS -> CS: Sum implementation values
+CS --> B: Cumulative implementation value
+
+B -> CS: Calculate acceptance value
+CS -> CM: GET /api/costs/contract/{id}/acceptance
+CM -> D: Query costs with "accepted" status
+D --> CM: Acceptance costs data
+CM --> CS: Acceptance costs
+CS -> CS: Sum acceptance values
+CS --> B: Cumulative acceptance value
+
+B -> CS: Calculate disbursement value
+CS -> CM: GET /api/costs/contract/{id}/disbursement
+CM -> D: Query costs with "fully_paid" status
+D --> CM: Disbursement costs data
+CM --> CS: Disbursement costs
+CS -> CS: Sum disbursement values
+CS --> B: Cumulative disbursement value
+
+B -> CS: Calculate remaining value
+CS -> CS: Calculate remaining = total - disbursement
+CS --> B: Remaining value
+
+B -> CS: Calculate completion ratio
+CS -> CS: Calculate ratio = (disbursement / total) × 100%
+CS --> B: Completion ratio
+
+B --> F: All financial indicators
+F --> U: Hiển thị các chỉ số tài chính
+
+== Hiển thị Biểu đồ ==
+
+U -> F: Nhấn "Xem biểu đồ"
+F -> B: GET /api/contracts/{id}/financial-charts
+B -> CHS: Generate financial charts
+CHS -> CHS: Create comparison charts
+CHS -> CHS: Create progress charts
+CHS -> CHS: Create pie charts
+CHS --> B: Chart data
+B --> F: Chart information
+F --> U: Hiển thị biểu đồ tài chính
+
+== Kiểm tra Cảnh báo ==
+
+B -> B: Check budget thresholds
+B -> D: Query alert settings
+D --> B: Alert settings
+
+alt Vượt 90% ngân sách
+    B -> N: Send budget warning
+    N --> B: Warning sent
+    B --> F: Budget warning alert
+    F --> U: Hiển thị cảnh báo "Sắp hết ngân sách"
+else Vượt 100% ngân sách
+    B -> N: Send over-budget alert
+    N --> B: Alert sent
+    B --> F: Over-budget alert
+    F --> U: Hiển thị cảnh báo "Vượt ngân sách"
+end
+
+== Xem Chi tiết Khoản mục ==
+
+U -> F: Nhấn "Xem chi tiết"
+F -> B: GET /api/contracts/{id}/cost-details
+B -> CM: GET /api/costs/contract/{id}/items
+CM -> D: Query cost items for contract
+D --> CM: Cost items data
+CM --> B: Cost items
+B --> F: Cost details
+F --> U: Hiển thị chi tiết khoản mục
+
+U -> F: Lọc theo trạng thái
+F -> B: GET /api/contracts/{id}/cost-details?status={status}
+B -> CM: GET /api/costs/contract/{id}/items?status={status}
+CM -> D: Query filtered cost items
+D --> CM: Filtered cost items
+CM --> B: Filtered cost items
+B --> F: Filtered cost details
+F --> U: Hiển thị khoản mục đã lọc
+
+== Xuất Báo cáo ==
+
+U -> F: Nhấn "Xuất báo cáo"
+F -> B: POST /api/contracts/{id}/financial-report
+note right: { format: string, date_range: object }
+
+B -> B: Generate financial report
+B -> CS: Get financial data for report
+CS --> B: Financial report data
+B -> B: Create report file
+B --> F: Report file
+F --> U: Cung cấp file báo cáo
+
+== So sánh với Kế hoạch ==
+
+U -> F: Nhấn "So sánh với kế hoạch"
+F -> B: GET /api/contracts/{id}/budget-comparison
+B -> D: Query original budget
+D --> B: Original budget data
+B -> CS: Compare actual vs planned
+CS --> B: Comparison data
+B -> CHS: Generate comparison charts
+CHS --> B: Comparison charts
+B --> F: Budget comparison data
+F --> U: Hiển thị so sánh với kế hoạch
+
+== Xem Lịch sử Thay đổi ==
+
+U -> F: Nhấn "Lịch sử thay đổi"
+F -> B: GET /api/contracts/{id}/financial-history
+B -> D: Query financial change history
+D --> B: Financial history data
+B --> F: Financial history
+F --> U: Hiển thị lịch sử thay đổi tài chính
+
+== Thiết lập Ngưỡng Cảnh báo ==
+
+U -> F: Nhấn "Thiết lập cảnh báo"
+F -> B: GET /api/contracts/{id}/alert-settings
+B -> D: Query current alert settings
+D --> B: Alert settings data
+B --> F: Alert settings form
+F --> U: Hiển thị form thiết lập cảnh báo
+
+U -> F: Cập nhật ngưỡng cảnh báo
+F -> B: PUT /api/contracts/{id}/alert-settings
+note right: { warning_threshold: number, critical_threshold: number }
+
+B -> D: Update alert settings
+D --> B: Settings updated
+B --> F: Settings updated successfully
+F --> U: Hiển thị thông báo cập nhật thành công
+
+== Cập nhật Real-time ==
+
+B -> CS: Monitor cost changes
+CS -> CM: Check for new costs
+CM --> CS: Cost change notifications
+CS -> B: Update financial indicators
+B -> D: Update cached financial data
+D --> B: Data updated
+B -> N: Send real-time notifications
+N --> B: Notifications sent
+B --> F: Updated financial data
+F --> U: Cập nhật dashboard real-time
+
+== Xử lý Lỗi ==
+
+alt Không có quyền xem thông tin tài chính
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xem"
+else Lỗi tính toán
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi tính toán
+else Lỗi kết nối Module Chi phí
+    B --> F: 503 Service Unavailable
+    F --> U: Hiển thị thông báo "Không thể kết nối Module Chi phí"
+end
+
+@enduml

@@ -1,0 +1,166 @@
+@startuml HD-5.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title HD-5.1: Activity Diagram - Ghi nhận Lịch sử Thao tác Hợp đồng (Log)
+
+start
+
+:Người dùng thực hiện hành động trên hợp đồng;
+
+:Hệ thống xác định loại hành động;
+note right
+**Các loại hành động:**
+- Tạo hợp đồng mới
+- Chỉnh sửa hợp đồng
+- Xóa hợp đồng
+- Thay đổi trạng thái
+- Upload tài liệu
+- Cập nhật tài chính
+- Thay đổi phân quyền
+end note
+
+:Hệ thống thu thập thông tin hành động;
+note right
+**Thông tin thu thập:**
+- Thời gian thực hiện
+- Người thực hiện
+- Loại hành động
+- Dữ liệu trước thay đổi
+- Dữ liệu sau thay đổi
+- Context và metadata
+end note
+
+:Hệ thống kiểm tra quyền ghi log;
+
+if (Có quyền ghi log?) then (Không)
+    :Ghi log lỗi quyền truy cập;
+    :Thông báo cho admin;
+else (Có)
+    :Tạo log entry;
+    :Gán timestamp chính xác;
+    :Ghi thông tin người dùng;
+    :Ghi loại hành động;
+    :Ghi chi tiết thay đổi;
+    
+    :Hệ thống lưu log vào database;
+    note right
+    **Lưu log:**
+    - Bảng contract_logs
+    - Immutable records
+    - Indexed cho tìm kiếm
+    - Encrypted nếu cần
+    end note
+    
+    :Hệ thống ghi log vào file system;
+    note right
+    **Backup log:**
+    - File log riêng biệt
+    - Rotate theo ngày
+    - Compress file cũ
+    - Backup định kỳ
+    end note
+    
+    :Hệ thống cập nhật audit trail;
+    :Ghi log thành công;
+    
+    :Người dùng có thể xem lịch sử;
+    
+    if (Xem lịch sử hợp đồng?) then (Có)
+        :Hiển thị danh sách log entries;
+        :Sắp xếp theo thời gian (mới nhất trước);
+        :Hiển thị thông tin cơ bản;
+        note right
+        **Thông tin hiển thị:**
+        - Thời gian
+        - Người thực hiện
+        - Loại hành động
+        - Mô tả ngắn gọn
+        end note
+    else (Không)
+        :Tiếp tục thao tác;
+    endif
+    
+    :Người dùng có thể tìm kiếm log;
+    
+    if (Tìm kiếm log?) then (Có)
+        :Hiển thị form tìm kiếm;
+        :Cho phép tìm theo thời gian;
+        :Cho phép tìm theo người thực hiện;
+        :Cho phép tìm theo loại hành động;
+        :Cho phép tìm theo từ khóa;
+        
+        :Người dùng nhập tiêu chí tìm kiếm;
+        :Hệ thống thực hiện tìm kiếm;
+        :Hiển thị kết quả tìm kiếm;
+    else (Không)
+        :Tiếp tục xem lịch sử;
+    endif
+    
+    :Người dùng có thể lọc log;
+    
+    if (Lọc log?) then (Có)
+        :Hiển thị bộ lọc;
+        :Cho phép lọc theo khoảng thời gian;
+        :Cho phép lọc theo người thực hiện;
+        :Cho phép lọc theo loại hành động;
+        :Cho phép lọc theo trạng thái;
+        
+        :Người dùng chọn bộ lọc;
+        :Hệ thống áp dụng bộ lọc;
+        :Hiển thị kết quả đã lọc;
+    else (Không)
+        :Tiếp tục xem lịch sử;
+    endif
+    
+    :Người dùng có thể xem chi tiết log;
+    
+    if (Xem chi tiết log entry?) then (Có)
+        :Hiển thị thông tin chi tiết;
+        note right
+        **Thông tin chi tiết:**
+        - Thời gian chính xác
+        - Người thực hiện đầy đủ
+        - Loại hành động chi tiết
+        - Dữ liệu trước thay đổi
+        - Dữ liệu sau thay đổi
+        - Context và metadata
+        - IP address
+        - User agent
+        end note
+    else (Không)
+        :Tiếp tục xem danh sách;
+    endif
+    
+    :Người dùng có thể xuất báo cáo log;
+    
+    if (Xuất báo cáo log?) then (Có)
+        :Chọn định dạng xuất (Excel, PDF, CSV);
+        :Chọn khoảng thời gian;
+        :Chọn loại hành động cần xuất;
+        :Tạo báo cáo log;
+        :Cung cấp file báo cáo cho người dùng;
+    else (Không)
+        :Tiếp tục xem lịch sử;
+    endif
+    
+    :Hệ thống quản lý retention policy;
+    
+    if (Kiểm tra retention policy?) then (Có)
+        :Kiểm tra log entries cũ;
+        :Xóa log entries quá hạn (10 năm);
+        :Nén log entries cũ;
+        :Backup log entries quan trọng;
+    else (Không)
+        :Tiếp tục quản lý log;
+    endif
+    
+    :Hệ thống đảm bảo bảo mật log;
+    :Mã hóa log entries nhạy cảm;
+    :Kiểm soát quyền truy cập log;
+    :Backup log định kỳ;
+endif
+
+stop
+
+@enduml

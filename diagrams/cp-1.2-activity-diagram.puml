@@ -1,0 +1,212 @@
+@startuml CP-1.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title CP-1.2: Activity Diagram - Liên kết khoản mục chi phí với Dự án, Gói thầu và Hợp đồng
+
+start
+
+:Người dùng truy cập trang quản lý chi phí;
+
+:Kiểm tra quyền liên kết chi phí;
+
+if (Có quyền liên kết chi phí?) then (Không)
+    :Hiển thị thông báo "Không có quyền liên kết chi phí";
+    stop
+else (Có)
+    :Hiển thị danh sách chi phí;
+    
+    :Người dùng chọn chi phí cần liên kết;
+    note right
+    **Chọn chi phí:**
+    - Tìm kiếm theo mã
+    - Tìm kiếm theo tên
+    - Lọc theo trạng thái
+    - Lọc theo loại chi phí
+    end note
+    
+    :Hệ thống hiển thị form liên kết;
+    
+    :Người dùng chọn loại đối tượng liên kết;
+    note right
+    **Loại đối tượng:**
+    - Dự án
+    - Gói thầu
+    - Hợp đồng
+    - Kết hợp nhiều loại
+    end note
+    
+    :Hệ thống hiển thị danh sách đối tượng;
+    note right
+    **Danh sách đối tượng:**
+    - Chỉ hiển thị đối tượng active
+    - Hiển thị mã, tên, trạng thái
+    - Hỗ trợ tìm kiếm và lọc
+    - Auto-complete functionality
+    end note
+    
+    :Người dùng tìm kiếm đối tượng;
+    note right
+    **Tìm kiếm:**
+    - Tìm theo mã
+    - Tìm theo tên
+    - Tìm theo trạng thái
+    - Tìm theo ngày tạo
+    end note
+    
+    :Người dùng chọn đối tượng;
+    
+    :Hệ thống validate đối tượng;
+    note right
+    **Validation:**
+    - Kiểm tra đối tượng tồn tại
+    - Kiểm tra trạng thái active
+    - Kiểm tra quyền truy cập
+    - Kiểm tra tính hợp lệ
+    end note
+    
+    if (Đối tượng hợp lệ?) then (Không)
+        :Hiển thị thông báo lỗi;
+        :Yêu cầu chọn lại đối tượng;
+        :Quay lại bước chọn đối tượng;
+    else (Có)
+        :Hiển thị thông tin chi tiết đối tượng;
+        note right
+        **Thông tin chi tiết:**
+        - Mã đối tượng
+        - Tên đối tượng
+        - Trạng thái
+        - Ngày tạo
+        - Người tạo
+        end note
+        
+        :Người dùng thiết lập phân bổ chi phí;
+        note right
+        **Phân bổ chi phí:**
+        - Phân bổ theo phần trăm
+        - Phân bổ theo số tiền
+        - Phân bổ đều
+        - Phân bổ tùy chỉnh
+        end note
+        
+        if (Liên kết nhiều đối tượng?) then (Có)
+            :Hiển thị form phân bổ chi phí;
+            :Người dùng nhập tỷ lệ phân bổ;
+            :Hệ thống validate tổng phân bổ;
+            
+            if (Tổng phân bổ = 100%?) then (Không)
+                :Hiển thị cảnh báo phân bổ chưa đủ;
+                :Yêu cầu điều chỉnh phân bổ;
+            else (Có)
+                :Tiếp tục với phân bổ hợp lệ;
+            endif
+        else (Không)
+            :Tự động phân bổ 100% cho đối tượng;
+        endif
+        
+        :Hệ thống tạo liên kết;
+        note right
+        **Tạo liên kết:**
+        - Lưu vào database
+        - Ghi log hoạt động
+        - Cập nhật thống kê
+        - Gửi thông báo
+        end note
+        
+        :Người dùng có thể thêm đối tượng khác;
+        
+        if (Thêm đối tượng khác?) then (Có)
+            :Quay lại bước chọn đối tượng;
+        else (Không)
+            :Tiếp tục với liên kết hiện tại;
+        endif
+        
+        :Hệ thống hiển thị preview liên kết;
+        note right
+        **Preview liên kết:**
+        - Hiển thị danh sách đối tượng đã liên kết
+        - Hiển thị tỷ lệ phân bổ
+        - Hiển thị số tiền phân bổ
+        - Hiển thị tổng phân bổ
+        end note
+        
+        :Người dùng xem preview;
+        
+        if (Người dùng hài lòng với preview?) then (Không)
+            :Người dùng chỉnh sửa liên kết;
+            :Quay lại bước thiết lập phân bổ;
+        else (Có)
+            :Người dùng xác nhận liên kết;
+            
+            :Hệ thống lưu liên kết;
+            note right
+            **Lưu liên kết:**
+            - Lưu vào database
+            - Tạo version liên kết
+            - Ghi log hoạt động
+            - Cập nhật thống kê
+            end note
+            
+            :Hệ thống gửi thông báo;
+            :Hiển thị thông báo liên kết thành công;
+            
+            :Người dùng có thể xem lịch sử liên kết;
+            
+            if (Xem lịch sử liên kết?) then (Có)
+                :Hiển thị lịch sử thay đổi liên kết;
+                note right
+                **Lịch sử liên kết:**
+                - Ngày tạo liên kết
+                - Người tạo liên kết
+                - Thay đổi liên kết
+                - Ngày thay đổi
+                - Người thay đổi
+                end note
+            else (Không)
+                :Tiếp tục với liên kết hiện tại;
+            endif
+            
+            :Người dùng có thể thay đổi liên kết;
+            
+            if (Thay đổi liên kết?) then (Có)
+                :Hiển thị form chỉnh sửa liên kết;
+                :Người dùng chỉnh sửa thông tin liên kết;
+                :Hệ thống validate thay đổi;
+                :Lưu thay đổi liên kết;
+                :Ghi log thay đổi;
+                :Hiển thị thông báo cập nhật thành công;
+            else (Không)
+                :Tiếp tục với liên kết hiện tại;
+            endif
+            
+            :Người dùng có thể xem báo cáo chi phí;
+            
+            if (Xem báo cáo chi phí?) then (Có)
+                :Hiển thị báo cáo chi phí theo đối tượng;
+                note right
+                **Báo cáo chi phí:**
+                - Tổng chi phí theo đối tượng
+                - Chi tiết từng khoản chi phí
+                - Phân tích chi phí
+                - So sánh kế hoạch vs thực tế
+                end note
+            else (Không)
+                :Tiếp tục với liên kết hiện tại;
+            endif
+            
+            :Người dùng có thể xuất báo cáo;
+            
+            if (Xuất báo cáo?) then (Có)
+                :Chọn định dạng xuất (Excel, PDF);
+                :Hệ thống tạo báo cáo;
+                :Cung cấp link download;
+            else (Không)
+                :Tiếp tục với liên kết hiện tại;
+            endif
+        endif
+    endif
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,185 @@
+@startuml CP-5.6 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title CP-5.6: Cảnh báo khi Tổng Chi phí Vượt quá Ngân sách Dự án - Sequence Diagram
+
+participant "Scheduler\nService" as Scheduler
+participant "Budget Monitor\nService" as MonitorService
+participant "Project\nRepository" as ProjectRepo
+participant "Cost Item\nRepository" as CostRepo
+participant "Budget\nRepository" as BudgetRepo
+participant "Alert\nService" as AlertService
+participant "Email\nService" as EmailService
+participant "SMS\nService" as SMSService
+participant "Notification\nService" as NotificationService
+participant "Configuration\nService" as ConfigService
+participant "Database" as DB
+
+Scheduler -> MonitorService: checkBudgetOverruns()
+MonitorService -> ProjectRepo: getAllProjects()
+ProjectRepo -> DB: SELECT * FROM projects WHERE is_active = true
+DB --> ProjectRepo: Active projects
+ProjectRepo --> MonitorService: Projects list
+
+loop Cho mỗi dự án
+  MonitorService -> BudgetRepo: getProjectBudget(projectId)
+  BudgetRepo -> DB: SELECT * FROM project_budgets WHERE project_id = ?
+  DB --> BudgetRepo: Project budget data
+  BudgetRepo --> MonitorService: Project budget
+  
+  MonitorService -> CostRepo: getActualCosts(projectId)
+  CostRepo -> DB: SELECT SUM(total_amount) FROM cost_items WHERE project_id = ? AND status = 'approved'
+  DB --> CostRepo: Actual costs
+  CostRepo --> MonitorService: Actual costs
+  
+  MonitorService -> CostRepo: getProjectedCosts(projectId)
+  CostRepo -> DB: SELECT SUM(total_amount) FROM cost_items WHERE project_id = ? AND status = 'planned'
+  DB --> CostRepo: Projected costs
+  CostRepo --> MonitorService: Projected costs
+  
+  MonitorService -> MonitorService: calculateTotalCosts(actualCosts, projectedCosts)
+  MonitorService -> MonitorService: compareWithBudget(totalCosts, budget)
+  MonitorService -> MonitorService: calculateBudgetUtilization(totalCosts, budget)
+  
+  MonitorService -> ConfigService: getAlertThresholds(projectId)
+  ConfigService -> DB: SELECT * FROM budget_alert_config WHERE project_id = ?
+  DB --> ConfigService: Alert thresholds
+  ConfigService --> MonitorService: Threshold configuration
+  
+  MonitorService -> MonitorService: checkBudgetThresholds(utilization, thresholds)
+  
+  alt Chi phí vượt ngưỡng cảnh báo
+    MonitorService -> MonitorService: determineAlertSeverity(utilization)
+    
+    alt Mức độ thấp (80-90%)
+      MonitorService -> MonitorService: createLowSeverityAlert()
+    elseif Mức độ trung bình (90-95%)
+      MonitorService -> MonitorService: createMediumSeverityAlert()
+    elseif Mức độ cao (95-100%)
+      MonitorService -> MonitorService: createHighSeverityAlert()
+    else Mức độ nghiêm trọng (trên 100%)
+      MonitorService -> MonitorService: createCriticalSeverityAlert()
+    end
+    
+    MonitorService -> AlertService: createBudgetAlert(projectId, alertData)
+    AlertService -> DB: INSERT INTO budget_alerts (...)
+    DB --> AlertService: Alert created
+    AlertService --> MonitorService: Alert created
+    
+    MonitorService -> ConfigService: getAlertRecipients(projectId)
+    ConfigService -> DB: SELECT * FROM alert_recipients WHERE project_id = ?
+    DB --> ConfigService: Alert recipients
+    ConfigService --> MonitorService: Recipients list
+    
+    loop Cho mỗi người nhận
+      MonitorService -> EmailService: sendBudgetAlertEmail(recipient, alertData)
+      EmailService -> EmailService: createAlertEmailContent(alertData)
+      EmailService -> EmailService: sendEmail(recipient, emailContent)
+      EmailService -> DB: INSERT INTO email_logs (...)
+      DB --> EmailService: Email logged
+      EmailService --> MonitorService: Email sent
+      
+      MonitorService -> NotificationService: createInAppNotification(recipient, alertData)
+      NotificationService -> DB: INSERT INTO notifications (...)
+      DB --> NotificationService: Notification created
+      NotificationService --> MonitorService: Notification sent
+      
+      alt Cấu hình SMS
+        MonitorService -> SMSService: sendBudgetAlertSMS(recipient, alertData)
+        SMSService -> SMSService: createAlertSMSContent(alertData)
+        SMSService -> SMSService: sendSMS(recipient, smsContent)
+        SMSService -> DB: INSERT INTO sms_logs (...)
+        DB --> SMSService: SMS logged
+        SMSService --> MonitorService: SMS sent
+      end
+    end
+    
+  else Không vượt ngưỡng
+    MonitorService -> MonitorService: skipAlertCreation()
+  end
+end
+
+Scheduler --> MonitorService: Budget monitoring completed
+
+note over MonitorService, DB
+  Tùy chọn: Người dùng quản lý cảnh báo
+end note
+
+participant "Người dùng" as User
+participant "Giao diện\nQuản lý Cảnh báo" as UI
+
+User -> UI: Truy cập trang quản lý cảnh báo
+UI -> AlertService: GET /api/budget-alerts
+AlertService -> DB: SELECT * FROM budget_alerts ORDER BY created_at DESC
+DB --> AlertService: Budget alerts
+AlertService --> UI: Alerts data
+UI --> User: Hiển thị danh sách cảnh báo
+
+User -> UI: Xác nhận cảnh báo
+UI -> AlertService: PUT /api/budget-alerts/{id}/acknowledge
+AlertService -> DB: UPDATE budget_alerts SET acknowledged_at = ?, acknowledged_by = ? WHERE id = ?
+DB --> AlertService: Alert acknowledged
+AlertService --> UI: Alert acknowledged successfully
+UI --> User: Thông báo xác nhận thành công
+
+User -> UI: Giải quyết cảnh báo
+UI -> AlertService: PUT /api/budget-alerts/{id}/resolve
+note right of UI
+{
+  "resolution_action": "budget_adjustment",
+  "resolution_notes": "Điều chỉnh ngân sách dự án",
+  "resolution_date": "2024-01-25"
+}
+end note
+
+AlertService -> DB: UPDATE budget_alerts SET resolved_at = ?, resolved_by = ?, resolution_action = ? WHERE id = ?
+DB --> AlertService: Alert resolved
+AlertService --> UI: Alert resolved successfully
+UI --> User: Thông báo giải quyết thành công
+
+User -> UI: Thiết lập cấu hình cảnh báo
+UI -> ConfigService: PUT /api/budget-alerts/config
+note right of UI
+{
+  "project_id": 123,
+  "thresholds": {
+    "low": 80,
+    "medium": 90,
+    "high": 95,
+    "critical": 100
+  },
+  "notification_channels": ["email", "sms", "in_app"],
+  "recipients": ["manager@company.com"]
+}
+end note
+
+ConfigService -> DB: UPDATE budget_alert_config SET ... WHERE project_id = ?
+DB --> ConfigService: Configuration updated
+ConfigService --> UI: Configuration saved successfully
+UI --> User: Thông báo lưu cấu hình thành công
+
+User -> UI: Xuất báo cáo cảnh báo
+UI -> AlertService: POST /api/budget-alerts/export
+AlertService -> DB: SELECT * FROM budget_alerts WHERE created_at BETWEEN ? AND ?
+DB --> AlertService: Alert history
+AlertService -> AlertService: generateAlertReport(alertHistory)
+AlertService --> UI: Report file
+UI --> User: Tải xuống báo cáo cảnh báo
+
+@enduml

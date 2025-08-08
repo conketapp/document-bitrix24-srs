@@ -1,0 +1,211 @@
+@startuml TSDV-1.2 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title TSDV-1.2: Chỉnh sửa thông tin Tài sản/Dịch vụ - Sequence Diagram
+
+actor "Cán bộ\nQuản lý Tài sản" as User
+participant "Giao diện\nQuản lý Tài sản" as UI
+participant "Asset Service\nController" as Controller
+participant "Asset Service\nService" as Service
+participant "Permission\nService" as PermissionService
+participant "Asset Service\nRepository" as AssetRepo
+participant "Change History\nService" as HistoryService
+participant "File Upload\nService" as FileService
+participant "Notification\nService" as NotificationService
+participant "Approval\nService" as ApprovalService
+participant "Database" as DB
+
+User -> UI: Truy cập trang quản lý tài sản/dịch vụ
+UI -> Controller: GET /api/assets-services
+Controller -> Service: getAssetServices()
+Service -> AssetRepo: findAll()
+AssetRepo -> DB: SELECT * FROM assets_services
+DB --> AssetRepo: Assets services data
+AssetRepo --> Service: Assets services list
+Service --> Controller: Assets services response
+Controller --> UI: Hiển thị danh sách tài sản/dịch vụ
+
+User -> UI: Chọn tài sản/dịch vụ cần chỉnh sửa
+UI -> Controller: GET /api/assets-services/{id}
+Controller -> Service: getAssetServiceById(id)
+Service -> AssetRepo: findById(id)
+AssetRepo -> DB: SELECT * FROM assets_services WHERE id = ?
+DB --> AssetRepo: Asset service details
+AssetRepo --> Service: Asset service details
+Service --> Controller: Asset service response
+Controller --> UI: Hiển thị chi tiết tài sản/dịch vụ
+
+User -> UI: Nhấn nút "Chỉnh sửa"
+UI -> Controller: GET /api/assets-services/{id}/edit
+Controller -> Service: getAssetServiceForEdit(id)
+Service -> PermissionService: checkEditPermissions(userId, assetServiceId)
+PermissionService -> DB: SELECT * FROM user_permissions WHERE user_id = ? AND permission = 'edit_asset_service'
+DB --> PermissionService: User permissions
+PermissionService --> Service: Edit permissions
+
+alt Có quyền chỉnh sửa
+  Service -> AssetRepo: getAssetServiceWithDetails(id)
+  AssetRepo -> DB: SELECT * FROM assets_services WHERE id = ?
+  DB --> AssetRepo: Asset service data
+  AssetRepo --> Service: Asset service with details
+  Service --> Controller: Asset service for editing
+  Controller --> UI: Hiển thị form chỉnh sửa
+  
+else Không có quyền chỉnh sửa
+  Service --> Controller: Edit permission denied
+  Controller --> UI: Hiển thị thông báo không có quyền
+end
+
+User -> UI: Chỉnh sửa thông tin tài sản/dịch vụ
+note right of User
+  - Tên tài sản/dịch vụ
+  - Mô tả chi tiết
+  - Danh mục và thông tin bổ sung
+  - Thông tin tài sản/dịch vụ cụ thể
+  - Người phụ trách
+  - Trạng thái
+end note
+
+UI -> Controller: PUT /api/assets-services/{id}/edit
+note right of UI
+{
+  "name": "Máy tính Dell OptiPlex 7090 - Cập nhật",
+  "description": "Máy tính văn phòng cho dự án - Phiên bản mới",
+  "category": "hardware",
+  "subcategory": "computer",
+  "status": "maintenance",
+  "responsible_person_id": 789,
+  "asset_specific": {
+    "model": "Dell OptiPlex 7090 MT",
+    "serial_number": "DELL123456789",
+    "purchase_date": "2024-01-15",
+    "purchase_cost": 15000000,
+    "warranty_expiry": "2027-01-15",
+    "location": "Phòng 301 - Tầng 3"
+  }
+}
+end note
+
+Controller -> Service: updateAssetService(id, updateData)
+Service -> Service: validateUpdateData(updateData)
+Service -> Service: checkBusinessRules(updateData)
+
+alt Dữ liệu hợp lệ
+  Service -> Service: categorizeChanges(updateData)
+  
+  Service -> HistoryService: logChanges(assetServiceId, oldData, newData)
+  HistoryService -> DB: INSERT INTO asset_service_changes (...)
+  DB --> HistoryService: Changes logged
+  HistoryService --> Service: Changes logged
+  
+  Service -> Service: checkImportantChanges(updateData)
+  
+  alt Có thay đổi quan trọng
+    Service -> ApprovalService: createApprovalRequest(assetServiceId, updateData)
+    ApprovalService -> DB: INSERT INTO approval_requests (...)
+    DB --> ApprovalService: Approval request created
+    ApprovalService --> Service: Approval request created
+    
+    Service -> Service: updateStatus("pending_approval")
+  else Không có thay đổi quan trọng
+    Service -> Service: updateStatus("updated")
+  end
+  
+  Service -> AssetRepo: updateAssetService(id, updateData)
+  AssetRepo -> DB: UPDATE assets_services SET ... WHERE id = ?
+  DB --> AssetRepo: Asset service updated
+  AssetRepo --> Service: Asset service updated
+  
+  Service -> FileService: handleFileUpdates(assetServiceId, fileData)
+  FileService -> FileService: processFileUpdates(fileData)
+  FileService -> DB: INSERT INTO asset_service_files (...)
+  DB --> FileService: Files updated
+  FileService --> Service: Files processed
+  
+  Service -> NotificationService: notifyImportantChanges(assetServiceId, updateData)
+  NotificationService -> DB: INSERT INTO notifications (...)
+  DB --> NotificationService: Notification created
+  NotificationService --> Service: Notification sent
+  
+  Service --> Controller: Update successful
+  Controller --> UI: Thông báo chỉnh sửa thành công
+  
+  UI -> Controller: GET /api/assets-services/{id}
+  Controller -> Service: getAssetServiceById(id)
+  Service -> AssetRepo: findById(id)
+  AssetRepo -> DB: SELECT * FROM assets_services WHERE id = ?
+  DB --> AssetRepo: Updated asset service data
+  AssetRepo --> Service: Updated asset service details
+  Service --> Controller: Updated asset service response
+  Controller --> UI: Cập nhật hiển thị tài sản/dịch vụ
+  
+else Dữ liệu không hợp lệ
+  Service --> Controller: Validation errors
+  Controller --> UI: Hiển thị lỗi validation
+end
+
+User -> UI: Xem lịch sử thay đổi (tùy chọn)
+UI -> Controller: GET /api/assets-services/{id}/change-history
+Controller -> HistoryService: getAssetServiceHistory(id)
+HistoryService -> DB: SELECT * FROM asset_service_changes WHERE asset_service_id = ? ORDER BY changed_at DESC
+DB --> HistoryService: Change history data
+HistoryService --> Controller: Change history response
+Controller --> UI: Hiển thị lịch sử thay đổi
+
+User -> UI: Hoàn tác thay đổi (tùy chọn)
+UI -> Controller: POST /api/assets-services/{id}/revert
+note right of UI
+{
+  "change_id": 123,
+  "revert_reason": "Khôi phục theo yêu cầu của ban quản lý"
+}
+end note
+
+Controller -> HistoryService: revertChange(assetServiceId, changeId)
+HistoryService -> DB: SELECT * FROM asset_service_changes WHERE id = ?
+DB --> HistoryService: Change data
+HistoryService -> AssetRepo: revertToPreviousState(assetServiceId, changeData)
+AssetRepo -> DB: UPDATE assets_services SET ... WHERE id = ?
+DB --> AssetRepo: Asset service reverted
+AssetRepo --> HistoryService: Revert completed
+HistoryService --> Controller: Revert successful
+Controller --> UI: Thông báo hoàn tác thành công
+
+User -> UI: Xuất thông tin đã chỉnh sửa (tùy chọn)
+UI -> Controller: POST /api/assets-services/{id}/export
+note right of UI
+{
+  "format": "excel",
+  "include_history": true,
+  "include_files": false
+}
+end note
+
+Controller -> Service: exportAssetServiceData(assetServiceId, exportData)
+Service -> AssetRepo: getAssetServiceForExport(assetServiceId)
+AssetRepo -> DB: SELECT * FROM assets_services WHERE id = ?
+DB --> AssetRepo: Asset service data
+AssetRepo --> Service: Asset service data
+Service -> HistoryService: getChangeHistoryForExport(assetServiceId)
+HistoryService --> Service: Change history data
+Service -> Service: generateExportFile(assetServiceData, changeHistory)
+Service --> Controller: Export file
+Controller --> UI: Tải xuống file xuất
+
+@enduml

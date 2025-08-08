@@ -1,0 +1,162 @@
+@startuml DMDA-4.4 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-4.4: Sequence Diagram - Báo cáo Thống kê Dự án Tổng quan
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Statistics Service" as SS
+participant "Chart Service" as CS
+participant "Export Service" as ES
+
+== Khởi tạo Trang Báo cáo ==
+
+U -> F: Truy cập trang báo cáo thống kê
+F -> B: GET /api/reports/dashboard
+B -> D: Check report permissions
+D --> B: Permission result
+
+alt Không có quyền xem báo cáo
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xem báo cáo"
+else Có quyền xem báo cáo
+    B -> SS: Get dashboard statistics
+    SS -> D: Query project statistics
+    D --> SS: Statistics data
+    SS -> SS: Process statistics data
+    SS --> B: Dashboard data
+    B --> F: Dashboard data
+    F --> U: Hiển thị dashboard tổng quan
+end
+
+== Tải Dữ liệu Biểu đồ ==
+
+F -> B: GET /api/reports/charts/status-distribution
+B -> SS: Get status distribution data
+SS -> D: Query projects by status
+D --> SS: Status distribution data
+SS --> B: Chart data
+B --> F: Status distribution chart
+F --> U: Hiển thị biểu đồ phân bố trạng thái
+
+F -> B: GET /api/reports/charts/category-comparison
+B -> SS: Get category comparison data
+SS -> D: Query projects by category
+D --> SS: Category comparison data
+SS --> B: Chart data
+B --> F: Category comparison chart
+F --> U: Hiển thị biểu đồ so sánh loại dự án
+
+F -> B: GET /api/reports/charts/budget-allocation
+B -> SS: Get budget allocation data
+SS -> D: Query project budgets
+D --> SS: Budget allocation data
+SS --> B: Chart data
+B --> F: Budget allocation chart
+F --> U: Hiển thị biểu đồ phân bố ngân sách
+
+== Lọc Báo cáo ==
+
+U -> F: Chọn bộ lọc báo cáo
+F -> B: GET /api/reports/filter
+note right: { year?: number, category_id?: number, status?: string, date_range?: object }
+
+B -> SS: Apply filters to statistics
+SS -> D: Query filtered statistics
+D --> SS: Filtered statistics data
+SS --> B: Filtered data
+B --> F: Filtered report data
+F --> U: Cập nhật báo cáo theo bộ lọc
+
+== Drill-down Chi tiết ==
+
+U -> F: Nhấn vào biểu đồ để xem chi tiết
+F -> B: GET /api/reports/drill-down
+note right: { chart_type: string, data_point: string, filters?: object }
+
+B -> SS: Get detailed data for drill-down
+SS -> D: Query detailed project data
+D --> SS: Detailed project data
+SS --> B: Drill-down data
+B --> F: Detailed data
+F --> U: Hiển thị dữ liệu chi tiết
+
+== Xuất Báo cáo ==
+
+U -> F: Nhấn "Xuất Báo cáo"
+F -> B: POST /api/reports/export
+note right: { format: string, report_type: string, filters?: object }
+
+B -> B: Validate export request
+B -> SS: Generate report data
+SS -> D: Query report data
+D --> SS: Report data
+SS --> B: Report data
+B -> ES: Create report file
+ES -> ES: Format report data
+ES -> ES: Generate file
+ES --> B: Report file URL
+B --> F: Report file URL
+F --> U: Cung cấp link tải xuống báo cáo
+
+== So sánh Dữ liệu ==
+
+U -> F: Chọn so sánh dữ liệu
+F -> B: GET /api/reports/compare
+note right: { period_1: object, period_2: object, metrics: string[] }
+
+B -> SS: Generate comparison data
+SS -> D: Query data for both periods
+D --> SS: Comparison data
+SS -> SS: Calculate differences
+SS --> B: Comparison results
+B --> F: Comparison data
+F --> U: Hiển thị biểu đồ so sánh
+
+== Tùy chỉnh Dashboard ==
+
+U -> F: Nhấn "Tùy chỉnh Dashboard"
+F -> B: GET /api/reports/dashboard/config
+B -> D: Query user dashboard configuration
+D --> B: Dashboard config
+B --> F: Dashboard configuration
+F --> U: Hiển thị form tùy chỉnh
+
+U -> F: Thay đổi cấu hình dashboard
+F -> B: PUT /api/reports/dashboard/config
+note right: { layout: object, charts: object[], filters: object }
+
+B -> D: Update dashboard configuration
+D --> B: Configuration updated
+B --> F: Configuration saved
+F --> U: Hiển thị thông báo lưu thành công
+
+== Cập nhật Dữ liệu Thời gian thực ==
+
+B -> SS: Schedule data refresh
+SS -> D: Query latest statistics
+D --> SS: Updated statistics
+SS -> B: Updated data
+B -> F: Push updated data
+F --> U: Cập nhật dashboard với dữ liệu mới
+
+== Xử lý Lỗi ==
+
+alt Lỗi quyền truy cập
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền"
+else Lỗi tải dữ liệu
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi tải dữ liệu"
+else Lỗi tạo biểu đồ
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi tạo biểu đồ"
+else Lỗi xuất báo cáo
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi xuất báo cáo"
+end
+
+@enduml

@@ -1,0 +1,125 @@
+@startuml CP-5.1 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title CP-5.1: Ghi nhận Lịch sử Thao tác Chi phí (Log) - Activity Diagram
+
+start
+
+:Người dùng thực hiện hành động trên khoản mục chi phí;
+
+partition "Phát hiện Hành động" {
+  :Hệ thống phát hiện hành động quan trọng;
+  if (Là hành động cần ghi log?) then (Có)
+    :Tiếp tục quá trình ghi log;
+  else (Không)
+    :Bỏ qua, không ghi log;
+    stop
+  endif
+}
+
+partition "Thu thập Thông tin Log" {
+  :Thu thập thông tin người thực hiện;
+  :Thu thập thời gian thực hiện;
+  :Thu thập loại hành động;
+  :Thu thập thông tin chi tiết hành động;
+  :Thu thập thông tin trước và sau thay đổi;
+}
+
+partition "Phân loại Hành động" {
+  if (Loại hành động?) then (Tạo mới)
+    :Ghi log tạo mới khoản mục chi phí;
+  elseif (Chỉnh sửa) then
+    :Ghi log chỉnh sửa thông tin;
+  elseif (Xóa) then
+    :Ghi log xóa khoản mục chi phí;
+  elseif (Thay đổi trạng thái) then
+    :Ghi log thay đổi trạng thái;
+  elseif (Tài chính) then
+    :Ghi log thay đổi thông tin tài chính;
+  elseif (Tài liệu) then
+    :Ghi log thao tác tài liệu;
+  else (Khác)
+    :Ghi log hành động khác;
+  endif
+}
+
+partition "Tạo Log Entry" {
+  :Tạo entry log với thông tin đầy đủ;
+  :Mã hóa thông tin nhạy cảm;
+  :Tạo hash để đảm bảo tính toàn vẹn;
+  :Gán ID duy nhất cho log entry;
+}
+
+partition "Lưu trữ Log" {
+  :Lưu log vào database;
+  :Tạo backup log entry;
+  :Cập nhật index tìm kiếm;
+  :Ghi log vào file system (nếu cần);
+}
+
+partition "Cập nhật Liên quan" {
+  :Cập nhật timestamp của khoản mục chi phí;
+  :Cập nhật thông tin người thực hiện cuối;
+  :Cập nhật số lần thay đổi;
+}
+
+partition "Thông báo (Tùy chọn)" {
+  if (Cần thông báo cho người khác?) then (Có)
+    :Gửi thông báo cho người liên quan;
+    :Gửi email thông báo;
+    :Cập nhật dashboard;
+  else (Không)
+    :Bỏ qua thông báo;
+  endif
+}
+
+partition "Hiển thị Log" {
+  :Cập nhật giao diện hiển thị log;
+  :Hiển thị thông báo thành công;
+  :Cập nhật lịch sử hoạt động;
+}
+
+partition "Tùy chọn: Xem Log" {
+  if (Người dùng muốn xem log?) then (Có)
+    :Hiển thị danh sách log;
+    :Cho phép lọc và tìm kiếm;
+    :Hiển thị chi tiết thay đổi;
+  else (Không)
+    :Bỏ qua hiển thị log;
+  endif
+}
+
+partition "Tùy chọn: Xuất Log" {
+  if (Người dùng muốn xuất log?) then (Có)
+    :Tạo báo cáo log;
+    :Xuất file PDF/Excel;
+    :Gửi báo cáo qua email;
+  else (Không)
+    :Bỏ qua xuất log;
+  endif
+}
+
+stop
+
+@enduml

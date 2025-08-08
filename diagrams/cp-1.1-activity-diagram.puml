@@ -1,0 +1,194 @@
+@startuml CP-1.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title CP-1.1: Activity Diagram - Tạo khoản mục chi phí mới và nhập thông tin chi tiết
+
+start
+
+:Người dùng truy cập trang tạo chi phí;
+
+:Kiểm tra quyền tạo chi phí;
+
+if (Có quyền tạo chi phí?) then (Không)
+    :Hiển thị thông báo "Không có quyền tạo chi phí";
+    stop
+else (Có)
+    :Hiển thị form tạo chi phí;
+    
+    :Hệ thống tự động sinh mã chi phí;
+    note right
+    **Mã chi phí:**
+    - Format: CP-YYYY-XXXX
+    - Tự động sinh
+    - Không thể chỉnh sửa
+    - Unique identifier
+    end note
+    
+    :Người dùng nhập thông tin cơ bản;
+    note right
+    **Thông tin cơ bản:**
+    - Tên chi phí
+    - Mô tả chi phí
+    - Danh mục chi phí
+    - Danh mục con
+    end note
+    
+    :Người dùng chọn loại chi phí;
+    note right
+    **Loại chi phí:**
+    - Một lần (One-time)
+    - Định kỳ (Recurring)
+    end note
+    
+    if (Loại chi phí?) then (Một lần)
+        :Hiển thị form chi phí một lần;
+        :Người dùng nhập thông tin chi phí một lần;
+        note right
+        **Thông tin chi phí một lần:**
+        - Tổng chi phí
+        - Đơn vị tiền tệ
+        - Số tiền VAT
+        - Tỷ lệ VAT
+        end note
+    else (Định kỳ)
+        :Hiển thị form chi phí định kỳ;
+        :Người dùng chọn tần suất;
+        note right
+        **Tần suất:**
+        - Tháng (Monthly)
+        - Quý (Quarterly)
+        - Năm (Annually)
+        end note
+        
+        :Người dùng nhập số kỳ;
+        :Người dùng chọn hình thức nhập chi phí;
+        note right
+        **Hình thức nhập:**
+        - Cùng chi phí mỗi kỳ
+        - Mỗi kỳ nhập chi phí riêng
+        end note
+        
+        if (Cùng chi phí mỗi kỳ?) then (Có)
+            :Hiển thị trường "Chi phí mỗi kỳ";
+            :Người dùng nhập chi phí mỗi kỳ;
+        else (Không)
+            :Hiển thị thông báo "Sẽ nhập chi phí riêng cho từng kỳ";
+        endif
+        
+        :Người dùng nhập ngày bắt đầu định kỳ;
+        :Hệ thống tính toán tổng chi phí;
+        note right
+        **Tính toán:**
+        - Tổng chi phí = Chi phí mỗi kỳ × Số kỳ
+        - Validate chi phí > 0
+        - Validate ngày hợp lệ
+        end note
+    endif
+    
+    :Người dùng nhập thông tin timeline;
+    note right
+    **Timeline:**
+    - Ngày bắt đầu dự kiến
+    - Ngày kết thúc dự kiến
+    - Ngày bắt đầu thực tế
+    - Ngày kết thúc thực tế
+    end note
+    
+    :Người dùng liên kết với dự án/gói thầu/hợp đồng;
+    note right
+    **Liên kết:**
+    - Chọn dự án
+    - Chọn gói thầu
+    - Chọn hợp đồng
+    - Validate liên kết
+    end note
+    
+    :Người dùng upload tài liệu đính kèm;
+    note right
+    **Tài liệu đính kèm:**
+    - Hóa đơn
+    - Biên bản
+    - Hợp đồng
+    - Chứng từ khác
+    end note
+    
+    :Người dùng thiết lập người phê duyệt;
+    note right
+    **Người phê duyệt:**
+    - Chọn người phê duyệt
+    - Thiết lập quyền
+    - Gửi thông báo
+    end note
+    
+    :Hệ thống validate dữ liệu;
+    note right
+    **Validation:**
+    - Kiểm tra trường bắt buộc
+    - Validate định dạng
+    - Kiểm tra business rules
+    - Cross-field validation
+    end note
+    
+    if (Dữ liệu hợp lệ?) then (Không)
+        :Hiển thị thông báo lỗi;
+        :Yêu cầu người dùng sửa lỗi;
+        :Quay lại bước nhập liệu;
+    else (Có)
+        :Hệ thống tạo preview;
+        note right
+        **Preview:**
+        - Hiển thị thông tin tổng quan
+        - Hiển thị chi tiết chi phí
+        - Hiển thị timeline
+        - Hiển thị liên kết
+        end note
+        
+        :Người dùng xem preview;
+        
+        if (Người dùng hài lòng với preview?) then (Không)
+            :Người dùng chỉnh sửa thông tin;
+            :Quay lại bước nhập liệu;
+        else (Có)
+            :Người dùng chọn lưu hoặc lưu nháp;
+            
+            if (Lưu hoàn thành?) then (Có)
+                :Hệ thống lưu chi phí;
+                note right
+                **Lưu chi phí:**
+                - Lưu vào database
+                - Tạo version
+                - Ghi log hoạt động
+                - Cập nhật thống kê
+                end note
+                
+                :Hệ thống gửi thông báo cho người phê duyệt;
+                :Hiển thị thông báo tạo thành công;
+                
+                :Người dùng có thể tạo chi phí tiếp theo;
+                
+                if (Tạo chi phí tiếp theo?) then (Có)
+                    :Reset form;
+                    :Quay lại bước tạo chi phí mới;
+                else (Không)
+                    :Chuyển đến trang danh sách chi phí;
+                endif
+            else (Lưu nháp)
+                :Hệ thống lưu nháp;
+                note right
+                **Lưu nháp:**
+                - Lưu tạm thời
+                - Có thể chỉnh sửa sau
+                - Không gửi approval
+                end note
+                
+                :Hiển thị thông báo lưu nháp thành công;
+                :Chuyển đến trang danh sách chi phí;
+            endif
+        endif
+    endif
+endif
+
+stop
+
+@enduml

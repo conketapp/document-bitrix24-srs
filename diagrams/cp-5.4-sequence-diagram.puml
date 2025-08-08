@@ -1,0 +1,162 @@
+@startuml CP-5.4 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title CP-5.4: Xuất Dữ liệu Chi phí ra Excel - Sequence Diagram
+
+actor "Cán bộ\nQuản lý" as User
+participant "Giao diện\nQuản lý Chi phí" as UI
+participant "Export\nController" as Controller
+participant "Export\nService" as Service
+participant "Cost Item\nRepository" as Repository
+participant "Permission\nService" as PermissionService
+participant "Excel\nGenerator" as ExcelGenerator
+participant "Email\nService" as EmailService
+participant "Scheduler\nService" as SchedulerService
+participant "Database" as DB
+
+User -> UI: Truy cập trang quản lý chi phí
+UI -> Controller: GET /api/cost-items
+Controller -> Service: getCostItems()
+Service -> Repository: findAll()
+Repository -> DB: SELECT * FROM cost_items
+DB --> Repository: Cost items data
+Repository --> Service: Cost items list
+Service --> Controller: Cost items response
+Controller --> UI: Hiển thị danh sách chi phí
+
+User -> UI: Nhấn nút "Xuất Excel"
+UI -> Controller: GET /api/cost-items/export-options
+Controller -> Service: getExportOptions()
+Service --> Controller: Export options configuration
+Controller --> UI: Hiển thị form cấu hình xuất
+
+User -> UI: Cấu hình xuất Excel
+note right of User
+  - Loại xuất: Toàn bộ/Đã chọn/Đã lọc/Báo cáo
+  - Phạm vi dữ liệu: Thời gian, trạng thái, danh mục
+  - Cột xuất: Chọn các cột cần thiết
+  - Định dạng: .xlsx/.xls, có định dạng hay không
+end note
+
+UI -> Controller: POST /api/cost-items/export
+note right of UI
+{
+  "export_type": "filtered",
+  "filters": {
+    "date_from": "2024-01-01",
+    "date_to": "2024-12-31",
+    "status": "approved",
+    "category": "all"
+  },
+  "columns": ["cost_code", "cost_name", "total_amount", "status"],
+  "format": "xlsx",
+  "include_formatting": true,
+  "multiple_sheets": false
+}
+end note
+
+Controller -> Service: exportCostItems(exportData)
+Service -> Service: validateExportRequest(exportData)
+Service -> PermissionService: checkExportPermissions(userId)
+PermissionService -> DB: SELECT * FROM user_permissions WHERE user_id = ? AND permission = 'export'
+DB --> PermissionService: User export permissions
+PermissionService --> Service: Export permissions
+
+alt Có quyền xuất
+  Service -> Repository: getCostItemsForExport(exportData.filters)
+  Repository -> DB: SELECT * FROM cost_items WHERE filters
+  DB --> Repository: Cost items for export
+  Repository --> Service: Cost items data
+  
+  Service -> Service: processExportData(costItems, exportData.columns)
+  Service -> Service: formatDataForExcel(processedData)
+  
+  Service -> ExcelGenerator: createExcelWorkbook(exportData)
+  ExcelGenerator -> ExcelGenerator: createWorkbook()
+  ExcelGenerator -> ExcelGenerator: addWorksheet("Cost Items")
+  ExcelGenerator -> ExcelGenerator: addHeaders(exportData.columns)
+  ExcelGenerator -> ExcelGenerator: addData(formattedData)
+  
+  alt Có định dạng
+    ExcelGenerator -> ExcelGenerator: applyFormatting()
+    ExcelGenerator -> ExcelGenerator: setColumnWidths()
+    ExcelGenerator -> ExcelGenerator: addColors()
+  end
+  
+  alt Cần tổng hợp
+    Service -> Service: calculateTotals(costItems)
+    ExcelGenerator -> ExcelGenerator: addSummarySheet(totals)
+  end
+  
+  ExcelGenerator -> ExcelGenerator: generateFileName(exportData)
+  ExcelGenerator -> ExcelGenerator: saveWorkbook()
+  ExcelGenerator --> Service: Excel file generated
+  Service --> Controller: Excel file ready
+  Controller --> UI: Tải xuống file Excel
+  
+else Không có quyền xuất
+  Service --> Controller: Export permission denied
+  Controller --> UI: Hiển thị thông báo không có quyền
+end
+
+User -> UI: Gửi file qua email (tùy chọn)
+UI -> Controller: POST /api/cost-items/export/email
+note right of UI
+{
+  "recipients": ["manager@company.com"],
+  "subject": "Báo cáo chi phí",
+  "message": "Đính kèm file Excel báo cáo chi phí",
+  "excel_file": "file_data"
+}
+end note
+
+Controller -> EmailService: sendExcelEmail(emailData)
+EmailService -> EmailService: createEmailMessage(emailData)
+EmailService -> EmailService: attachExcelFile(excelFile)
+EmailService -> EmailService: sendEmail(recipients, emailMessage)
+EmailService --> Controller: Email sent successfully
+Controller --> UI: Thông báo gửi email thành công
+
+User -> UI: Lên lịch xuất tự động (tùy chọn)
+UI -> Controller: POST /api/cost-items/export/schedule
+note right of UI
+{
+  "schedule_type": "weekly",
+  "schedule_time": "09:00",
+  "schedule_day": "monday",
+  "recipients": ["manager@company.com"],
+  "export_config": {...}
+}
+end note
+
+Controller -> SchedulerService: scheduleExport(scheduleData)
+SchedulerService -> DB: INSERT INTO export_schedules (...)
+DB --> SchedulerService: Schedule created
+SchedulerService --> Controller: Export scheduled successfully
+Controller --> UI: Thông báo lên lịch thành công
+
+User -> UI: Xem lịch sử xuất (tùy chọn)
+UI -> Controller: GET /api/cost-items/export/history
+Controller -> Service: getExportHistory(userId)
+Service -> DB: SELECT * FROM export_logs WHERE user_id = ? ORDER BY created_at DESC
+DB --> Service: Export history
+Service --> Controller: Export history response
+Controller --> UI: Hiển thị lịch sử xuất
+
+@enduml

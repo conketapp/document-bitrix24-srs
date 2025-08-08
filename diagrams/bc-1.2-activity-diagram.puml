@@ -1,0 +1,220 @@
+@startuml BC-1.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title BC-1.2: Activity Diagram - Lựa chọn loại biểu đồ và định dạng hiển thị
+
+start
+
+:Người dùng truy cập trang tạo báo cáo;
+
+:Kiểm tra quyền tạo biểu đồ;
+
+if (Có quyền tạo biểu đồ?) then (Không)
+    :Hiển thị thông báo "Không có quyền tạo biểu đồ";
+    stop
+else (Có)
+    :Hiển thị giao diện Chart Builder;
+    
+    :Hệ thống phân tích dữ liệu;
+    note right
+    **Phân tích dữ liệu:**
+    - Xác định loại dữ liệu
+    - Phân tích cấu trúc dữ liệu
+    - Đề xuất loại biểu đồ phù hợp
+    - Kiểm tra tính khả thi
+    end note
+    
+    :Hệ thống gợi ý loại biểu đồ;
+    note right
+    **Gợi ý biểu đồ:**
+    - Biểu đồ cột cho so sánh
+    - Biểu đồ đường cho xu hướng
+    - Biểu đồ tròn cho tỷ lệ
+    - Biểu đồ vùng cho tích lũy
+    - Biểu đồ phân tán cho tương quan
+    end note
+    
+    :Người dùng chọn loại biểu đồ;
+    note right
+    **Các loại biểu đồ:**
+    - Biểu đồ cột (dọc/ngang)
+    - Biểu đồ đường
+    - Biểu đồ tròn
+    - Biểu đồ vùng
+    - Biểu đồ phân tán
+    - Biểu đồ bong bóng
+    - Biểu đồ nhiệt
+    - Biểu đồ Gantt
+    - Biểu đồ thác nước
+    - Biểu đồ phễu
+    end note
+    
+    :Hệ thống kiểm tra tính khả thi;
+    
+    if (Loại biểu đồ phù hợp với dữ liệu?) then (Không)
+        :Hiển thị cảnh báo không phù hợp;
+        :Đề xuất loại biểu đồ thay thế;
+        :Người dùng chọn lại loại biểu đồ;
+    else (Có)
+        :Tiếp tục tạo biểu đồ;
+    endif
+    
+    :Người dùng tùy chỉnh màu sắc;
+    note right
+    **Tùy chỉnh màu sắc:**
+    - Chọn bảng màu
+    - Tùy chỉnh màu từng phần
+    - Đảm bảo khả năng phân biệt
+    - Hỗ trợ người mù màu
+    end note
+    
+    :Người dùng tùy chỉnh font chữ;
+    note right
+    **Tùy chỉnh font:**
+    - Chọn font chữ
+    - Kích thước font
+    - Màu chữ
+    - Độ đậm nhạt
+    end note
+    
+    :Người dùng thiết lập tiêu đề biểu đồ;
+    note right
+    **Tiêu đề biểu đồ:**
+    - Nhập tiêu đề chính
+    - Nhập tiêu đề phụ
+    - Vị trí tiêu đề
+    - Định dạng tiêu đề
+    end note
+    
+    :Người dùng thiết lập nhãn trục;
+    note right
+    **Nhãn trục:**
+    - Nhãn trục X
+    - Nhãn trục Y
+    - Định dạng nhãn
+    - Góc xoay nhãn
+    end note
+    
+    :Người dùng thiết lập nhãn dữ liệu;
+    note right
+    **Nhãn dữ liệu:**
+    - Hiển thị giá trị
+    - Hiển thị phần trăm
+    - Vị trí nhãn
+    - Định dạng nhãn
+    end note
+    
+    :Người dùng thiết lập legend;
+    note right
+    **Legend:**
+    - Vị trí legend
+    - Hiển thị/ẩn legend
+    - Định dạng legend
+    - Tương tác legend
+    end note
+    
+    :Người dùng thiết lập grid lines;
+    note right
+    **Grid lines:**
+    - Hiển thị/ẩn grid
+    - Kiểu grid
+    - Màu grid
+    - Độ dày grid
+    end note
+    
+    :Người dùng thiết lập background;
+    note right
+    **Background:**
+    - Màu nền
+    - Hình nền
+    - Độ trong suốt
+    - Border
+    end note
+    
+    :Hệ thống tạo biểu đồ;
+    note right
+    **Tạo biểu đồ:**
+    - Vẽ biểu đồ theo cấu hình
+    - Áp dụng styling
+    - Thêm tương tác
+    - Tối ưu hóa hiệu suất
+    end note
+    
+    :Người dùng xem preview biểu đồ;
+    
+    if (Người dùng hài lòng với preview?) then (Không)
+        :Người dùng chỉnh sửa cấu hình;
+        :Quay lại bước tùy chỉnh;
+    else (Có)
+        :Người dùng thiết lập tương tác;
+        note right
+        **Tương tác:**
+        - Zoom in/out
+        - Pan navigation
+        - Drill-down
+        - Hover tooltips
+        - Click events
+        end note
+        
+        :Người dùng thiết lập animation;
+        note right
+        **Animation:**
+        - Hiệu ứng xuất hiện
+        - Hiệu ứng chuyển đổi
+        - Tốc độ animation
+        - Loại animation
+        end note
+        
+        :Người dùng thiết lập layout;
+        note right
+        **Layout:**
+        - Kích thước biểu đồ
+        - Vị trí biểu đồ
+        - Responsive design
+        - Print layout
+        end note
+        
+        :Người dùng có thể thêm nhiều biểu đồ;
+        
+        if (Thêm biểu đồ khác?) then (Có)
+            :Hiển thị danh sách biểu đồ;
+            :Người dùng chọn biểu đồ để thêm;
+            :Hệ thống tạo biểu đồ mới;
+            :Cập nhật layout tổng thể;
+        else (Không)
+            :Tiếp tục với biểu đồ hiện tại;
+        endif
+        
+        :Người dùng có thể xuất biểu đồ;
+        
+        if (Xuất biểu đồ?) then (Có)
+            :Chọn định dạng xuất (PNG, JPG, SVG);
+            :Chọn kích thước xuất;
+            :Hệ thống tạo file ảnh;
+            :Cung cấp link tải xuống;
+        else (Không)
+            :Tiếp tục sử dụng biểu đồ;
+        endif
+        
+        :Người dùng có thể lưu template biểu đồ;
+        
+        if (Lưu template?) then (Có)
+            :Nhập tên template;
+            :Chọn quyền chia sẻ;
+            :Lưu template vào database;
+            :Hiển thị thông báo lưu thành công;
+        else (Không)
+            :Tiếp tục sử dụng biểu đồ;
+        endif
+        
+        :Hệ thống tích hợp biểu đồ vào báo cáo;
+        :Cập nhật báo cáo với biểu đồ mới;
+        :Lưu cấu hình biểu đồ;
+        :Ghi log hoạt động tạo biểu đồ;
+    endif
+endif
+
+stop
+
+@enduml

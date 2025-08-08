@@ -1,0 +1,53 @@
+@startuml DMDA-1.3 Sequence Diagram
+
+title DMDA-1.3: Sequence Diagram - Mã Dự án Tự sinh theo Logic
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Bitrix24 API" as B24
+
+U -> F: Truy cập trang tạo dự án mới
+F -> F: Hiển thị form tạo dự án với đầy đủ trường
+
+U -> F: Nhập thông tin dự án
+note right
+  Thông tin dự án đầy đủ
+  (chi tiết trong tài liệu chức năng tạo dự án)
+end note
+
+U -> F: Submit form tạo dự án
+F -> B: POST /api/projects (không có projectCode)
+
+B -> B: Validate thông tin dự án
+
+B -> B: Tạo projectCode tự động
+note right
+  Format: Năm-Phòng-Loại-STT
+  Ví dụ: 2024-IT-INV-001
+end note
+
+B -> D: INSERT projects với đầy đủ thông tin
+D -> B: Confirm insert và trả về project data
+
+B -> B24: Sync project data với Bitrix24
+note right
+  Mapping tất cả trường thông tin
+end note
+B24 -> B: Confirm sync
+
+B -> F: Response với project data bao gồm projectCode
+F -> F: Hiển thị thông báo thành công
+
+F -> F: Redirect đến trang chi tiết dự án
+F -> B: GET /api/projects/{id}
+B -> D: Query project details
+D -> B: Trả về project details với đầy đủ thông tin
+B -> F: Response với project details
+F -> F: Hiển thị dự án với projectCode và đầy đủ thông tin
+
+U -> F: Xem dự án với projectCode
+F -> F: Hiển thị projectCode và tất cả thông tin dự án
+
+@enduml

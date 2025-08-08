@@ -1,0 +1,155 @@
+@startuml CP-2.1 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title CP-2.1: Chỉnh sửa thông tin khoản mục chi phí - Sequence Diagram
+
+actor "Cán bộ\nChi phí" as User
+participant "Giao diện\nQuản lý Chi phí" as UI
+participant "Cost Item\nController" as Controller
+participant "Cost Item\nService" as Service
+participant "Edit Permission\nService" as PermissionService
+participant "Cost Item\nRepository" as Repository
+participant "Change History\nService" as HistoryService
+participant "Approval\nService" as ApprovalService
+participant "Database" as DB
+
+User -> UI: Truy cập trang quản lý chi phí
+UI -> Controller: GET /api/cost-items
+Controller -> Service: getCostItems()
+Service -> Repository: findAll()
+Repository -> DB: SELECT * FROM cost_items
+DB --> Repository: Cost items data
+Repository --> Service: Cost items list
+Service --> Controller: Cost items response
+Controller --> UI: Hiển thị danh sách chi phí
+
+User -> UI: Chọn khoản mục chi phí cần chỉnh sửa
+UI -> Controller: GET /api/cost-items/{id}
+Controller -> Service: getCostItemById(id)
+Service -> Repository: findById(id)
+Repository -> DB: SELECT * FROM cost_items WHERE id = ?
+DB --> Repository: Cost item data
+Repository --> Service: Cost item details
+Service --> Controller: Cost item response
+Controller --> UI: Hiển thị chi tiết chi phí
+
+User -> UI: Nhấn nút "Chỉnh sửa"
+UI -> Controller: GET /api/cost-items/{id}/edit
+Controller -> Service: getCostItemForEdit(id)
+Service -> PermissionService: checkEditPermissions(userId, costItemId)
+PermissionService -> DB: SELECT * FROM cost_edit_permissions WHERE user_role = ?
+DB --> PermissionService: Edit permissions
+PermissionService --> Service: User permissions
+Service --> Controller: Cost item with edit permissions
+Controller --> UI: Hiển thị form chỉnh sửa
+
+User -> UI: Chỉnh sửa thông tin chi phí
+note right of User
+  - Tên chi phí
+  - Mô tả chi phí
+  - Danh mục chi phí
+  - Tổng chi phí
+  - Số tiền VAT
+  - Ngày bắt đầu/kết thúc
+  - Dự án liên quan
+  - Nhà cung cấp
+  - Ghi chú
+end note
+
+UI -> Controller: PUT /api/cost-items/{id}/edit
+note right of UI
+{
+  "cost_name": "Chi phí thiết bị văn phòng - Cập nhật",
+  "cost_description": "Mua sắm thiết bị văn phòng cho dự án - Phiên bản mới",
+  "total_amount": 55000000,
+  "vat_amount": 5500000,
+  "planned_start_date": "2024-01-20",
+  "planned_end_date": "2024-02-20",
+  "supplier_name": "Công ty ABC - Chi nhánh mới",
+  "priority": "high",
+  "notes": "Cập nhật thông tin chi phí theo yêu cầu mới",
+  "change_reason": "Cập nhật theo yêu cầu của ban quản lý"
+}
+end note
+
+Controller -> Service: updateCostItem(id, updateData)
+Service -> Service: validateUpdateData(updateData)
+Service -> Service: checkBusinessRules(updateData)
+
+alt Dữ liệu hợp lệ
+  Service -> Service: categorizeChanges(updateData)
+  
+  Service -> HistoryService: logChanges(costItemId, oldData, newData)
+  HistoryService -> DB: INSERT INTO cost_item_changes (...)
+  DB --> HistoryService: Change logged
+  HistoryService --> Service: Changes logged
+  
+  Service -> Repository: updateCostItem(id, updateData)
+  Repository -> DB: UPDATE cost_items SET ... WHERE id = ?
+  DB --> Repository: Cost item updated
+  Repository --> Service: Cost item updated
+  
+  Service -> Service: checkApprovalRequired(updateData)
+  
+  alt Cần phê duyệt
+    Service -> ApprovalService: createApprovalRequest(costItemId, updateData)
+    ApprovalService -> DB: INSERT INTO approval_requests (...)
+    DB --> ApprovalService: Approval request created
+    ApprovalService --> Service: Approval request created
+    
+    Service -> Service: updateStatus("pending_approval")
+  else Không cần phê duyệt
+    Service -> Service: updateStatus("updated")
+  end
+  
+  Service --> Controller: Update successful
+  Controller --> UI: Thông báo cập nhật thành công
+  
+  UI -> Controller: GET /api/cost-items/{id}
+  Controller -> Service: getCostItemById(id)
+  Service -> Repository: findById(id)
+  Repository -> DB: SELECT * FROM cost_items WHERE id = ?
+  DB --> Repository: Updated cost item data
+  Repository --> Service: Updated cost item details
+  Service --> Controller: Updated cost item response
+  Controller --> UI: Cập nhật hiển thị chi phí
+  
+else Dữ liệu không hợp lệ
+  Service --> Controller: Validation errors
+  Controller --> UI: Hiển thị lỗi validation
+end
+
+User -> UI: Xem lịch sử thay đổi (tùy chọn)
+UI -> Controller: GET /api/cost-items/{id}/edit-history
+Controller -> HistoryService: getCostItemHistory(id)
+HistoryService -> DB: SELECT * FROM cost_item_changes WHERE cost_item_id = ? ORDER BY changed_at DESC
+DB --> HistoryService: Change history data
+HistoryService --> Controller: Change history response
+Controller --> UI: Hiển thị lịch sử thay đổi
+
+User -> UI: Xuất báo cáo thay đổi (tùy chọn)
+UI -> Controller: POST /api/cost-items/{id}/edit-history/export
+Controller -> HistoryService: exportChangeHistory(id, format)
+HistoryService -> DB: SELECT * FROM cost_item_changes WHERE cost_item_id = ?
+DB --> HistoryService: Change history for export
+HistoryService -> HistoryService: generateReport(historyData, format)
+HistoryService --> Controller: Report file
+Controller --> UI: Tải xuống báo cáo thay đổi
+
+@enduml

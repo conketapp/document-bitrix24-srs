@@ -1,0 +1,166 @@
+@startuml HD-4.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title HD-4.1: Activity Diagram - Hiển thị Tổng giá trị Hợp đồng, Lũy kế Chi phí Thực hiện và Giá trị Chưa Hoàn thành
+
+start
+
+:Người dùng truy cập trang chi tiết hợp đồng;
+
+:Kiểm tra quyền xem thông tin tài chính;
+
+if (Có quyền xem thông tin tài chính?) then (Không)
+    :Hiển thị thông báo "Không có quyền xem thông tin tài chính";
+    stop
+else (Có)
+    :Hiển thị dashboard tài chính hợp đồng;
+    
+    :Hệ thống tính toán các chỉ số tài chính;
+    note right
+    **Tính toán các chỉ số:**
+    - Tổng giá trị hợp đồng
+    - Giá trị thực hiện lũy kế
+    - Giá trị nghiệm thu lũy kế
+    - Giá trị giải ngân lũy kế
+    - Giá trị chưa hoàn thành
+    end note
+    
+    :Lấy dữ liệu từ Module Chi phí;
+    
+    :Tính toán giá trị thực hiện lũy kế;
+    note right
+    **Tính toán giá trị thực hiện:**
+    - Lọc chi phí có trạng thái "Giá trị đã thực hiện"
+    - Tổng hợp theo hợp đồng
+    - Cập nhật real-time
+    end note
+    
+    :Tính toán giá trị nghiệm thu lũy kế;
+    note right
+    **Tính toán giá trị nghiệm thu:**
+    - Lọc chi phí có trạng thái "Giá trị đã nghiệm thu"
+    - Tổng hợp theo hợp đồng
+    - Cập nhật real-time
+    end note
+    
+    :Tính toán giá trị giải ngân lũy kế;
+    note right
+    **Tính toán giá trị giải ngân:**
+    - Lọc chi phí có trạng thái "Đã thanh toán đầy đủ"
+    - Tổng hợp theo hợp đồng
+    - Cập nhật real-time
+    end note
+    
+    :Tính toán giá trị chưa hoàn thành;
+    note right
+    **Công thức tính:**
+    Giá trị chưa hoàn thành = 
+    Tổng giá trị hợp đồng - Giá trị giải ngân lũy kế
+    end note
+    
+    :Tính toán tỷ lệ hoàn thành;
+    note right
+    **Công thức tính:**
+    Tỷ lệ hoàn thành = 
+    (Giá trị giải ngân lũy kế / Tổng giá trị hợp đồng) × 100%
+    end note
+    
+    :Hiển thị các chỉ số tài chính;
+    note right
+    **Hiển thị:**
+    - Tổng giá trị hợp đồng
+    - Giá trị thực hiện lũy kế
+    - Giá trị nghiệm thu lũy kế
+    - Giá trị giải ngân lũy kế
+    - Giá trị chưa hoàn thành
+    - Tỷ lệ hoàn thành
+    end note
+    
+    :Hiển thị biểu đồ trực quan;
+    note right
+    **Biểu đồ:**
+    - Biểu đồ cột so sánh
+    - Biểu đồ tròn tỷ lệ
+    - Biểu đồ đường tiến độ
+    - Biểu đồ thanh ngang
+    end note
+    
+    :Kiểm tra ngưỡng cảnh báo;
+    
+    if (Vượt 90% ngân sách?) then (Có)
+        :Hiển thị cảnh báo "Sắp hết ngân sách";
+        :Đổi màu chỉ số thành màu vàng;
+    else (Không)
+        :Tiếp tục hiển thị bình thường;
+    endif
+    
+    if (Vượt 100% ngân sách?) then (Có)
+        :Hiển thị cảnh báo "Vượt ngân sách";
+        :Đổi màu chỉ số thành màu đỏ;
+        :Gửi thông báo cho quản lý;
+    else (Không)
+        :Tiếp tục hiển thị bình thường;
+    endif
+    
+    :Người dùng có thể xem chi tiết;
+    
+    if (Xem chi tiết khoản mục?) then (Có)
+        :Hiển thị danh sách chi tiết khoản mục;
+        :Cho phép lọc theo trạng thái;
+        :Cho phép tìm kiếm khoản mục;
+        :Hiển thị thông tin chi tiết từng khoản mục;
+    else (Không)
+        :Tiếp tục hiển thị tổng quan;
+    endif
+    
+    :Người dùng có thể xuất báo cáo;
+    
+    if (Xuất báo cáo tài chính?) then (Có)
+        :Chọn định dạng xuất (Excel, PDF);
+        :Chọn thời gian báo cáo;
+        :Tạo báo cáo tài chính;
+        :Cung cấp file báo cáo cho người dùng;
+    else (Không)
+        :Tiếp tục xem dashboard;
+    endif
+    
+    :Người dùng có thể so sánh với kế hoạch;
+    
+    if (So sánh với kế hoạch?) then (Có)
+        :Hiển thị biểu đồ so sánh;
+        :Hiển thị chênh lệch thực tế vs kế hoạch;
+        :Hiển thị phân tích nguyên nhân chênh lệch;
+    else (Không)
+        :Tiếp tục xem dashboard;
+    endif
+    
+    :Người dùng có thể xem lịch sử thay đổi;
+    
+    if (Xem lịch sử thay đổi?) then (Có)
+        :Hiển thị lịch sử thay đổi các chỉ số;
+        :Hiển thị ngày thay đổi và người thực hiện;
+        :Hiển thị giá trị trước và sau thay đổi;
+    else (Không)
+        :Tiếp tục xem dashboard;
+    endif
+    
+    :Người dùng có thể thiết lập ngưỡng cảnh báo;
+    
+    if (Thiết lập ngưỡng cảnh báo?) then (Có)
+        :Hiển thị form thiết lập ngưỡng;
+        :Cho phép nhập ngưỡng cảnh báo;
+        :Lưu cài đặt ngưỡng cảnh báo;
+        :Cập nhật hệ thống cảnh báo;
+    else (Không)
+        :Tiếp tục xem dashboard;
+    endif
+    
+    :Hệ thống cập nhật real-time;
+    :Lưu lịch sử thay đổi các chỉ số;
+    :Gửi thông báo nếu có thay đổi quan trọng;
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,134 @@
+@startuml DMDA-4.3 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-4.3: Sequence Diagram - Xuất Dữ liệu Danh mục Dự án ra Excel
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Export Service" as ES
+participant "File Storage" as FS
+participant "Log Service" as L
+
+== Khởi tạo Trang Danh mục Dự án ==
+
+U -> F: Truy cập trang danh mục dự án
+F -> B: GET /api/projects
+B -> D: Query projects data
+D --> B: Projects data
+B --> F: Projects list
+F --> U: Hiển thị danh sách dự án
+
+== Áp dụng Bộ lọc ==
+
+U -> F: Áp dụng bộ lọc
+F -> B: GET /api/projects/filter
+note right: { filters: object, keyword?: string }
+
+B -> D: Query filtered projects
+D --> B: Filtered projects data
+B --> F: Filtered projects
+F --> U: Cập nhật hiển thị danh sách
+
+== Xuất Dữ liệu ==
+
+U -> F: Nhấn "Xuất Excel"
+F -> B: GET /api/export/permissions
+B -> D: Check export permissions
+D --> B: Permission result
+
+alt Không có quyền xuất
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xuất"
+else Có quyền xuất
+    B --> F: Export permissions granted
+    F --> U: Hiển thị form tùy chọn xuất
+    
+    U -> F: Chọn tùy chọn xuất
+    F -> B: POST /api/export/projects
+    note right: { format: string, fields: string[], filters?: object, filename?: string }
+    
+    B -> B: Validate export request
+    B -> D: Query projects for export
+    D --> B: Projects data for export
+    
+    B -> ES: Create export job
+    ES -> ES: Process export data
+    ES -> ES: Format data for Excel
+    ES -> FS: Save export file
+    FS --> ES: File saved successfully
+    ES -> D: Insert export_history
+    D --> ES: Export record created
+    ES -> L: Log export action
+    L --> ES: Export logged
+    ES --> B: Export completed
+    B --> F: Export file URL
+    F --> U: Hiển thị thông báo xuất thành công
+    F --> U: Cung cấp link tải xuống
+end
+
+== Xem Lịch sử Xuất ==
+
+U -> F: Nhấn "Xem Lịch sử Xuất"
+F -> B: GET /api/export/history
+B -> D: Query export history
+D --> B: Export history data
+B --> F: Export history
+F --> U: Hiển thị lịch sử xuất
+
+== Tải xuống File ==
+
+U -> F: Nhấn "Tải xuống" từ lịch sử
+F -> B: GET /api/export/download/{export_id}
+B -> D: Query export record
+D --> B: Export record data
+B -> FS: Get export file
+FS --> B: File data
+B --> F: File download
+F --> U: Cung cấp file cho người dùng
+
+== Quản lý Template Xuất ==
+
+U -> F: Truy cập trang quản lý template
+F -> B: GET /api/export/templates
+B -> D: Query export templates
+D --> B: Templates data
+B --> F: Templates list
+F --> U: Hiển thị danh sách template
+
+U -> F: Tạo template mới
+F -> B: POST /api/export/templates
+note right: { name: string, fields_config: object, format_config: object }
+
+B -> D: Insert export_templates
+D --> B: Template created
+B --> F: Template created successfully
+F --> U: Hiển thị thông báo tạo template thành công
+
+== Progress Tracking ==
+
+F -> B: GET /api/export/status/{job_id}
+B -> ES: Get export job status
+ES --> B: Job status
+B --> F: Export progress
+F --> U: Cập nhật progress indicator
+
+== Xử lý Lỗi ==
+
+alt Lỗi quyền xuất
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xuất"
+else Lỗi validation
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị lỗi validation
+else Lỗi tạo file
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi tạo file xuất"
+else Lỗi storage
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi lưu file"
+end
+
+@enduml

@@ -1,0 +1,205 @@
+@startuml BC-1.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title BC-1.1: Activity Diagram - Tạo báo cáo tổng hợp theo các tiêu chí khác nhau
+
+start
+
+:Người dùng truy cập trang tạo báo cáo;
+
+:Kiểm tra quyền tạo báo cáo;
+
+if (Có quyền tạo báo cáo?) then (Không)
+    :Hiển thị thông báo "Không có quyền tạo báo cáo";
+    stop
+else (Có)
+    :Hiển thị giao diện Report Builder;
+    
+    :Người dùng chọn loại báo cáo;
+    note right
+    **Các loại báo cáo:**
+    - Báo cáo dự án
+    - Báo cáo hợp đồng
+    - Báo cáo tài sản
+    - Báo cáo tài chính
+    - Báo cáo tổng hợp
+    end note
+    
+    :Người dùng chọn nguồn dữ liệu;
+    note right
+    **Nguồn dữ liệu:**
+    - Dữ liệu dự án
+    - Dữ liệu hợp đồng
+    - Dữ liệu tài sản
+    - Dữ liệu chi phí
+    - Dữ liệu phòng ban
+    - Dữ liệu theo thời gian
+    end note
+    
+    :Người dùng chọn các trường dữ liệu;
+    note right
+    **Các trường dữ liệu:**
+    - Thông tin cơ bản
+    - Thông tin tài chính
+    - Thông tin thời gian
+    - Thông tin người dùng
+    - Thông tin trạng thái
+    end note
+    
+    :Người dùng thiết lập tiêu chí lọc;
+    note right
+    **Tiêu chí lọc:**
+    - Lọc theo dự án
+    - Lọc theo gói thầu
+    - Lọc theo hợp đồng
+    - Lọc theo thời gian
+    - Lọc theo phòng ban
+    - Lọc theo loại chi phí
+    end note
+    
+    :Người dùng thiết lập cách nhóm dữ liệu;
+    note right
+    **Cách nhóm:**
+    - Nhóm theo dự án
+    - Nhóm theo loại chi phí
+    - Nhóm theo thời gian
+    - Nhóm theo phòng ban
+    - Nhóm theo trạng thái
+    end note
+    
+    :Người dùng thiết lập sắp xếp;
+    note right
+    **Tùy chọn sắp xếp:**
+    - Sắp xếp theo tên
+    - Sắp xếp theo ngày
+    - Sắp xếp theo giá trị
+    - Sắp xếp theo trạng thái
+    end note
+    
+    :Hệ thống xác thực cấu hình báo cáo;
+    
+    if (Cấu hình hợp lệ?) then (Không)
+        :Hiển thị thông báo lỗi;
+        :Yêu cầu người dùng sửa cấu hình;
+    else (Có)
+        :Hệ thống thu thập dữ liệu;
+        note right
+        **Thu thập dữ liệu:**
+        - Lấy dữ liệu từ các nguồn
+        - Áp dụng các bộ lọc
+        - Xử lý dữ liệu theo nhóm
+        - Tính toán các chỉ số
+        end note
+        
+        :Hệ thống xử lý dữ liệu;
+        note right
+        **Xử lý dữ liệu:**
+        - Tổng hợp dữ liệu
+        - Tính toán thống kê
+        - Tạo biểu đồ
+        - Format dữ liệu
+        end note
+        
+        :Hệ thống tạo preview báo cáo;
+        note right
+        **Preview báo cáo:**
+        - Hiển thị dữ liệu tổng quan
+        - Hiển thị biểu đồ
+        - Hiển thị thống kê
+        - Hiển thị định dạng
+        end note
+        
+        :Người dùng xem preview;
+        
+        if (Người dùng hài lòng với preview?) then (Không)
+            :Người dùng chỉnh sửa cấu hình;
+            :Quay lại bước thiết lập;
+        else (Có)
+            :Người dùng chọn định dạng xuất;
+            note right
+            **Định dạng xuất:**
+            - Excel (.xlsx)
+            - PDF (.pdf)
+            - CSV (.csv)
+            - HTML (.html)
+            end note
+            
+            :Hệ thống tạo báo cáo;
+            note right
+            **Tạo báo cáo:**
+            - Tạo file theo định dạng
+            - Áp dụng template
+            - Thêm biểu đồ
+            - Format styling
+            end note
+            
+            :Hệ thống lưu báo cáo;
+            note right
+            **Lưu báo cáo:**
+            - Lưu vào database
+            - Tạo link download
+            - Ghi log hoạt động
+            - Cập nhật thống kê
+            end note
+            
+            :Hiển thị thông báo tạo thành công;
+            
+            :Người dùng chọn cách nhận báo cáo;
+            
+            if (Tải xuống ngay?) then (Có)
+                :Cung cấp link tải xuống;
+                :Người dùng tải file;
+            else (Gửi email)
+                :Hiển thị form nhập email;
+                :Người dùng nhập email;
+                :Hệ thống gửi báo cáo qua email;
+                :Hiển thị thông báo gửi thành công;
+            endif
+            
+            :Người dùng có thể lưu template;
+            
+            if (Lưu template?) then (Có)
+                :Nhập tên template;
+                :Chọn quyền chia sẻ (riêng tư/công khai);
+                :Lưu template vào database;
+                :Hiển thị thông báo lưu thành công;
+            else (Không)
+                :Tiếp tục sử dụng báo cáo;
+            endif
+            
+            :Người dùng có thể lên lịch gửi tự động;
+            
+            if (Lên lịch gửi tự động?) then (Có)
+                :Hiển thị form lên lịch;
+                :Người dùng chọn tần suất gửi;
+                :Người dùng chọn thời gian gửi;
+                :Người dùng chọn email nhận;
+                :Hệ thống lưu lịch gửi;
+                :Hiển thị thông báo lên lịch thành công;
+            else (Không)
+                :Tiếp tục gửi thủ công;
+            endif
+            
+            :Người dùng có thể chia sẻ báo cáo;
+            
+            if (Chia sẻ báo cáo?) then (Có)
+                :Hiển thị form chia sẻ;
+                :Người dùng chọn người nhận;
+                :Người dùng thiết lập quyền truy cập;
+                :Hệ thống gửi thông báo chia sẻ;
+                :Hiển thị thông báo chia sẻ thành công;
+            else (Không)
+                :Tiếp tục sử dụng báo cáo;
+            endif
+        endif
+    endif
+    
+    :Hệ thống ghi log hoạt động;
+    :Cập nhật thống kê báo cáo;
+    :Dọn dẹp dữ liệu tạm;
+endif
+
+stop
+
+@enduml

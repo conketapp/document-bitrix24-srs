@@ -1,0 +1,59 @@
+@startuml DMDA-1.2 Activity Diagram
+
+title DMDA-1.2: Activity Diagram - Tự động Phân biệt Dự án Chuyển tiếp và Dự án Mới
+
+start
+
+:User truy cập danh mục dự án;
+
+:User chọn năm và loại dự án;
+
+:System gọi API để lấy danh sách dự án;
+
+:System tự động phân loại từng dự án;
+note right
+  Logic phân loại:
+  - Dự án Mới: start_date.year = current_year
+  - Dự án Chuyển tiếp: start_date.year < current_year 
+    AND status ≠ "completed"
+end note
+
+if (Dự án có start_date?) then (có)
+  if (Năm bắt đầu = năm hiện tại?) then (có)
+    :Gán project_type = "new";
+    :Hiển thị badge "Dự án Mới";
+  else (không)
+    if (Trạng thái = "completed"?) then (có)
+      :Gán project_type = "new";
+      :Hiển thị badge "Dự án Mới";
+    else (không)
+      :Gán project_type = "carryover";
+      :Hiển thị badge "Dự án Chuyển tiếp";
+    endif
+  endif
+else (không)
+  :Gán project_type = "new";
+  :Hiển thị badge "Dự án Mới";
+endif
+
+:System lưu project_type vào database;
+
+:System sync với Bitrix24 (nếu có);
+
+:System hiển thị danh sách dự án với badge;
+
+:User có thể filter theo loại dự án;
+note right
+  Filter options:
+  - Tất cả
+  - Dự án Mới
+  - Dự án Chuyển tiếp
+end note
+
+:User có thể xem chi tiết dự án;
+
+:User hover để xem tooltip giải thích;
+
+stop
+
+@enduml

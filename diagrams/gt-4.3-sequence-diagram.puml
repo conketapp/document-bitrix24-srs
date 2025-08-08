@@ -1,0 +1,175 @@
+@startuml GT-4.3 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title GT-4.3: Sequence Diagram - Xuất Dữ liệu Gói thầu ra Excel
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Excel Generator" as E
+participant "File Storage" as FS
+participant "Email Service" as ES
+participant "Background Processor" as BP
+
+== Khởi tạo Xuất ==
+
+U -> F: Truy cập trang danh sách gói thầu
+F -> B: GET /api/tender-packages/export-options
+B -> D: Query export configurations
+D --> B: Export options
+B --> F: Export interface data
+F --> U: Hiển thị nút "Xuất Excel"
+
+U -> F: Nhấn "Xuất Excel"
+F -> B: GET /api/tender-packages/export-modal
+B --> F: Export modal data
+F --> U: Hiển thị modal tùy chọn xuất
+
+== Thiết lập Tùy chọn Xuất ==
+
+U -> F: Chọn loại xuất (toàn bộ/bộ lọc)
+F -> B: POST /api/tender-packages/export-setup
+note right: { export_type: string, filters: object }
+
+B -> B: Validate export parameters
+B -> D: Count records to export
+D --> B: Record count
+
+alt Record count > 50,000
+    B --> F: 400 Bad Request - Too many records
+    F --> U: Hiển thị cảnh báo giới hạn
+else Record count OK
+    B --> F: Export setup valid
+    F --> U: Hiển thị tùy chọn cột
+end
+
+U -> F: Chọn cột cần xuất
+F -> B: POST /api/tender-packages/export-columns
+note right: { selected_columns: string[] }
+
+B -> B: Validate column selection
+B --> F: Column selection confirmed
+F --> U: Hiển thị tùy chọn định dạng
+
+== Tạo File Excel ==
+
+U -> F: Nhấn "Bắt đầu xuất"
+F -> B: POST /api/tender-packages/export
+note right: { export_config: object }
+
+B -> B: Check file size estimation
+B -> B: Determine processing method
+
+alt Estimated file size > 100MB
+    B -> BP: Create background export job
+    BP -> BP: Process export in background
+    BP -> D: Query tender packages data
+    D --> BP: Export data
+    BP -> E: Generate Excel file
+    E --> BP: Excel file generated
+    BP -> FS: Store Excel file
+    FS --> BP: File stored
+    BP -> ES: Send completion email
+    ES --> BP: Email sent
+    BP --> B: Background job completed
+    B --> F: Export job created
+    F --> U: Hiển thị thông báo "Xuất đang xử lý"
+else File size OK
+    B -> D: Query tender packages data
+    D --> B: Export data
+    B -> E: Generate Excel file
+    E -> E: Apply formatting và styling
+    E -> E: Create multiple sheets
+    E -> E: Add formulas và calculations
+    E -> E: Generate charts và graphs
+    E --> B: Excel file generated
+    B -> FS: Store Excel file
+    FS --> B: File stored
+    B --> F: Excel file ready
+    F --> U: Hiển thị link tải xuống
+end
+
+== Tải xuống File ==
+
+U -> F: Nhấn "Tải xuống"
+F -> B: GET /api/tender-packages/export/{export_id}/download
+B -> FS: Get Excel file
+FS --> B: File content
+B -> D: Log download action
+D --> B: Download logged
+B --> F: File download response
+F --> U: Tải xuống file Excel
+
+== Lên lịch Xuất ==
+
+U -> F: Nhấn "Lên lịch xuất"
+F -> B: POST /api/tender-packages/scheduled-export
+note right: { schedule: object, email: string }
+
+B -> D: Insert scheduled_export
+D --> B: Scheduled export created
+B -> ES: Schedule email notification
+ES --> B: Email scheduled
+B --> F: Scheduled export created
+F --> U: Hiển thị thông báo "Đã lên lịch xuất"
+
+== Quản lý Xuất ==
+
+U -> F: Xem lịch sử xuất
+F -> B: GET /api/tender-packages/export-history
+B -> D: Query export_history
+D --> B: Export history data
+B --> F: Export history
+F --> U: Hiển thị lịch sử xuất
+
+U -> F: Tải lại file đã xuất
+F -> B: GET /api/tender-packages/export/{export_id}/download
+B -> FS: Get stored file
+FS --> B: File content
+B --> F: File download response
+F --> U: Tải xuống file
+
+== Background Processing ==
+
+BP -> B: Export job completed
+B -> D: Update export status
+D --> B: Status updated
+B -> ES: Send completion notification
+ES --> B: Notification sent
+B -> FS: Cleanup temporary files
+FS --> B: Cleanup completed
+
+== Export Templates ==
+
+U -> F: Lưu template xuất
+F -> B: POST /api/tender-packages/export-templates
+note right: { template_name: string, config: object }
+
+B -> D: Insert export_template
+D --> B: Template saved
+B --> F: Template saved successfully
+F --> U: Hiển thị thông báo "Đã lưu template"
+
+U -> F: Sử dụng template xuất
+F -> B: GET /api/tender-packages/export-templates
+B -> D: Query export_templates
+D --> B: Templates data
+B --> F: Templates list
+F --> U: Hiển thị danh sách template
+
+== Xử lý Lỗi ==
+
+alt Lỗi tạo file Excel
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+else Lỗi lưu file
+    B --> F: 500 File Storage Error
+    F --> U: Hiển thị thông báo lỗi
+else Lỗi gửi email
+    B --> F: 500 Email Service Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+@enduml

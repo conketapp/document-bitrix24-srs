@@ -1,0 +1,74 @@
+@startuml GT-2.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title GT-2.1: Activity Diagram - Chỉnh sửa thông tin Gói thầu
+
+start
+
+:Người dùng truy cập trang chi tiết gói thầu;
+
+:Kiểm tra quyền chỉnh sửa gói thầu;
+
+if (Có quyền chỉnh sửa?) then (Không)
+    :Hiển thị thông báo "Không có quyền chỉnh sửa";
+    stop
+else (Có)
+    :Hiển thị nút "Chỉnh sửa";
+    :Người dùng nhấn "Chỉnh sửa";
+    :Mở form chỉnh sửa với thông tin hiện tại;
+    
+    :Người dùng chỉnh sửa thông tin;
+    note right
+    **Các trường có thể chỉnh sửa:**
+    - Tên gói thầu
+    - Mô tả
+    - Dự án liên quan
+    - Hình thức lựa chọn nhà thầu
+    - Giá trị dự kiến
+    - Thời gian bắt đầu/kết thúc
+    - Mã TBMT
+    - Số lượng nhà thầu tham gia
+    - Quyết định phê duyệt HSMT
+    - Quyết định phê duyệt KQLCNT
+    - Giá trúng thầu
+    - Nhà thầu trúng thầu
+    - Trạng thái gói thầu
+    - Ghi chú
+    end note
+    
+    :Validation real-time;
+    
+    if (Thông tin hợp lệ?) then (Không)
+        :Hiển thị lỗi validation;
+        :Yêu cầu sửa lỗi;
+    else (OK)
+        :Kiểm tra thay đổi quan trọng;
+        
+        if (Có thay đổi quan trọng?) then (Có)
+            :Hiển thị cảnh báo thay đổi quan trọng;
+            :Yêu cầu xác nhận thay đổi;
+            
+            if (Xác nhận thay đổi?) then (Có)
+                :Lưu thay đổi vào database;
+                :Tạo log thay đổi;
+                :Gửi thông báo cho stakeholders;
+                :Cập nhật trạng thái gói thầu;
+            else (Không)
+                :Hủy thay đổi;
+                :Quay lại form chỉnh sửa;
+            endif
+        else (Không)
+            :Lưu thay đổi vào database;
+            :Tạo log thay đổi;
+            :Cập nhật trạng thái gói thầu;
+        endif
+        
+        :Hiển thị thông báo thành công;
+        :Cập nhật giao diện;
+    endif
+endif
+
+stop
+
+@enduml

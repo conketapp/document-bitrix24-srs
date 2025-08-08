@@ -1,0 +1,136 @@
+@startuml DMDA-4.2 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-4.2: Sequence Diagram - Chế độ Xem Kanban cho Danh mục Dự án
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Log Service" as L
+participant "Notification Service" as N
+
+== Khởi tạo Bảng Kanban ==
+
+U -> F: Truy cập trang danh mục dự án
+F -> B: GET /api/projects
+B -> D: Query all projects
+D --> B: Projects data
+B --> F: Projects list
+F --> U: Hiển thị chế độ xem danh sách
+
+U -> F: Nhấn "Chế độ xem Kanban"
+F -> B: GET /api/projects/kanban-view
+B -> D: Query projects grouped by status
+D --> B: Projects grouped by status
+B -> B: Group projects into columns
+B --> F: Kanban data structure
+F --> U: Hiển thị bảng Kanban với các cột
+
+== Kéo thả Thẻ Dự án ==
+
+U -> F: Kéo thẻ dự án
+F -> F: Hiển thị preview thẻ đang kéo
+F -> F: Hiển thị vùng thả hợp lệ
+
+U -> F: Thả thẻ vào cột mới
+F -> B: PUT /api/projects/{id}/status
+note right: { new_status: string, drag_source: string }
+
+B -> B: Validate status change
+B -> D: Check project permissions
+D --> B: Permission result
+
+alt Không có quyền thay đổi trạng thái
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền"
+else Thay đổi trạng thái không hợp lệ
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo "Thay đổi không hợp lệ"
+else Thay đổi thành công
+    B -> D: Update project status
+    D --> B: Project status updated
+    B -> D: Insert kanban_drag_history
+    D --> B: Drag history saved
+    B -> L: Log status change
+    L --> B: Status change logged
+    B -> N: Send status change notification
+    N --> B: Notification sent
+    B --> F: Status change successful
+    F --> U: Hiển thị thông báo thành công
+    F -> F: Cập nhật vị trí thẻ trong bảng Kanban
+end
+
+== Lọc và Tìm kiếm ==
+
+U -> F: Chọn bộ lọc và nhập từ khóa
+F -> B: GET /api/projects/kanban-filter
+note right: { filters: object, keyword?: string }
+
+B -> D: Query filtered projects
+D --> B: Filtered projects data
+B -> B: Group filtered projects by status
+B --> F: Filtered kanban data
+F --> U: Cập nhật hiển thị thẻ dự án trong các cột
+
+== Xem Chi tiết Dự án ==
+
+U -> F: Nhấn vào thẻ dự án
+F -> B: GET /api/projects/{id}
+B -> D: Query project details
+D --> B: Project details
+B --> F: Project details
+F --> U: Hiển thị modal hoặc chuyển trang chi tiết
+
+== Hành động Nhanh ==
+
+U -> F: Nhấn nút hành động trên thẻ
+F -> F: Hiển thị menu hành động
+
+U -> F: Chọn hành động
+F -> B: POST /api/projects/{id}/quick-action
+note right: { action_type: string, action_data?: object }
+
+B -> B: Validate quick action
+B -> D: Execute quick action
+D --> B: Action result
+B -> L: Log quick action
+L --> B: Action logged
+B --> F: Quick action completed
+F --> U: Hiển thị thông báo thành công
+F -> F: Cập nhật thẻ dự án
+
+== Chuyển đổi Chế độ Xem ==
+
+U -> F: Nhấn nút chuyển đổi chế độ xem
+F -> B: PUT /api/user/preferences/view-mode
+note right: { view_mode: string, kanban_config?: object }
+
+B -> D: Update user preferences
+D --> B: Preferences updated
+B --> F: View mode changed
+F --> U: Chuyển sang chế độ xem mới
+
+== Cập nhật Thống kê Cột ==
+
+F -> B: GET /api/projects/kanban-statistics
+B -> D: Query project counts by status
+D --> B: Statistics data
+B --> F: Column statistics
+F --> U: Cập nhật số lượng dự án trong mỗi cột
+
+== Xử lý Lỗi ==
+
+alt Lỗi tải dữ liệu Kanban
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi tải dữ liệu"
+else Lỗi kéo thả
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo "Lỗi kéo thả"
+else Lỗi cập nhật trạng thái
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi cập nhật trạng thái"
+end
+
+@enduml

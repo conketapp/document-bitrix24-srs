@@ -1,0 +1,147 @@
+@startuml GT-4.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title GT-4.1: Sequence Diagram - Ghi nhận Lịch sử Thao tác Gói thầu
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Logging Service" as L
+participant "Audit Service" as A
+participant "Notification Service" as N
+participant "Encryption Service" as E
+
+== Thực hiện Hành động ==
+
+U -> F: Thực hiện hành động trên gói thầu
+F -> B: API call với action data
+B -> B: Process action
+B -> D: Update tender package data
+D --> B: Update success
+
+== Thu thập Thông tin Log ==
+
+B -> B: Collect action information
+note right
+**Thông tin thu thập:**
+- Timestamp
+- User ID
+- Action type
+- IP address
+- Session ID
+- Request data
+end note
+
+B -> B: Determine action importance
+B -> B: Collect change details
+
+== Ghi Log ==
+
+B -> L: Create log entry
+note right: { action_type, user_id, timestamp, details }
+
+L -> L: Validate log data
+L -> E: Encrypt sensitive data
+E --> L: Encrypted data
+L -> L: Generate digital signature
+L -> D: Insert activity_logs
+D --> L: Log created
+L --> B: Log entry created
+
+== Xử lý Thay đổi Dữ liệu ==
+
+alt Có thay đổi dữ liệu
+    B -> B: Compare before/after values
+    B -> L: Log detailed changes
+    note right: { field_name, old_value, new_value }
+    L -> D: Insert change_logs
+    D --> L: Change log created
+    L --> B: Change details logged
+end
+
+== Audit Trail ==
+
+B -> A: Create audit trail
+A -> A: Generate audit record
+A -> D: Insert audit_trails
+D --> A: Audit trail created
+A --> B: Audit trail completed
+
+== Real-time Notification ==
+
+alt Hành động quan trọng
+    B -> N: Send real-time notification
+    N -> N: Process notification
+    N --> B: Notification sent
+    B -> B: Update stakeholders
+end
+
+B --> F: Action completed successfully
+F --> U: Hiển thị thông báo thành công
+
+== Xem Lịch sử ==
+
+U -> F: Truy cập trang lịch sử gói thầu
+F -> B: GET /api/tender-packages/{id}/logs
+B -> D: Query activity_logs
+D --> B: Log data
+B -> D: Query change_logs
+D --> B: Change data
+B --> F: Combined log data
+F --> U: Hiển thị lịch sử hoạt động
+
+== Tìm kiếm và Lọc ==
+
+U -> F: Nhập từ khóa tìm kiếm
+F -> B: GET /api/tender-packages/{id}/logs/search
+note right: { keyword: string, action_type: string, date_range: string }
+
+B -> D: Search logs
+D --> B: Search results
+B --> F: Filtered log data
+F --> U: Hiển thị kết quả tìm kiếm
+
+== Export Log ==
+
+U -> F: Nhấn "Export Log"
+F -> B: GET /api/tender-packages/{id}/logs/export
+note right: { format: string, date_range: string }
+
+B -> D: Query logs for export
+D --> B: Export data
+B -> B: Generate export file
+B --> F: Export file (PDF/Excel)
+F --> U: Tải xuống file export
+
+== Log Retention ==
+
+B -> L: Check log retention policy
+L -> L: Identify old logs (>7 years)
+L -> D: Move old logs to archive
+D --> L: Archive completed
+L --> B: Retention policy applied
+
+== Backup Logs ==
+
+B -> L: Trigger daily backup
+L -> L: Create backup file
+L -> D: Backup logs
+D --> L: Backup completed
+L --> B: Backup successful
+
+== Xử lý Lỗi ==
+
+alt Lỗi ghi log
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+else Lỗi encryption
+    B --> F: 500 Encryption Error
+    F --> U: Hiển thị thông báo lỗi
+else Lỗi database
+    B --> F: 500 Database Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+@enduml

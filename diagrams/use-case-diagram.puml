@@ -1,0 +1,64 @@
+@startuml
+!theme plain
+left to right direction
+skinparam packageStyle rectangle
+
+actor Customer
+actor Admin
+actor Manager
+
+rectangle "Hệ thống E-Commerce" {
+  usecase "Đăng ký tài khoản" as UC1
+  usecase "Đăng nhập" as UC2
+  usecase "Xem danh sách sản phẩm" as UC3
+  usecase "Tìm kiếm sản phẩm" as UC4
+  usecase "Xem chi tiết sản phẩm" as UC5
+  usecase "Thêm vào giỏ hàng" as UC6
+  usecase "Xem giỏ hàng" as UC7
+  usecase "Thanh toán" as UC8
+  usecase "Xem lịch sử đơn hàng" as UC9
+  usecase "Đánh giá sản phẩm" as UC10
+  usecase "Quản lý sản phẩm" as UC11
+  usecase "Quản lý danh mục" as UC12
+  usecase "Quản lý đơn hàng" as UC13
+  usecase "Quản lý người dùng" as UC14
+  usecase "Xem báo cáo" as UC15
+  usecase "Quản lý kho" as UC16
+}
+
+' Customer use cases
+Customer --> UC1
+Customer --> UC2
+Customer --> UC3
+Customer --> UC4
+Customer --> UC5
+Customer --> UC6
+Customer --> UC7
+Customer --> UC8
+Customer --> UC9
+Customer --> UC10
+
+' Admin use cases
+Admin --> UC11
+Admin --> UC12
+Admin --> UC13
+Admin --> UC14
+Admin --> UC15
+Admin --> UC16
+
+' Manager use cases
+Manager --> UC15
+Manager --> UC13
+
+' Include relationships
+UC8 ..> UC7 : <<include>>
+UC8 ..> UC2 : <<include>>
+UC9 ..> UC2 : <<include>>
+UC10 ..> UC2 : <<include>>
+UC10 ..> UC5 : <<include>>
+
+' Extend relationships
+UC4 ..> UC3 : <<extend>>
+UC6 ..> UC5 : <<extend>>
+
+@enduml

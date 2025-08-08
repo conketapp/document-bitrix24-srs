@@ -1,0 +1,77 @@
+@startuml GT-4.3 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title GT-4.3: Activity Diagram - Xuất Dữ liệu Gói thầu ra Excel
+
+start
+
+:Người dùng truy cập trang danh sách gói thầu;
+
+:Người dùng áp dụng bộ lọc (tùy chọn);
+
+:Người dùng nhấn "Xuất Excel";
+
+:Hiển thị modal tùy chọn xuất;
+
+:Người dùng chọn loại xuất;
+
+if (Xuất toàn bộ?) then (Có)
+    :Hiển thị cảnh báo số lượng lớn;
+    :Yêu cầu xác nhận;
+else (Xuất theo bộ lọc)
+    :Hiển thị thông tin bộ lọc hiện tại;
+endif
+
+:Người dùng chọn cột cần xuất;
+
+:Người dùng chọn định dạng Excel;
+
+:Người dùng nhấn "Bắt đầu xuất";
+
+:Kiểm tra giới hạn xuất (50,000 records);
+
+if (Vượt quá giới hạn?) then (Có)
+    :Hiển thị cảnh báo giới hạn;
+    :Yêu cầu thu hẹp bộ lọc;
+else (OK)
+    :Hiển thị progress indicator;
+    
+    :Thu thập dữ liệu gói thầu;
+    
+    :Kiểm tra kích thước file dự kiến;
+    
+    if (File lớn hơn 100MB?) then (Có)
+        :Chuyển sang background processing;
+        :Gửi thông báo email khi hoàn thành;
+    else (OK)
+        :Tạo file Excel;
+        :Áp dụng định dạng và styling;
+        :Tạo multiple sheets (nếu cần);
+        :Thêm formulas và calculations;
+        :Tạo charts và graphs;
+        
+        :Lưu file Excel;
+        :Tạo download link;
+        
+        :Hiển thị thông báo hoàn thành;
+        :Cung cấp link tải xuống;
+    endif
+endif
+
+:Người dùng tải xuống file Excel;
+
+:Người dùng có thể lên lịch xuất tự động;
+
+if (Lên lịch xuất?) then (Có)
+    :Người dùng thiết lập lịch xuất;
+    :Người dùng nhập email nhận file;
+    :Lưu lịch xuất vào database;
+    :Hiển thị thông báo "Đã lên lịch xuất";
+else (Không)
+    :Hoàn thành xuất;
+endif
+
+stop
+
+@enduml

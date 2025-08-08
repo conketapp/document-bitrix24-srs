@@ -1,0 +1,258 @@
+@startuml CP-1.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title CP-1.1: Sequence Diagram - Tạo khoản mục chi phí mới và nhập thông tin chi tiết
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Cost Service" as CS
+participant "Validation Service" as VS
+participant "File Service" as FS
+participant "Notification Service" as NS
+
+== Khởi tạo Form Tạo Chi phí ==
+
+U -> F: Truy cập trang tạo chi phí
+F -> B: GET /api/costs/create-form
+B -> B: Check cost creation permissions
+B -> D: Query cost categories
+D --> B: Cost categories
+B -> D: Query cost subcategories
+D --> B: Cost subcategories
+B -> D: Query available projects
+D --> B: Available projects
+B -> D: Query available tenders
+D --> B: Available tenders
+B -> D: Query available contracts
+D --> B: Available contracts
+B --> F: Cost creation form
+F --> U: Hiển thị form tạo chi phí
+
+== Tạo Mã Chi phí ==
+
+F -> B: POST /api/costs/generate-code
+B -> CS: Generate cost code
+CS -> CS: Create unique identifier
+CS -> CS: Format: CP-YYYY-XXXX
+CS --> B: Cost code generated
+B --> F: Cost code
+F --> U: Hiển thị mã chi phí tự động
+
+== Nhập Thông tin Cơ bản ==
+
+U -> F: Nhập thông tin cơ bản
+F -> B: POST /api/costs/validate-basic-info
+note right: { name: string, description: string, category: string, subcategory: string }
+
+B -> VS: Validate basic information
+VS -> VS: Check required fields
+VS -> VS: Validate format
+VS --> B: Validation result
+B --> F: Basic info validation
+F --> U: Hiển thị kết quả validation
+
+== Chọn Loại Chi phí ==
+
+U -> F: Chọn loại chi phí
+F -> B: POST /api/costs/select-type
+note right: { cost_type: string }
+
+B -> CS: Process cost type selection
+CS -> CS: Configure form fields
+CS --> B: Form configuration
+B --> F: Updated form fields
+F --> U: Hiển thị form theo loại chi phí
+
+== Nhập Thông tin Chi phí ==
+
+alt Chi phí một lần
+    U -> F: Nhập thông tin chi phí một lần
+    F -> B: POST /api/costs/one-time-info
+    note right: { total_amount: number, currency: string, vat_amount: number, vat_rate: number }
+    
+    B -> VS: Validate one-time cost
+    VS -> VS: Check amount > 0
+    VS -> VS: Validate currency
+    VS -> VS: Validate VAT calculation
+    VS --> B: Validation result
+    B --> F: One-time cost validation
+    F --> U: Hiển thị kết quả validation
+else Chi phí định kỳ
+    U -> F: Nhập thông tin chi phí định kỳ
+    F -> B: POST /api/costs/recurring-info
+    note right: { frequency: string, periods: number, cost_per_period: number, input_method: string, start_date: string }
+    
+    B -> CS: Process recurring cost
+    CS -> CS: Calculate total cost
+    CS -> CS: Validate frequency
+    CS -> CS: Validate periods
+    CS --> B: Calculation result
+    
+    B -> VS: Validate recurring cost
+    VS -> VS: Check cost per period > 0
+    VS -> VS: Validate start date
+    VS -> VS: Validate total calculation
+    VS --> B: Validation result
+    B --> F: Recurring cost validation
+    F --> U: Hiển thị kết quả validation
+end
+
+== Nhập Timeline ==
+
+U -> F: Nhập thông tin timeline
+F -> B: POST /api/costs/timeline-info
+note right: { planned_start: string, planned_end: string, actual_start: string, actual_end: string }
+
+B -> VS: Validate timeline
+VS -> VS: Check date format
+VS -> VS: Validate date logic
+VS -> VS: Check date ranges
+VS --> B: Timeline validation
+B --> F: Timeline validation result
+F --> U: Hiển thị kết quả validation timeline
+
+== Liên kết với Dự án/Gói thầu/Hợp đồng ==
+
+U -> F: Liên kết với dự án/gói thầu/hợp đồng
+F -> B: POST /api/costs/link-entities
+note right: { project_id: string, tender_id: string, contract_id: string }
+
+B -> CS: Process entity linking
+CS -> CS: Validate entity existence
+CS -> CS: Check permissions
+CS -> CS: Update relationships
+CS --> B: Linking result
+B --> F: Entity linking result
+F --> U: Hiển thị kết quả liên kết
+
+== Upload Tài liệu ==
+
+U -> F: Upload tài liệu đính kèm
+F -> B: POST /api/costs/upload-documents
+note right: { files: object[], document_type: string }
+
+B -> FS: Process file upload
+FS -> FS: Validate file format
+FS -> FS: Check file size
+FS -> FS: Store files
+FS --> B: Upload result
+B --> F: File upload result
+F --> U: Hiển thị kết quả upload
+
+== Thiết lập Người phê duyệt ==
+
+U -> F: Thiết lập người phê duyệt
+F -> B: POST /api/costs/set-approver
+note right: { approver_id: string, approval_level: string }
+
+B -> CS: Configure approver
+CS -> CS: Validate approver permissions
+CS -> CS: Set approval workflow
+CS --> B: Approver configuration
+B --> F: Approver setup result
+F --> U: Hiển thị kết quả thiết lập approver
+
+== Validate Toàn bộ Dữ liệu ==
+
+U -> F: Nhấn "Validate"
+F -> B: POST /api/costs/validate-all
+note right: { cost_data: object }
+
+B -> VS: Comprehensive validation
+VS -> VS: Check all required fields
+VS -> VS: Validate business rules
+VS -> VS: Cross-field validation
+VS -> VS: Check data consistency
+VS --> B: Complete validation result
+
+alt Validation thành công
+    B --> F: Validation passed
+    F --> U: Hiển thị thông báo validation thành công
+else Validation thất bại
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị danh sách lỗi
+    U -> F: Sửa lỗi
+    F -> B: POST /api/costs/update
+    B -> D: Update cost data
+    D --> B: Data updated
+    B --> F: Update successful
+    F --> U: Hiển thị thông báo cập nhật thành công
+end
+
+== Tạo Preview ==
+
+U -> F: Nhấn "Preview"
+F -> B: POST /api/costs/preview
+note right: { cost_config: object }
+
+B -> CS: Generate cost preview
+CS -> CS: Format cost information
+CS -> CS: Calculate totals
+CS -> CS: Prepare display data
+CS --> B: Preview data
+B --> F: Cost preview
+F --> U: Hiển thị preview chi phí
+
+== Lưu Chi phí ==
+
+U -> F: Nhấn "Lưu"
+F -> B: POST /api/costs/save
+note right: { save_type: string, cost_data: object }
+
+alt Lưu hoàn thành
+    B -> D: Save cost to database
+    D --> B: Cost saved
+    B -> D: Create cost version
+    D --> B: Version created
+    B -> D: Update cost statistics
+    D --> B: Statistics updated
+    B -> NS: Send approval notification
+    NS --> B: Notification sent
+    B --> F: Cost saved successfully
+    F --> U: Hiển thị thông báo tạo thành công
+    
+    U -> F: Chọn tạo chi phí tiếp theo
+    F -> B: POST /api/costs/reset-form
+    B --> F: Form reset
+    F --> U: Hiển thị form trống để tạo chi phí mới
+else Lưu nháp
+    B -> D: Save draft cost
+    D --> B: Draft saved
+    B --> F: Draft saved successfully
+    F --> U: Hiển thị thông báo lưu nháp thành công
+    
+    U -> F: Chuyển đến danh sách chi phí
+    F -> B: GET /api/costs/list
+    B -> D: Query cost list
+    D --> B: Cost list
+    B --> F: Cost list page
+    F --> U: Hiển thị danh sách chi phí
+end
+
+== Ghi Log ==
+
+B -> D: Log cost creation activity
+D --> B: Activity logged
+B -> D: Update cost metrics
+D --> B: Metrics updated
+
+== Xử lý Lỗi ==
+
+alt Không có quyền tạo chi phí
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền tạo chi phí"
+else Lỗi validation
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo lỗi validation
+else Lỗi upload file
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi upload
+else Lỗi lưu chi phí
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi lưu
+end
+
+@enduml

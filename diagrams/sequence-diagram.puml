@@ -1,0 +1,73 @@
+@startuml
+!theme plain
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+
+actor User
+participant "Frontend" as FE
+participant "API Gateway" as AG
+participant "Auth Service" as AS
+participant "User Service" as US
+participant "Product Service" as PS
+participant "Order Service" as OS
+participant "Payment Service" as PYS
+database "Database" as DB
+database "Redis Cache" as RC
+
+== Authentication ==
+User -> FE: Enter credentials
+FE -> AG: POST /auth/login
+AG -> AS: Validate credentials
+AS -> DB: Query user data
+DB --> AS: Return user data
+AS -> RC: Store session
+RC --> AS: Session stored
+AS --> AG: Return JWT token
+AG --> FE: Return authentication result
+FE --> User: Show dashboard/error
+
+== Product Browsing ==
+User -> FE: Browse products
+FE -> AG: GET /products
+AG -> PS: Get product list
+PS -> RC: Check cache
+alt Cache hit
+    RC --> PS: Return cached data
+else Cache miss
+    PS -> DB: Query products
+    DB --> PS: Return products
+    PS -> RC: Store in cache
+end
+PS --> AG: Return products
+AG --> FE: Return product list
+FE --> User: Display products
+
+== Order Placement ==
+User -> FE: Add to cart
+FE -> AG: POST /cart/add
+AG -> PS: Update cart
+PS -> RC: Store cart data
+RC --> PS: Cart updated
+PS --> AG: Return cart status
+AG --> FE: Return cart update
+FE --> User: Show updated cart
+
+User -> FE: Checkout
+FE -> AG: POST /orders
+AG -> OS: Create order
+OS -> PS: Validate products
+PS --> OS: Product validation
+OS -> DB: Create order record
+DB --> OS: Order created
+OS -> PYS: Process payment
+PYS -> DB: Create payment record
+DB --> PYS: Payment created
+PYS --> OS: Payment processed
+OS -> RC: Clear cart
+RC --> OS: Cart cleared
+OS --> AG: Return order details
+AG --> FE: Return order confirmation
+FE --> User: Show order confirmation
+
+@enduml

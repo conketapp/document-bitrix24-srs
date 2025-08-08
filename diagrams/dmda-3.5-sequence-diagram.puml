@@ -1,0 +1,119 @@
+@startuml DMDA-3.5 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-3.5: Sequence Diagram - Phân biệt & Hiển thị Dự án Chính thức
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Bitrix24 API" as B24
+participant "Export Service" as ES
+
+== Khởi tạo Danh sách Dự án ==
+
+U -> F: Truy cập danh sách dự án
+F -> B: GET /api/projects
+B -> D: Query all projects
+D --> B: Projects data
+B --> F: Projects list
+F --> U: Hiển thị danh sách dự án với filter
+
+== Lọc Dự án Chính thức ==
+
+U -> F: Chọn "Chỉ dự án chính thức"
+F -> B: GET /api/projects/official
+B -> D: Query official projects (status = 'approved')
+D --> B: Official projects data
+B --> F: Official projects list
+F --> U: Hiển thị danh sách dự án chính thức
+
+== Tìm kiếm Dự án ==
+
+U -> F: Nhập từ khóa tìm kiếm
+F -> B: GET /api/projects/search
+note right: { keyword: string, filter_type: string, official_only: boolean }
+
+B -> D: Search projects with filters
+D --> B: Search results
+B --> F: Search results
+F --> U: Hiển thị kết quả tìm kiếm
+
+== Xem Thống kê Dự án Chính thức ==
+
+U -> F: Nhấn "Xem Thống kê"
+F -> B: GET /api/projects/official/statistics
+B -> D: Query official projects statistics
+D --> B: Statistics data
+B --> F: Statistics dashboard
+F --> U: Hiển thị dashboard thống kê
+
+== Xem Chi tiết Dự án Chính thức ==
+
+U -> F: Nhấn vào dự án chính thức
+F -> B: GET /api/projects/{id}
+B -> D: Query project details
+D --> B: Project data
+B -> B: Check if project is official
+B --> F: Project details with official status
+F --> U: Hiển thị chi tiết dự án chính thức
+
+== Export Danh sách Dự án Chính thức ==
+
+U -> F: Nhấn "Export Danh sách"
+F -> B: POST /api/projects/official/export
+note right: { format: string, fields: string[] }
+
+B -> D: Query official projects for export
+D --> B: Export data
+B -> ES: Generate export file
+ES --> B: Export file
+B --> F: Export file link
+F --> U: Cung cấp file export
+
+== Quản lý Cấu hình Hiển thị ==
+
+U -> F: Nhấn "Quản lý Cấu hình"
+F -> B: GET /api/projects/display-config
+B -> D: Query display configuration
+D --> B: Config data
+B --> F: Configuration form
+F --> U: Hiển thị form cấu hình
+
+U -> F: Thay đổi cài đặt hiển thị
+F -> B: PUT /api/projects/display-config
+note right: { config_key: string, config_value: string }
+
+B -> D: Update display configuration
+D --> B: Config updated
+B --> F: Configuration updated
+F --> U: Hiển thị thông báo cập nhật thành công
+
+== Đồng bộ với Bitrix24 ==
+
+B -> B24: GET /api/bitrix24/projects
+B24 --> B: Bitrix24 projects data
+B -> B: Compare with official projects
+B -> D: Update project sync status
+D --> B: Sync status updated
+B --> F: Sync status
+F --> U: Hiển thị trạng thái đồng bộ
+
+== Xử lý Lỗi ==
+
+alt Không có quyền xem dự án chính thức
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xem dự án chính thức"
+else Không có dự án chính thức nào
+    B --> F: 404 Not Found
+    F --> U: Hiển thị thông báo "Không có dự án chính thức nào"
+else Lỗi export
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi export
+else Lỗi cấu hình
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo lỗi cấu hình
+end
+
+@enduml

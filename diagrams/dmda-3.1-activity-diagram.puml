@@ -1,0 +1,87 @@
+@startuml DMDA-3.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-3.1: Activity Diagram - Gửi Phê duyệt Dự án Lần lượt
+
+start
+
+:Người dùng truy cập trang chi tiết dự án;
+
+:Kiểm tra quyền gửi phê duyệt dự án;
+
+if (Có quyền gửi phê duyệt?) then (Không)
+    :Hiển thị thông báo "Không có quyền gửi phê duyệt";
+    stop
+else (Có)
+    :Kiểm tra trạng thái dự án;
+    
+    if (Dự án có thể gửi phê duyệt?) then (Không)
+        :Hiển thị thông báo "Dự án không thể gửi phê duyệt";
+        :Hiển thị lý do không thể gửi phê duyệt;
+        stop
+    else (Có)
+        :Hiển thị nút "Gửi Phê duyệt";
+        :Người dùng nhấn "Gửi Phê duyệt";
+        :Mở form gửi phê duyệt;
+        
+        :Hiển thị thông tin dự án;
+        note right
+        **Thông tin Dự án:**
+        - Mã dự án
+        - Tên dự án
+        - Loại dự án
+        - Trạng thái hiện tại
+        - Người tạo dự án
+        end note
+        
+        :Hiển thị danh sách người phê duyệt;
+        :Người dùng chọn người phê duyệt;
+        
+        if (Có người phê duyệt phù hợp?) then (Không)
+            :Hiển thị thông báo "Không có người phê duyệt phù hợp";
+            :Yêu cầu liên hệ admin;
+        else (Có)
+            :Người dùng nhập comment (tùy chọn);
+            :Người dùng xác nhận gửi phê duyệt;
+            
+            if (Xác nhận gửi phê duyệt?) then (Có)
+                :Kiểm tra validation cuối cùng;
+                
+                if (Validation thành công?) then (Có)
+                    :Cập nhật trạng thái dự án thành "pending_approval";
+                    :Tạo bản ghi phê duyệt;
+                    :Ghi log gửi phê duyệt;
+                    :Gửi thông báo cho người phê duyệt;
+                    :Đồng bộ với Bitrix24;
+                    :Hiển thị thông báo thành công;
+                    :Chuyển đến trang chi tiết dự án;
+                else (Validation thất bại)
+                    :Hiển thị lỗi validation;
+                    :Yêu cầu sửa lỗi;
+                endif
+            else (Không)
+                :Hủy thao tác gửi phê duyệt;
+            endif
+        endif
+    endif
+endif
+
+:Người dùng có thể xem trạng thái phê duyệt;
+
+if (Xem trạng thái phê duyệt?) then (Có)
+    :Hiển thị thông tin phê duyệt;
+    note right
+    **Thông tin Phê duyệt:**
+    - Người phê duyệt
+    - Ngày gửi phê duyệt
+    - Trạng thái phê duyệt
+    - Comment (nếu có)
+    end note
+else (Không)
+    :Tiếp tục quản lý dự án;
+endif
+
+stop
+
+@enduml

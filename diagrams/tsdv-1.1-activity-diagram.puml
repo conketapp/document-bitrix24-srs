@@ -1,0 +1,204 @@
+@startuml TSDV-1.1 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title TSDV-1.1: Tạo mới một Tài sản/Dịch vụ đầu ra từ dự án - Activity Diagram
+
+start
+
+:Người dùng truy cập trang quản lý tài sản/dịch vụ;
+
+:Hiển thị giao diện tạo mới tài sản/dịch vụ;
+
+:Người dùng nhấn nút "Tạo mới";
+
+partition "Chọn Loại Tài sản/Dịch vụ" {
+  :Hiển thị form chọn loại;
+  :Chọn loại: Tài sản hoặc Dịch vụ;
+  if (Loại đã chọn?) then (Tài sản)
+    :Hiển thị form nhập thông tin tài sản;
+  else (Dịch vụ)
+    :Hiển thị form nhập thông tin dịch vụ;
+  endif
+}
+
+partition "Chọn Dự án Nguồn" {
+  :Hiển thị danh sách dự án;
+  :Lọc dự án đang triển khai hoặc đã hoàn thành;
+  :Chọn dự án nguồn;
+  :Kiểm tra quyền truy cập dự án;
+  if (Có quyền truy cập?) then (Có)
+    :Tiếp tục quá trình tạo;
+  else (Không)
+    :Hiển thị thông báo không có quyền;
+    stop
+  endif
+}
+
+partition "Nhập Thông tin Cơ bản" {
+  :Nhập tên tài sản/dịch vụ;
+  :Nhập mô tả chi tiết;
+  :Chọn danh mục chính;
+  :Chọn danh mục con;
+  :Nhập thông tin bổ sung;
+}
+
+partition "Nhập Thông tin Tài sản (nếu là Tài sản)" {
+  if (Là tài sản?) then (Có)
+    :Nhập model/specifications;
+    :Nhập serial number;
+    :Nhập ngày mua;
+    :Nhập chi phí mua;
+    :Nhập thông tin bảo hành;
+    :Nhập vị trí lưu trữ;
+  else (Không)
+    :Bỏ qua thông tin tài sản;
+  endif
+}
+
+partition "Nhập Thông tin Dịch vụ (nếu là Dịch vụ)" {
+  if (Là dịch vụ?) then (Có)
+    :Nhập mô tả dịch vụ;
+    :Nhập service level agreement;
+    :Nhập ngày bắt đầu dịch vụ;
+    :Nhập ngày kết thúc dịch vụ;
+    :Nhập chi phí dịch vụ;
+    :Nhập nhà cung cấp dịch vụ;
+  else (Không)
+    :Bỏ qua thông tin dịch vụ;
+  endif
+}
+
+partition "Gán Người phụ trách" {
+  :Chọn người phụ trách từ danh sách;
+  :Kiểm tra quyền của người phụ trách;
+  :Nhập thông tin liên hệ;
+  :Nhập ghi chú phụ trách;
+}
+
+partition "Thiết lập Trạng thái" {
+  :Chọn trạng thái ban đầu;
+  if (Trạng thái?) then (Đang sử dụng)
+    :Trạng thái = "Đang sử dụng";
+  elseif (Đang bảo trì) then
+    :Trạng thái = "Đang bảo trì";
+  elseif (Ngừng sử dụng) then
+    :Trạng thái = "Ngừng sử dụng";
+  else (Khác)
+    :Trạng thái = "Khác";
+  endif
+}
+
+partition "Đính kèm Tài liệu" {
+  if (Có tài liệu đính kèm?) then (Có)
+    :Tải lên file tài liệu;
+    :Nhập mô tả tài liệu;
+    :Chọn loại tài liệu;
+    :Lưu tài liệu vào hệ thống;
+  else (Không)
+    :Bỏ qua đính kèm tài liệu;
+  endif
+}
+
+partition "Tạo Mã Tự động" {
+  :Hệ thống tạo mã tài sản/dịch vụ;
+  :Kiểm tra mã đã tồn tại;
+  if (Mã đã tồn tại?) then (Có)
+    :Tạo mã mới;
+  else (Không)
+    :Sử dụng mã đã tạo;
+  endif
+}
+
+partition "Kiểm tra Validation" {
+  :Kiểm tra thông tin bắt buộc;
+  :Kiểm tra định dạng dữ liệu;
+  :Kiểm tra quy tắc nghiệp vụ;
+  if (Dữ liệu hợp lệ?) then (Có)
+    :Tiếp tục quá trình lưu;
+  else (Không)
+    :Hiển thị lỗi validation;
+    :Yêu cầu sửa lỗi;
+    :Quay lại form nhập liệu;
+  endif
+}
+
+partition "Preview Trước khi Lưu" {
+  if (Xem preview?) then (Có)
+    :Hiển thị thông tin preview;
+    :Cho phép chỉnh sửa;
+    if (Cần chỉnh sửa?) then (Có)
+      :Quay lại form chỉnh sửa;
+    else (Không)
+      :Tiếp tục lưu;
+    endif
+  else (Không)
+    :Bỏ qua preview;
+  endif
+}
+
+partition "Lưu Tài sản/Dịch vụ" {
+  :Lưu thông tin vào database;
+  :Tạo mã tài sản/dịch vụ;
+  :Liên kết với dự án nguồn;
+  :Gán người phụ trách;
+  :Lưu tài liệu đính kèm;
+}
+
+partition "Cập nhật Liên quan" {
+  :Cập nhật danh sách tài sản/dịch vụ;
+  :Cập nhật thống kê dự án;
+  :Gửi thông báo cho người phụ trách;
+  :Cập nhật dashboard;
+}
+
+partition "Hiển thị Kết quả" {
+  :Hiển thị thông báo tạo thành công;
+  :Hiển thị mã tài sản/dịch vụ;
+  :Chuyển đến trang chi tiết;
+}
+
+partition "Tùy chọn: Tạo Nhiều Cùng lúc" {
+  if (Tạo nhiều cùng lúc?) then (Có)
+    :Hiển thị form tạo hàng loạt;
+    :Nhập danh sách tài sản/dịch vụ;
+    :Import từ file Excel;
+    :Xử lý hàng loạt;
+  else (Không)
+    :Bỏ qua tạo hàng loạt;
+  endif
+}
+
+partition "Tùy chọn: Lưu Bản nháp" {
+  if (Lưu bản nháp?) then (Có)
+    :Lưu thông tin dưới dạng bản nháp;
+    :Hiển thị thông báo lưu bản nháp;
+    :Cho phép hoàn thiện sau;
+  else (Không)
+    :Bỏ qua lưu bản nháp;
+  endif
+}
+
+stop
+
+@enduml

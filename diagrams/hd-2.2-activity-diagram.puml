@@ -1,0 +1,88 @@
+@startuml HD-2.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title HD-2.2: Activity Diagram - Xóa Hợp đồng
+
+start
+
+:Người dùng truy cập trang chi tiết hợp đồng;
+
+:Kiểm tra quyền xóa hợp đồng;
+
+if (Có quyền xóa hợp đồng?) then (Không)
+    :Hiển thị thông báo "Không có quyền xóa hợp đồng";
+    stop
+else (Có)
+    :Hiển thị nút "Xóa" hợp đồng;
+    
+    :Người dùng nhấn "Xóa";
+    :Hiển thị hộp thoại xác nhận xóa;
+    note right
+    **Thông tin xác nhận:**
+    - Tên hợp đồng
+    - Số hợp đồng
+    - Trạng thái hiện tại
+    - Cảnh báo về hậu quả
+    end note
+    
+    :Người dùng xác nhận xóa;
+    
+    if (Xác nhận xóa?) then (Không)
+        :Hủy thao tác xóa;
+        :Quay lại trang chi tiết hợp đồng;
+    else (Có)
+        :Kiểm tra dependencies của hợp đồng;
+        note right
+        **Kiểm tra dependencies:**
+        - Gói thầu liên kết
+        - Lịch thanh toán
+        - Phụ lục hợp đồng
+        - Tài liệu đính kèm
+        end note
+        
+        if (Có dependencies quan trọng?) then (Có)
+            :Hiển thị cảnh báo dependencies;
+            :Liệt kê các dependencies;
+            :Cho phép xóa cưỡng chế hoặc hủy;
+            
+            if (Xóa cưỡng chế?) then (Có)
+                :Cập nhật các records liên quan;
+                :Xóa dependencies trước;
+                :Tiếp tục xóa hợp đồng;
+            else (Không)
+                :Hủy thao tác xóa;
+                :Quay lại trang chi tiết hợp đồng;
+            endif
+        else (Không)
+            :Tiếp tục xóa hợp đồng;
+        endif
+        
+        if (Xóa hợp đồng?) then (Có)
+            :Kiểm tra trạng thái hợp đồng;
+            
+            if (Hợp đồng đã ký?) then (Có)
+                :Hiển thị thông báo "Hợp đồng đã ký không thể xóa";
+                :Chuyển sang chế độ archive;
+                :Cập nhật trạng thái thành "archived";
+            else (Chưa ký)
+                :Thực hiện soft delete;
+                :Cập nhật trạng thái thành "deleted";
+                :Cập nhật deleted_at timestamp;
+                :Cập nhật deleted_by user;
+            endif
+            
+            :Ghi log hành động xóa;
+            :Gửi thông báo cho các bên liên quan;
+            :Cập nhật danh sách hợp đồng;
+            :Hiển thị thông báo xóa thành công;
+        else (Không)
+            :Hủy thao tác xóa;
+            :Quay lại trang chi tiết hợp đồng;
+        endif
+    endif
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,40 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        npm install -g markdown-preview-enhanced
+        npm install -g @mermaid-js/mermaid-cli
+        
+    - name: Generate HTML from Markdown
+      run: |
+        # Convert SRS_INDEX.md to HTML
+        markdown-preview-enhanced SRS_INDEX.md --output-file docs/index.html
+        
+        # Convert diagrams README to HTML
+        markdown-preview-enhanced diagrams/README.md --output-file docs/diagrams.html
+        
+        # Convert QUICK_ACCESS to HTML
+        markdown-preview-enhanced diagrams/QUICK_ACCESS.md --output-file docs/quick-access.html
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs

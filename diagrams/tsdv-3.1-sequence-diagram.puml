@@ -1,0 +1,163 @@
+@startuml TSDV-3.1 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title TSDV-3.1: Theo dõi lịch sử sử dụng, bảo hành, bảo dưỡng của Tài sản - Sequence Diagram
+
+actor "Cán bộ\nQuản lý Tài sản" as User
+participant "Giao diện\nQuản lý Tài sản" as UI
+participant "Asset History\nController" as Controller
+participant "Asset History\nService" as Service
+participant "Asset\nRepository" as AssetRepo
+participant "Asset History\nRepository" as HistoryRepo
+participant "File Upload\nService" as FileService
+participant "Notification\nService" as NotificationService
+participant "Database" as DB
+
+User -> UI: Truy cập trang quản lý tài sản
+UI -> Controller: GET /api/assets
+Controller -> Service: getAssets()
+Service -> AssetRepo: findAll()
+AssetRepo -> DB: SELECT * FROM assets
+DB --> AssetRepo: Assets data
+AssetRepo --> Service: Assets list
+Service --> Controller: Assets response
+Controller --> UI: Hiển thị danh sách tài sản
+
+User -> UI: Chọn tài sản cần xem lịch sử
+UI -> Controller: GET /api/assets/{id}
+Controller -> Service: getAssetById(id)
+Service -> AssetRepo: findById(id)
+AssetRepo -> DB: SELECT * FROM assets WHERE id = ?
+DB --> AssetRepo: Asset data
+AssetRepo --> Service: Asset details
+Service --> Controller: Asset response
+Controller --> UI: Hiển thị chi tiết tài sản
+
+User -> UI: Nhấn vào phần "Lịch sử"
+UI -> Controller: GET /api/assets/{id}/history
+Controller -> Service: getAssetHistory(id)
+Service -> HistoryRepo: getHistoryByAsset(id)
+HistoryRepo -> DB: SELECT * FROM asset_history WHERE asset_id = ? ORDER BY event_date DESC
+DB --> HistoryRepo: History data
+HistoryRepo --> Service: Asset history
+Service --> Controller: Asset history response
+Controller --> UI: Hiển thị timeline lịch sử
+
+User -> UI: Nhấn "Thêm sự kiện"
+UI -> Controller: GET /api/assets/{id}/history/add
+Controller -> Service: getEventTypes()
+Service --> Controller: Event types response
+Controller --> UI: Hiển thị form thêm sự kiện
+
+User -> UI: Nhập thông tin sự kiện
+note right of User
+  - Loại sự kiện: Sử dụng/Bảo dưỡng/Bảo hành/Sửa chữa/Kiểm tra
+  - Ngày thực hiện
+  - Mô tả sự kiện
+  - Người thực hiện
+  - Chi phí liên quan
+  - File đính kèm (tùy chọn)
+end note
+
+UI -> Controller: POST /api/assets/{id}/history
+note right of UI
+{
+  "event_type": "maintenance",
+  "event_date": "2024-01-25",
+  "description": "Bảo dưỡng định kỳ máy tính",
+  "performed_by": "Nguyễn Văn A",
+  "cost": 500000,
+  "attachments": []
+}
+end note
+
+Controller -> Service: addAssetEvent(assetId, eventData)
+Service -> Service: validateEventData(eventData)
+Service -> Service: categorizeEvent(eventData.event_type)
+
+alt Sự kiện sử dụng
+  Service -> Service: createUsageEvent()
+elseif Sự kiện bảo dưỡng
+  Service -> Service: createMaintenanceEvent()
+elseif Sự kiện bảo hành
+  Service -> Service: createWarrantyEvent()
+elseif Sự kiện sửa chữa
+  Service -> Service: createRepairEvent()
+else Sự kiện kiểm tra
+  Service -> Service: createInspectionEvent()
+end
+
+Service -> HistoryRepo: saveEvent(assetId, eventData)
+HistoryRepo -> DB: INSERT INTO asset_history (...)
+DB --> HistoryRepo: Event saved successfully
+HistoryRepo --> Service: Event created
+
+alt Có file đính kèm
+  Service -> FileService: uploadAttachment(file)
+  FileService -> FileService: validateFile(file)
+  FileService -> FileService: saveFile(file)
+  FileService --> Service: File uploaded
+end
+
+Service -> Service: updateAssetMetadata(assetId)
+Service -> AssetRepo: updateLastEventDate(assetId)
+AssetRepo -> DB: UPDATE assets SET last_event_date = ? WHERE id = ?
+DB --> AssetRepo: Asset updated
+AssetRepo --> Service: Asset metadata updated
+
+Service -> NotificationService: notifyAssetEvent(assetId, eventData)
+NotificationService -> NotificationService: determineRecipients()
+NotificationService -> DB: INSERT INTO notifications (...)
+DB --> NotificationService: Notification created
+NotificationService --> Service: Notification sent
+
+Service --> Controller: Event created successfully
+Controller --> UI: Thông báo thêm sự kiện thành công
+
+UI -> Controller: GET /api/assets/{id}/history
+Controller -> Service: getAssetHistory(id)
+Service -> HistoryRepo: getHistoryByAsset(id)
+HistoryRepo -> DB: SELECT * FROM asset_history WHERE asset_id = ?
+DB --> HistoryRepo: Updated history data
+HistoryRepo --> Service: Updated asset history
+Service --> Controller: Updated history response
+Controller --> UI: Cập nhật timeline lịch sử
+
+User -> UI: Xem thống kê chi phí (tùy chọn)
+UI -> Controller: GET /api/assets/{id}/history/statistics
+Controller -> Service: getAssetHistoryStatistics(id)
+Service -> HistoryRepo: getCostStatistics(id)
+HistoryRepo -> DB: SELECT SUM(cost) FROM asset_history WHERE asset_id = ? AND event_type = ?
+DB --> HistoryRepo: Cost statistics
+HistoryRepo --> Service: Statistics data
+Service --> Controller: Statistics response
+Controller --> UI: Hiển thị báo cáo thống kê
+
+User -> UI: Xuất báo cáo lịch sử (tùy chọn)
+UI -> Controller: POST /api/assets/{id}/history/export
+Controller -> Service: exportAssetHistory(id, format)
+Service -> HistoryRepo: getHistoryForExport(id)
+HistoryRepo -> DB: SELECT * FROM asset_history WHERE asset_id = ?
+DB --> HistoryRepo: History data for export
+HistoryRepo --> Service: History data
+Service -> Service: generateReport(historyData, format)
+Service --> Controller: Report file
+Controller --> UI: Tải xuống báo cáo lịch sử
+
+@enduml

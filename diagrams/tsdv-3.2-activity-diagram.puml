@@ -1,0 +1,187 @@
+@startuml TSDV-3.2 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title TSDV-3.2: Nhắc nhở khi Tài sản/Dịch vụ sắp hết hạn bảo hành/bảo trì/sử dụng - Activity Diagram
+
+start
+
+:Hệ thống khởi động quy trình kiểm tra hàng ngày;
+
+partition "Thu thập Dữ liệu Tài sản/Dịch vụ" {
+  :Tải danh sách tất cả tài sản;
+  :Tải danh sách tất cả dịch vụ;
+  :Thu thập thông tin ngày hết hạn;
+  :Thu thập thông tin người quản lý;
+}
+
+partition "Kiểm tra Hết hạn Bảo hành" {
+  :Lọc tài sản sắp hết hạn bảo hành;
+  if (Có tài sản sắp hết hạn bảo hành?) then (Có)
+    :Tính toán số ngày còn lại;
+    :Kiểm tra ngưỡng cảnh báo;
+    if (Đạt ngưỡng cảnh báo?) then (Có)
+      :Tạo thông báo hết hạn bảo hành;
+      :Thêm vào danh sách thông báo;
+    else (Không)
+      :Bỏ qua, chưa đến thời điểm cảnh báo;
+    endif
+  else (Không)
+    :Không có tài sản sắp hết hạn bảo hành;
+  endif
+}
+
+partition "Kiểm tra Hết hạn Bảo trì" {
+  :Lọc tài sản sắp đến kỳ bảo trì;
+  if (Có tài sản sắp đến kỳ bảo trì?) then (Có)
+    :Tính toán số ngày còn lại;
+    :Kiểm tra ngưỡng cảnh báo;
+    if (Đạt ngưỡng cảnh báo?) then (Có)
+      :Tạo thông báo kỳ bảo trì;
+      :Thêm vào danh sách thông báo;
+    else (Không)
+      :Bỏ qua, chưa đến thời điểm cảnh báo;
+    endif
+  else (Không)
+    :Không có tài sản sắp đến kỳ bảo trì;
+  endif
+}
+
+partition "Kiểm tra Hết hạn Dịch vụ" {
+  :Lọc dịch vụ sắp hết thời gian sử dụng;
+  if (Có dịch vụ sắp hết hạn?) then (Có)
+    :Tính toán số ngày còn lại;
+    :Kiểm tra ngưỡng cảnh báo;
+    if (Đạt ngưỡng cảnh báo?) then (Có)
+      :Tạo thông báo hết hạn dịch vụ;
+      :Thêm vào danh sách thông báo;
+    else (Không)
+      :Bỏ qua, chưa đến thời điểm cảnh báo;
+    endif
+  else (Không)
+    :Không có dịch vụ sắp hết hạn;
+  endif
+}
+
+partition "Tạo Thông báo" {
+  if (Có thông báo cần gửi?) then (Có)
+    :Tạo nội dung thông báo;
+    :Chọn người nhận thông báo;
+    :Chọn kênh gửi thông báo;
+    
+    partition "Gửi Thông báo Email" {
+      if (Có cấu hình email?) then (Có)
+        :Tạo template email;
+        :Gửi email thông báo;
+        :Ghi log gửi email;
+      else (Không)
+        :Bỏ qua gửi email;
+      endif
+    }
+    
+    partition "Gửi Thông báo Trong hệ thống" {
+      if (Có cấu hình notification?) then (Có)
+        :Tạo notification trong hệ thống;
+        :Lưu vào bảng notifications;
+        :Cập nhật dashboard;
+      else (Không)
+        :Bỏ qua notification;
+      endif
+    }
+    
+    partition "Gửi SMS (Tùy chọn)" {
+      if (Có cấu hình SMS?) then (Có)
+        :Tạo nội dung SMS;
+        :Gửi SMS thông báo;
+        :Ghi log gửi SMS;
+      else (Không)
+        :Bỏ qua gửi SMS;
+      endif
+    }
+    
+  else (Không)
+    :Không có thông báo cần gửi;
+  endif
+}
+
+partition "Cập nhật Trạng thái" {
+  :Cập nhật trạng thái đã gửi thông báo;
+  :Ghi log hoạt động gửi thông báo;
+  :Cập nhật timestamp gửi thông báo;
+}
+
+partition "Tùy chọn: Thiết lập Cấu hình" {
+  if (Người dùng muốn thiết lập cấu hình?) then (Có)
+    :Hiển thị form cấu hình thông báo;
+    
+    partition "Cấu hình Ngưỡng Cảnh báo" {
+      :Thiết lập cảnh báo 7 ngày trước;
+      :Thiết lập cảnh báo 30 ngày trước;
+      :Thiết lập cảnh báo 60 ngày trước;
+      :Thiết lập cảnh báo tùy chỉnh;
+    }
+    
+    partition "Cấu hình Người nhận" {
+      :Chọn người nhận thông báo;
+      :Thiết lập kênh gửi thông báo;
+      :Cấu hình template thông báo;
+    }
+    
+    partition "Cấu hình Loại Thông báo" {
+      :Bật/tắt thông báo bảo hành;
+      :Bật/tắt thông báo bảo trì;
+      :Bật/tắt thông báo dịch vụ;
+      :Bật/tắt thông báo tùy chỉnh;
+    }
+    
+    :Lưu cấu hình thông báo;
+    :Hiển thị thông báo lưu thành công;
+  else (Không)
+    :Bỏ qua thiết lập cấu hình;
+  endif
+}
+
+partition "Tùy chọn: Xem Lịch sử Thông báo" {
+  if (Người dùng muốn xem lịch sử?) then (Có)
+    :Hiển thị danh sách thông báo đã gửi;
+    :Cho phép lọc theo loại thông báo;
+    :Cho phép lọc theo thời gian;
+    :Hiển thị chi tiết thông báo;
+  else (Không)
+    :Bỏ qua xem lịch sử;
+  endif
+}
+
+partition "Tùy chọn: Xuất Báo cáo" {
+  if (Người dùng muốn xuất báo cáo?) then (Có)
+    :Tạo báo cáo tài sản/dịch vụ sắp hết hạn;
+    :Xuất file Excel/PDF;
+    :Gửi báo cáo qua email;
+  else (Không)
+    :Bỏ qua xuất báo cáo;
+  endif
+}
+
+stop
+
+@enduml

@@ -1,0 +1,226 @@
+@startuml BC-1.3 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title BC-1.3: Activity Diagram - Phát triển các mẫu báo cáo theo yêu cầu đặc thù của Agribank
+
+start
+
+:Quản trị viên truy cập Template Builder;
+
+:Kiểm tra quyền tạo template;
+
+if (Có quyền tạo template?) then (Không)
+    :Hiển thị thông báo "Không có quyền tạo template";
+    stop
+else (Có)
+    :Hiển thị giao diện Template Builder;
+    
+    :Quản trị viên chọn loại template;
+    note right
+    **Loại template:**
+    - Báo cáo tài chính
+    - Báo cáo tuân thủ
+    - Báo cáo quản lý rủi ro
+    - Báo cáo nội bộ
+    - Báo cáo phòng ban
+    end note
+    
+    :Quản trị viên thiết lập tiêu chuẩn Agribank;
+    note right
+    **Tiêu chuẩn Agribank:**
+    - Corporate branding
+    - Logo placement
+    - Header/footer templates
+    - Standard fonts và colors
+    - Page numbering
+    end note
+    
+    :Quản trị viên thiết kế layout;
+    note right
+    **Thiết kế layout:**
+    - Drag-and-drop interface
+    - Visual template designer
+    - Field mapping tools
+    - Layout designer
+    - Responsive design
+    end note
+    
+    :Quản trị viên thiết lập các trường dữ liệu;
+    note right
+    **Trường dữ liệu:**
+    - Thông tin cơ bản
+    - Dữ liệu tài chính
+    - Dữ liệu tuân thủ
+    - Dữ liệu rủi ro
+    - Dữ liệu nội bộ
+    end note
+    
+    :Quản trị viên tạo công thức tính toán;
+    note right
+    **Công thức tính toán:**
+    - Mathematical calculations
+    - Financial formulas
+    - Statistical functions
+    - Custom functions
+    - Formula validation
+    end note
+    
+    :Hệ thống validate công thức;
+    
+    if (Công thức hợp lệ?) then (Không)
+        :Hiển thị thông báo lỗi công thức;
+        :Yêu cầu sửa công thức;
+        :Quay lại bước tạo công thức;
+    else (Có)
+        :Tiếp tục thiết lập template;
+    endif
+    
+    :Quản trị viên thiết lập định dạng trình bày;
+    note right
+    **Định dạng trình bày:**
+    - Font chữ chuẩn
+    - Màu sắc corporate
+    - Kích thước và spacing
+    - Alignment và formatting
+    - Print layout
+    end note
+    
+    :Quản trị viên thiết lập quyền truy cập;
+    note right
+    **Quyền truy cập:**
+    - Phân quyền theo role
+    - Phân quyền theo department
+    - Phân quyền theo level
+    - Audit trail
+    - Approval workflow
+    end note
+    
+    :Quản trị viên thiết lập version control;
+    note right
+    **Version control:**
+    - Template versioning
+    - Change tracking
+    - Rollback capability
+    - Backup/restore
+    - Template history
+    end note
+    
+    :Hệ thống tạo preview template;
+    note right
+    **Preview template:**
+    - Hiển thị layout
+    - Test công thức
+    - Validate dữ liệu
+    - Check formatting
+    - Performance test
+    end note
+    
+    :Quản trị viên xem preview;
+    
+    if (Template đạt yêu cầu?) then (Không)
+        :Quản trị viên chỉnh sửa template;
+        :Quay lại bước thiết kế;
+    else (Có)
+        :Quản trị viên lưu template;
+        note right
+        **Lưu template:**
+        - Lưu vào database
+        - Tạo version mới
+        - Backup template
+        - Ghi log hoạt động
+        - Cập nhật metadata
+        end note
+        
+        :Hệ thống tạo approval workflow;
+        note right
+        **Approval workflow:**
+        - Gửi cho approver
+        - Review process
+        - Approval decision
+        - Notification system
+        - Status tracking
+        end note
+        
+        :Approver review template;
+        
+        if (Template được approve?) then (Không)
+            :Gửi feedback cho quản trị viên;
+            :Quản trị viên chỉnh sửa theo feedback;
+            :Quay lại bước thiết kế;
+        else (Có)
+            :Template được approve;
+            :Hệ thống publish template;
+            note right
+            **Publish template:**
+            - Activate template
+            - Make available to users
+            - Update template catalog
+            - Send notifications
+            - Update permissions
+            end note
+            
+            :Quản trị viên có thể export template;
+            
+            if (Export template?) then (Có)
+                :Chọn định dạng export (XML, JSON, ZIP);
+                :Hệ thống tạo file export;
+                :Cung cấp link download;
+            else (Không)
+                :Tiếp tục sử dụng template;
+            endif
+            
+            :Quản trị viên có thể import template;
+            
+            if (Import template?) then (Có)
+                :Upload file template;
+                :Hệ thống validate file;
+                :Import template vào hệ thống;
+                :Hiển thị thông báo import thành công;
+            else (Không)
+                :Tiếp tục sử dụng template;
+            endif
+            
+            :Quản trị viên có thể thiết lập lịch trình;
+            
+            if (Thiết lập lịch trình?) then (Có)
+                :Chọn tần suất tạo báo cáo;
+                :Chọn thời gian tạo;
+                :Chọn người nhận báo cáo;
+                :Hệ thống lưu lịch trình;
+                :Hiển thị thông báo lên lịch thành công;
+            else (Không)
+                :Tiếp tục sử dụng template;
+            endif
+            
+            :Quản trị viên có thể thiết lập multi-language;
+            
+            if (Thiết lập multi-language?) then (Có)
+                :Chọn ngôn ngữ hỗ trợ;
+                :Nhập nội dung đa ngôn ngữ;
+                :Hệ thống lưu cấu hình ngôn ngữ;
+                :Hiển thị thông báo thiết lập thành công;
+            else (Không)
+                :Tiếp tục sử dụng template;
+            endif
+            
+            :Hệ thống tích hợp với workflow Agribank;
+            note right
+            **Tích hợp workflow:**
+            - Connect với approval system
+            - Integrate với notification
+            - Link với audit trail
+            - Sync với user management
+            - Connect với reporting system
+            end note
+            
+            :Hệ thống ghi audit trail;
+            :Cập nhật template statistics;
+            :Gửi notification cho stakeholders;
+        endif
+    endif
+endif
+
+stop
+
+@enduml

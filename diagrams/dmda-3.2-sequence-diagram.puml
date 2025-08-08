@@ -1,0 +1,165 @@
+@startuml DMDA-3.2 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-3.2: Sequence Diagram - Gửi Phê duyệt Nhiều Dự án Cùng lúc (Multiselect)
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Approval Service" as A
+participant "Notification Service" as N
+participant "Audit Service" as AS
+
+== Khởi tạo Danh sách Dự án ==
+
+U -> F: Truy cập danh sách dự án
+F -> B: GET /api/projects
+B -> D: Query projects with approval status
+D --> B: Projects data
+B --> F: Projects list with approval eligibility
+F --> U: Hiển thị danh sách dự án với checkbox
+
+== Chọn Dự án ==
+
+U -> F: Chọn checkbox cho dự án
+F -> F: Update selection state
+F -> F: Update counter display
+F --> U: Hiển thị số dự án đã chọn
+
+U -> F: Chọn "Select All"
+F -> B: GET /api/projects/approvable
+B -> D: Query projects that can be approved
+D --> B: Approvable projects
+B --> F: All approvable projects selected
+F --> U: Hiển thị tất cả dự án có thể phê duyệt được chọn
+
+== Gửi Phê duyệt Hàng loạt ==
+
+U -> F: Nhấn "Gửi Phê duyệt (X dự án)"
+F -> B: POST /api/projects/bulk-approval/validate
+note right: { project_ids: number[], approver_id: number }
+
+B -> D: Validate projects for bulk approval
+D --> B: Validation results
+B --> F: Validation results
+F --> U: Hiển thị form chọn người phê duyệt
+
+U -> F: Chọn người phê duyệt
+F -> B: GET /api/projects/approvers
+B -> D: Query available approvers
+D --> B: Approvers list
+B --> F: Approvers list
+F --> U: Hiển thị dropdown người phê duyệt
+
+U -> F: Nhập comment (tùy chọn)
+F -> F: Validate form data
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Nhấn "Xác nhận Gửi"
+F -> B: POST /api/projects/bulk-approval
+note right: { project_ids: number[], approver_id: number, comment?: string }
+
+B -> B: Validate bulk approval request
+B -> D: Check permissions for all projects
+D --> B: Permission results
+
+alt Không có quyền gửi phê duyệt hàng loạt
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền gửi phê duyệt hàng loạt"
+else Quá nhiều dự án được chọn
+    B --> F: 400 Bad Request - Too many projects
+    F --> U: Hiển thị cảnh báo "Tối đa 50 dự án mỗi lần gửi"
+else Validation thành công
+    B -> AS: Create bulk approval log
+    AS -> D: Insert bulk_approval_logs
+    D --> AS: Bulk approval log created
+    AS --> B: Bulk approval log created
+    B --> F: Bulk approval started
+    F --> U: Hiển thị progress indicator
+end
+
+== Xử lý Từng Dự án ==
+
+loop For each selected project
+    B -> B: Process project approval
+    B -> D: Update project status to 'pending_approval'
+    D --> B: Project status updated
+    B -> D: Create approval record
+    D --> B: Approval record created
+    B -> A: Create approval request
+    A -> D: Insert approval_requests
+    D --> A: Approval request created
+    A --> B: Approval request created
+    B -> N: Send approval notification
+    N --> B: Notification sent
+    B -> AS: Log individual project approval
+    AS --> B: Project approval logged
+    B -> F: Update progress indicator
+    F --> U: Cập nhật tiến độ xử lý
+end
+
+== Hoàn thành Xử lý ==
+
+B -> AS: Complete bulk approval log
+AS -> D: Update bulk_approval_logs
+D --> AS: Bulk approval log completed
+AS --> B: Bulk approval completed
+B --> F: Bulk approval completed
+F --> U: Hiển thị thông báo hoàn thành
+
+== Hiển thị Kết quả ==
+
+U -> F: Nhấn "Xem Kết quả"
+F -> B: GET /api/projects/bulk-approval/{log_id}/results
+B -> D: Query bulk approval results
+D --> B: Results data
+B --> F: Results summary
+F --> U: Hiển thị summary report
+
+== Xử lý Lỗi ==
+
+alt Lỗi validation cho một số dự án
+    B -> F: Partial success response
+    F --> U: Hiển thị danh sách dự án thành công và thất bại
+else Lỗi hệ thống
+    B -> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi hệ thống
+else Lỗi network
+    B -> F: Network error
+    F --> U: Hiển thị thông báo lỗi kết nối
+end
+
+== Lịch sử Gửi Phê duyệt Hàng loạt ==
+
+U -> F: Nhấn "Xem Lịch sử"
+F -> B: GET /api/projects/bulk-approval/history
+B -> D: Query bulk approval history
+D --> B: History data
+B --> F: History list
+F --> U: Hiển thị lịch sử gửi phê duyệt hàng loạt
+
+== Chi tiết Lịch sử ==
+
+U -> F: Nhấn vào một lần gửi hàng loạt
+F -> B: GET /api/projects/bulk-approval/{log_id}/details
+B -> D: Query bulk approval details
+D --> B: Details data
+B --> F: Details information
+F --> U: Hiển thị chi tiết lần gửi hàng loạt
+
+== Xử lý Lỗi ==
+
+alt Không có quyền xem lịch sử
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xem lịch sử"
+else Lịch sử không tồn tại
+    B --> F: 404 Not Found
+    F --> U: Hiển thị thông báo "Lịch sử không tồn tại"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+@enduml

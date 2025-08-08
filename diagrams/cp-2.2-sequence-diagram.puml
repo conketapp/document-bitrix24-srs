@@ -1,0 +1,187 @@
+@startuml CP-2.2 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title CP-2.2: Xóa khoản mục chi phí - Sequence Diagram
+
+actor "Cán bộ\nChi phí" as User
+participant "Giao diện\nQuản lý Chi phí" as UI
+participant "Cost Item\nController" as Controller
+participant "Cost Item\nService" as Service
+participant "Delete Permission\nService" as PermissionService
+participant "Constraint\nService" as ConstraintService
+participant "Cost Item\nRepository" as Repository
+participant "Delete History\nService" as HistoryService
+participant "Notification\nService" as NotificationService
+participant "Database" as DB
+
+User -> UI: Truy cập trang quản lý chi phí
+UI -> Controller: GET /api/cost-items
+Controller -> Service: getCostItems()
+Service -> Repository: findAll()
+Repository -> DB: SELECT * FROM cost_items WHERE is_deleted = false
+DB --> Repository: Cost items data
+Repository --> Service: Cost items list
+Service --> Controller: Cost items response
+Controller --> UI: Hiển thị danh sách chi phí
+
+User -> UI: Chọn khoản mục chi phí cần xóa
+UI -> Controller: GET /api/cost-items/{id}
+Controller -> Service: getCostItemById(id)
+Service -> Repository: findById(id)
+Repository -> DB: SELECT * FROM cost_items WHERE id = ?
+DB --> Repository: Cost item data
+Repository --> Service: Cost item details
+Service --> Controller: Cost item response
+Controller --> UI: Hiển thị chi tiết chi phí
+
+User -> UI: Nhấn nút "Xóa"
+UI -> Controller: GET /api/cost-items/{id}/delete-check
+Controller -> Service: checkDeletePermissions(userId, costItemId)
+Service -> PermissionService: validateDeletePermissions(userId, costItemId)
+PermissionService -> DB: SELECT * FROM cost_delete_permissions WHERE user_role = ?
+DB --> PermissionService: Delete permissions
+PermissionService --> Service: User delete permissions
+
+alt Có quyền xóa
+  Service -> ConstraintService: checkDeleteConstraints(costItemId)
+  ConstraintService -> DB: SELECT * FROM cost_delete_constraints WHERE is_active = true
+  DB --> ConstraintService: Active constraints
+  ConstraintService -> ConstraintService: validateConstraints(costItemId)
+  
+  alt Có ràng buộc
+    ConstraintService --> Service: Constraint violations
+    Service --> Controller: Delete blocked by constraints
+    Controller --> UI: Hiển thị thông báo ràng buộc
+  else Không có ràng buộc
+    ConstraintService --> Service: No constraints
+    Service --> Controller: Delete allowed
+    Controller --> UI: Hiển thị hộp thoại xác nhận xóa
+  end
+  
+else Không có quyền xóa
+  Service --> Controller: Delete permission denied
+  Controller --> UI: Hiển thị thông báo không có quyền
+end
+
+User -> UI: Xác nhận xóa và nhập lý do
+note right of User
+  - Lý do xóa: Trùng lặp/Sai sót/Không cần thiết
+  - Loại xóa: Soft delete/Hard delete
+  - Xác nhận hiểu hậu quả
+end note
+
+UI -> Controller: DELETE /api/cost-items/{id}
+note right of UI
+{
+  "delete_reason": "Khoản mục chi phí bị trùng lặp",
+  "deletion_type": "soft",
+  "admin_confirmation": false
+}
+end note
+
+Controller -> Service: deleteCostItem(id, deleteData)
+Service -> Service: validateDeleteData(deleteData)
+Service -> Service: determineDeleteType(deleteData.deletion_type)
+
+alt Soft delete
+  Service -> Repository: softDeleteCostItem(id, deleteData)
+  Repository -> DB: UPDATE cost_items SET is_deleted = true, deleted_at = ?, deleted_by = ?, delete_reason = ? WHERE id = ?
+  DB --> Repository: Cost item soft deleted
+  Repository --> Service: Soft delete completed
+  
+else Hard delete
+  Service -> Repository: hardDeleteCostItem(id)
+  Repository -> DB: DELETE FROM cost_items WHERE id = ?
+  Repository -> DB: DELETE FROM cost_item_changes WHERE cost_item_id = ?
+  Repository -> DB: DELETE FROM cost_item_logs WHERE cost_item_id = ?
+  DB --> Repository: Cost item hard deleted
+  Repository --> Service: Hard delete completed
+end
+
+Service -> HistoryService: logDeleteAction(costItemId, deleteData)
+HistoryService -> DB: INSERT INTO cost_item_deletions (...)
+DB --> HistoryService: Delete action logged
+HistoryService --> Service: Delete logged
+
+Service -> Service: updateRelatedStatistics()
+Service -> Repository: updateCostStatistics()
+Repository -> DB: UPDATE cost_statistics SET total_items = total_items - 1
+DB --> Repository: Statistics updated
+Repository --> Service: Statistics updated
+
+Service -> NotificationService: notifyDeleteAction(costItemId, deleteData)
+NotificationService -> NotificationService: determineDeleteRecipients()
+NotificationService -> DB: INSERT INTO notifications (...)
+DB --> NotificationService: Notification created
+NotificationService --> Service: Notification sent
+
+Service --> Controller: Delete successful
+Controller --> UI: Thông báo xóa thành công
+
+UI -> Controller: GET /api/cost-items
+Controller -> Service: getCostItems()
+Service -> Repository: findAll()
+Repository -> DB: SELECT * FROM cost_items WHERE is_deleted = false
+DB --> Repository: Updated cost items data
+Repository --> Service: Updated cost items list
+Service --> Controller: Updated cost items response
+Controller --> UI: Cập nhật danh sách chi phí
+
+User -> UI: Xem khoản mục đã xóa (tùy chọn)
+UI -> Controller: GET /api/cost-items/deleted
+Controller -> Service: getDeletedCostItems()
+Service -> Repository: findDeletedItems()
+Repository -> DB: SELECT * FROM cost_items WHERE is_deleted = true
+DB --> Repository: Deleted cost items
+Repository --> Service: Deleted cost items
+Service --> Controller: Deleted cost items response
+Controller --> UI: Hiển thị danh sách đã xóa
+
+User -> UI: Khôi phục khoản mục (tùy chọn)
+UI -> Controller: POST /api/cost-items/{id}/restore
+note right of UI
+{
+  "restoration_reason": "Khôi phục theo yêu cầu của ban quản lý"
+}
+end note
+
+Controller -> Service: restoreCostItem(id, restoreData)
+Service -> Repository: restoreCostItem(id)
+Repository -> DB: UPDATE cost_items SET is_deleted = false, deleted_at = NULL, deleted_by = NULL WHERE id = ?
+DB --> Repository: Cost item restored
+Repository --> Service: Cost item restored
+
+Service -> HistoryService: logRestoreAction(costItemId, restoreData)
+HistoryService -> DB: INSERT INTO cost_item_restorations (...)
+DB --> HistoryService: Restore action logged
+HistoryService --> Service: Restore logged
+
+Service --> Controller: Restore successful
+Controller --> UI: Thông báo khôi phục thành công
+
+User -> UI: Xuất báo cáo lịch sử xóa (tùy chọn)
+UI -> Controller: POST /api/cost-items/delete-history/export
+Controller -> HistoryService: exportDeleteHistory(format)
+HistoryService -> DB: SELECT * FROM cost_item_deletions ORDER BY deleted_at DESC
+DB --> HistoryService: Delete history data
+HistoryService -> HistoryService: generateDeleteReport(historyData, format)
+HistoryService --> Controller: Report file
+Controller --> UI: Tải xuống báo cáo lịch sử xóa
+
+@enduml

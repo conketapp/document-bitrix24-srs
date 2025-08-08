@@ -1,0 +1,253 @@
+@startuml BC-1.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title BC-1.1: Sequence Diagram - Tạo báo cáo tổng hợp theo các tiêu chí khác nhau
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Report Builder" as RB
+participant "Data Service" as DS
+participant "Chart Service" as CS
+participant "Export Service" as ES
+participant "Email Service" as EMS
+
+== Khởi tạo Report Builder ==
+
+U -> F: Truy cập trang tạo báo cáo
+F -> B: GET /api/reports/builder
+B -> B: Check report creation permissions
+B -> D: Query available data sources
+D --> B: Data sources
+B -> D: Query report templates
+D --> B: Report templates
+B --> F: Report builder interface
+F --> U: Hiển thị giao diện Report Builder
+
+== Cấu hình Báo cáo ==
+
+U -> F: Chọn loại báo cáo
+F -> B: POST /api/reports/configure
+note right: { report_type: string, data_sources: string[], fields: string[], filters: object, grouping: object, sorting: object }
+
+B -> RB: Process report configuration
+RB -> RB: Validate configuration
+RB -> D: Query available fields for data sources
+D --> RB: Available fields
+RB --> B: Configuration validated
+B --> F: Configuration accepted
+F --> U: Hiển thị thông báo cấu hình hợp lệ
+
+== Thu thập Dữ liệu ==
+
+U -> F: Nhấn "Thu thập dữ liệu"
+F -> B: POST /api/reports/collect-data
+note right: { report_config: object }
+
+B -> DS: Collect data from sources
+DS -> D: Query project data
+D --> DS: Project data
+DS -> D: Query contract data
+D --> DS: Contract data
+DS -> D: Query asset data
+D --> DS: Asset data
+DS -> D: Query cost data
+D --> DS: Cost data
+DS -> D: Query department data
+D --> DS: Department data
+DS --> B: All data collected
+B --> F: Data collection completed
+F --> U: Hiển thị tiến trình thu thập dữ liệu
+
+== Xử lý Dữ liệu ==
+
+B -> RB: Process collected data
+RB -> RB: Apply filters
+RB -> RB: Group data
+RB -> RB: Sort data
+RB -> RB: Calculate statistics
+RB --> B: Processed data ready
+B --> F: Data processing completed
+F --> U: Hiển thị tiến trình xử lý dữ liệu
+
+== Tạo Biểu đồ ==
+
+B -> CS: Generate charts
+CS -> CS: Create bar charts
+CS -> CS: Create pie charts
+CS -> CS: Create line charts
+CS -> CS: Create area charts
+CS --> B: Charts generated
+B --> F: Charts ready
+F --> U: Hiển thị biểu đồ
+
+== Tạo Preview ==
+
+U -> F: Nhấn "Xem preview"
+F -> B: GET /api/reports/preview
+B -> RB: Generate report preview
+RB -> RB: Format data for preview
+RB -> RB: Apply styling
+RB --> B: Preview data
+B --> F: Report preview
+F --> U: Hiển thị preview báo cáo
+
+== Tạo Báo cáo ==
+
+U -> F: Nhấn "Tạo báo cáo"
+F -> B: POST /api/reports/generate
+note right: { format: string, template: string }
+
+B -> ES: Generate report file
+ES -> ES: Create file in specified format
+ES -> ES: Apply template styling
+ES -> ES: Add charts and graphs
+ES -> ES: Format data
+ES --> B: Report file generated
+B -> D: Save report metadata
+D --> B: Report saved
+B --> F: Report generation completed
+F --> U: Hiển thị thông báo tạo thành công
+
+== Nhận Báo cáo ==
+
+U -> F: Chọn cách nhận báo cáo
+
+alt Tải xuống ngay
+    F -> B: GET /api/reports/download
+    B -> ES: Get report file
+    ES --> B: Report file
+    B --> F: Download link
+    F --> U: Cung cấp link tải xuống
+    
+    U -> F: Tải file
+    F -> ES: Download file
+    ES --> F: File content
+    F --> U: File downloaded
+else Gửi email
+    U -> F: Nhập email
+    F -> B: POST /api/reports/email
+    note right: { email: string, report_id: string }
+    
+    B -> EMS: Send report via email
+    EMS -> EMS: Attach report file
+    EMS -> EMS: Send email
+    EMS --> B: Email sent
+    B --> F: Email sent successfully
+    F --> U: Hiển thị thông báo gửi email thành công
+end
+
+== Lưu Template ==
+
+U -> F: Nhấn "Lưu template"
+F -> B: POST /api/reports/templates
+note right: { name: string, config: object, is_public: boolean }
+
+B -> D: Save report template
+D --> B: Template saved
+B --> F: Template saved successfully
+F --> U: Hiển thị thông báo lưu template thành công
+
+== Lên lịch Gửi Tự động ==
+
+U -> F: Nhấn "Lên lịch gửi"
+F -> B: GET /api/reports/schedule
+B -> D: Query existing schedules
+D --> B: Schedule data
+B --> F: Schedule interface
+F --> U: Hiển thị form lên lịch
+
+U -> F: Cấu hình lịch gửi
+F -> B: POST /api/reports/schedule
+note right: { frequency: string, time: string, email: string, report_config: object }
+
+B -> D: Save report schedule
+D --> B: Schedule saved
+B --> F: Schedule created successfully
+F --> U: Hiển thị thông báo lên lịch thành công
+
+== Chia sẻ Báo cáo ==
+
+U -> F: Nhấn "Chia sẻ báo cáo"
+F -> B: GET /api/reports/share
+B -> D: Query user list
+D --> B: User list
+B --> F: Share interface
+F --> U: Hiển thị form chia sẻ
+
+U -> F: Chọn người nhận và quyền
+F -> B: POST /api/reports/share
+note right: { recipients: string[], permissions: object }
+
+B -> D: Update report sharing
+D --> B: Sharing updated
+B -> EMS: Send sharing notification
+EMS --> B: Notification sent
+B --> F: Sharing completed
+F --> U: Hiển thị thông báo chia sẻ thành công
+
+== So sánh Báo cáo ==
+
+U -> F: Nhấn "So sánh báo cáo"
+F -> B: GET /api/reports/compare
+B -> D: Query historical reports
+D --> B: Historical reports
+B --> F: Compare interface
+F --> U: Hiển thị giao diện so sánh
+
+U -> F: Chọn báo cáo để so sánh
+F -> B: POST /api/reports/compare
+note right: { report_ids: string[], comparison_type: string }
+
+B -> RB: Generate comparison report
+RB -> RB: Compare data between reports
+RB -> RB: Calculate differences
+RB --> B: Comparison data
+B --> F: Comparison report
+F --> U: Hiển thị báo cáo so sánh
+
+== Quản lý Quyền ==
+
+U -> F: Nhấn "Quản lý quyền"
+F -> B: GET /api/reports/permissions
+B -> D: Query report permissions
+D --> B: Permission data
+B --> F: Permission management interface
+F --> U: Hiển thị quản lý quyền
+
+U -> F: Cập nhật quyền truy cập
+F -> B: PUT /api/reports/permissions
+note right: { user_id: string, permission_level: string }
+
+B -> D: Update report permissions
+D --> B: Permissions updated
+B --> F: Permissions updated successfully
+F --> U: Hiển thị thông báo cập nhật quyền
+
+== Ghi Log ==
+
+B -> D: Log report creation activity
+D --> B: Activity logged
+B -> D: Update report statistics
+D --> B: Statistics updated
+B -> B: Clean up temporary data
+
+== Xử lý Lỗi ==
+
+alt Không có quyền tạo báo cáo
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền tạo báo cáo"
+else Lỗi cấu hình
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo lỗi cấu hình
+else Lỗi thu thập dữ liệu
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi thu thập dữ liệu
+else Lỗi tạo file
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi tạo file
+end
+
+@enduml

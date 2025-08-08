@@ -1,0 +1,139 @@
+@startuml CP-5.1 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title CP-5.1: Ghi nhận Lịch sử Thao tác Chi phí (Log) - Sequence Diagram
+
+actor "Người dùng" as User
+participant "Giao diện\nQuản lý Chi phí" as UI
+participant "Cost Item\nController" as Controller
+participant "Cost Item\nService" as Service
+participant "Logging\nService" as LogService
+participant "Cost Item\nRepository" as Repository
+participant "Log\nRepository" as LogRepo
+participant "Notification\nService" as NotificationService
+participant "Database" as DB
+
+User -> UI: Thực hiện hành động trên chi phí
+note right of User
+  Ví dụ: Tạo mới, chỉnh sửa, xóa,
+  thay đổi trạng thái, cập nhật tài chính
+end note
+
+UI -> Controller: POST/PUT/DELETE /api/cost-items
+Controller -> Service: processCostItemAction(action, data)
+
+Service -> Service: validateAction(action, data)
+Service -> Service: checkPermissions(user, action)
+
+alt Hành động hợp lệ
+  Service -> Repository: executeAction(action, data)
+  Repository -> DB: Execute SQL operation
+  DB --> Repository: Operation result
+  Repository --> Service: Action completed
+  
+  Service -> LogService: logAction(action, data, user)
+  LogService -> LogService: collectLogInformation()
+  note right of LogService
+    - Thông tin người thực hiện
+    - Thời gian thực hiện
+    - Loại hành động
+    - Dữ liệu trước và sau thay đổi
+    - Context thông tin
+  end note
+  
+  LogService -> LogService: categorizeAction(action)
+  
+  alt Tạo mới khoản mục chi phí
+    LogService -> LogService: createCreationLog()
+  elseif Chỉnh sửa thông tin
+    LogService -> LogService: createUpdateLog()
+  elseif Xóa khoản mục chi phí
+    LogService -> LogService: createDeletionLog()
+  elseif Thay đổi trạng thái
+    LogService -> LogService: createStatusChangeLog()
+  elseif Thay đổi tài chính
+    LogService -> LogService: createFinancialLog()
+  else Hành động khác
+    LogService -> LogService: createGenericLog()
+  end
+  
+  LogService -> LogService: encryptSensitiveData(logData)
+  LogService -> LogService: generateLogHash(logData)
+  LogService -> LogService: assignUniqueLogId()
+  
+  LogService -> LogRepo: saveLog(logEntry)
+  LogRepo -> DB: INSERT INTO cost_item_logs (...)
+  DB --> LogRepo: Log saved successfully
+  LogRepo --> LogService: Log entry created
+  
+  LogService -> LogService: updateRelatedData()
+  LogService -> Repository: updateCostItemMetadata(costItemId)
+  Repository -> DB: UPDATE cost_items SET last_modified = ?, modified_by = ?
+  DB --> Repository: Metadata updated
+  Repository --> LogService: Metadata updated
+  
+  alt Cần thông báo
+    LogService -> NotificationService: notifyRelevantUsers(action, costItemId)
+    NotificationService -> NotificationService: determineRecipients()
+    NotificationService -> NotificationService: createNotification()
+    NotificationService -> DB: INSERT INTO notifications (...)
+    DB --> NotificationService: Notification created
+    NotificationService --> LogService: Notification sent
+  end
+  
+  LogService --> Service: Logging completed
+  Service --> Controller: Action completed with logging
+  Controller --> UI: Success response with log info
+  
+  UI -> Controller: GET /api/cost-items/{id}/logs
+  Controller -> LogService: getCostItemLogs(costItemId)
+  LogService -> LogRepo: getLogsByCostItem(costItemId)
+  LogRepo -> DB: SELECT * FROM cost_item_logs WHERE cost_item_id = ?
+  DB --> LogRepo: Log entries
+  LogRepo --> LogService: Log entries
+  LogService --> Controller: Log entries response
+  Controller --> UI: Hiển thị lịch sử log
+  
+else Hành động không hợp lệ
+  Service --> Controller: Action failed
+  Controller --> UI: Error response
+end
+
+User -> UI: Xem chi tiết log (tùy chọn)
+UI -> Controller: GET /api/cost-items/{id}/logs/{logId}
+Controller -> LogService: getLogDetails(logId)
+LogService -> LogRepo: getLogById(logId)
+LogRepo -> DB: SELECT * FROM cost_item_logs WHERE id = ?
+DB --> LogRepo: Log details
+LogRepo --> LogService: Log details
+LogService --> Controller: Log details response
+Controller --> UI: Hiển thị chi tiết log
+
+User -> UI: Xuất báo cáo log (tùy chọn)
+UI -> Controller: POST /api/cost-items/{id}/logs/export
+Controller -> LogService: exportLogs(costItemId, format)
+LogService -> LogRepo: getLogsForExport(costItemId)
+LogRepo -> DB: SELECT * FROM cost_item_logs WHERE cost_item_id = ?
+DB --> LogRepo: Log data for export
+LogRepo --> LogService: Log data
+LogService -> LogService: generateReport(logData, format)
+LogService --> Controller: Report file
+Controller --> UI: Tải xuống báo cáo log
+
+@enduml

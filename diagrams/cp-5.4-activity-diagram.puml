@@ -1,0 +1,172 @@
+@startuml CP-5.4 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title CP-5.4: Xuất Dữ liệu Chi phí ra Excel - Activity Diagram
+
+start
+
+:Người dùng truy cập trang quản lý chi phí;
+
+:Hiển thị danh sách chi phí hoặc báo cáo;
+
+:Người dùng nhấn nút "Xuất Excel";
+
+partition "Chọn Loại Xuất" {
+  :Hiển thị các tùy chọn xuất;
+  if (Loại xuất?) then (Toàn bộ danh sách)
+    :Xuất tất cả khoản mục chi phí;
+  elseif (Đã chọn) then
+    :Xuất các khoản mục đã chọn;
+  elseif (Đã lọc) then
+    :Xuất dữ liệu đã được lọc;
+  elseif (Báo cáo) then
+    :Xuất dữ liệu từ báo cáo;
+  else (Tùy chỉnh)
+    :Xuất với cấu hình tùy chỉnh;
+  endif
+}
+
+partition "Chọn Phạm vi Dữ liệu" {
+  :Chọn khoảng thời gian;
+  :Chọn trạng thái chi phí;
+  :Chọn danh mục chi phí;
+  :Chọn dự án/hợp đồng;
+  :Chọn nhà cung cấp;
+}
+
+partition "Chọn Cột Xuất" {
+  :Hiển thị danh sách các cột có thể xuất;
+  :Chọn các cột cần xuất;
+  :Sắp xếp thứ tự các cột;
+  :Thêm cột tính toán (nếu cần);
+}
+
+partition "Cấu hình Định dạng" {
+  :Chọn định dạng Excel (.xlsx/.xls);
+  :Chọn có định dạng hay không;
+  :Chọn màu sắc và font chữ;
+  :Chọn header và footer;
+}
+
+partition "Cấu hình Sheet" {
+  if (Xuất nhiều sheet?) then (Có)
+    :Chọn số lượng sheet;
+    :Đặt tên cho từng sheet;
+    :Phân bổ dữ liệu cho từng sheet;
+  else (Không)
+    :Xuất tất cả vào một sheet;
+  endif
+}
+
+partition "Đặt tên File" {
+  :Hệ thống tạo tên file tự động;
+  :Thêm timestamp vào tên file;
+  :Cho phép người dùng chỉnh sửa tên;
+  :Kiểm tra tên file hợp lệ;
+}
+
+partition "Tạo File Excel" {
+  :Tạo workbook Excel mới;
+  :Thêm dữ liệu vào worksheet;
+  :Áp dụng định dạng (nếu có);
+  :Tạo header và footer;
+  :Tự động điều chỉnh độ rộng cột;
+}
+
+partition "Tạo Tổng hợp" {
+  if (Cần tổng hợp?) then (Có)
+    :Tính tổng chi phí;
+    :Tính tổng theo danh mục;
+    :Tạo biểu đồ tổng hợp;
+    :Thêm vào sheet riêng;
+  else (Không)
+    :Bỏ qua tạo tổng hợp;
+  endif
+}
+
+partition "Kiểm tra Quyền" {
+  :Kiểm tra quyền xuất dữ liệu;
+  if (Có quyền xuất?) then (Có)
+    :Tiếp tục quá trình xuất;
+  else (Không)
+    :Hiển thị thông báo không có quyền;
+    stop
+  endif
+}
+
+partition "Tạo File Excel" {
+  :Thu thập dữ liệu từ database;
+  :Xử lý và định dạng dữ liệu;
+  :Tạo file Excel với định dạng;
+  :Thêm metadata và thông tin;
+}
+
+partition "Tải xuống File" {
+  :Tạo link tải xuống;
+  :Hiển thị thông báo tạo file thành công;
+  :Cho phép tải xuống ngay lập tức;
+}
+
+partition "Tùy chọn: Gửi Email" {
+  if (Gửi qua email?) then (Có)
+    :Nhập địa chỉ email;
+    :Nhập tiêu đề email;
+    :Nhập nội dung email;
+    :Gửi file Excel qua email;
+  else (Không)
+    :Bỏ qua gửi email;
+  endif
+}
+
+partition "Tùy chọn: Lưu vào Cloud" {
+  if (Lưu vào cloud storage?) then (Có)
+    :Chọn cloud storage;
+    :Upload file Excel;
+    :Tạo link chia sẻ;
+  else (Không)
+    :Bỏ qua lưu cloud;
+  endif
+}
+
+partition "Tùy chọn: Lên lịch Xuất" {
+  if (Lên lịch xuất tự động?) then (Có)
+    :Chọn tần suất xuất;
+    :Chọn thời gian xuất;
+    :Chọn người nhận email;
+    :Lưu cấu hình lịch xuất;
+  else (Không)
+    :Bỏ qua lên lịch;
+  endif
+}
+
+partition "Ghi Log" {
+  :Ghi log hoạt động xuất file;
+  :Lưu thông tin người xuất;
+  :Lưu thông tin file đã xuất;
+  :Cập nhật thống kê xuất;
+}
+
+stop
+
+@enduml

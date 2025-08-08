@@ -1,0 +1,191 @@
+@startuml HD-5.2 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title HD-5.2: Sequence Diagram - Tìm kiếm & Lọc Hợp đồng Đa tiêu chí
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Search Service" as SS
+participant "Filter Service" as FS
+participant "Cache Service" as CS
+
+== Khởi tạo Trang Tìm kiếm ==
+
+U -> F: Truy cập trang tìm kiếm hợp đồng
+F -> B: GET /api/contracts/search
+B -> B: Check search permissions
+B -> D: Query available filters
+D --> B: Filter options data
+B --> F: Search interface data
+F --> U: Hiển thị giao diện tìm kiếm
+
+== Tìm kiếm Cơ bản ==
+
+U -> F: Nhập từ khóa tìm kiếm
+F -> B: GET /api/contracts/search
+note right: { keyword: string, filters: object, page: number, limit: number }
+
+B -> SS: Process search query
+SS -> SS: Parse search keywords
+SS -> SS: Apply fuzzy matching
+SS -> D: Query contracts with filters
+D --> SS: Contract search results
+SS -> SS: Calculate relevance scores
+SS --> B: Search results with scores
+B -> B: Apply pagination
+B --> F: Paginated search results
+F --> U: Hiển thị kết quả tìm kiếm
+
+== Lọc Kết quả ==
+
+U -> F: Áp dụng bộ lọc
+F -> B: GET /api/contracts/search
+note right: { filters: object, sort_by: string, sort_order: string }
+
+B -> FS: Process filter criteria
+FS -> FS: Validate filter parameters
+FS -> D: Query contracts with filters
+D --> FS: Filtered contract results
+FS -> FS: Apply sorting
+FS --> B: Filtered and sorted results
+B -> B: Apply pagination
+B --> F: Filtered results
+F --> U: Hiển thị kết quả đã lọc
+
+== Tìm kiếm Nâng cao ==
+
+U -> F: Mở tìm kiếm nâng cao
+F -> B: GET /api/contracts/advanced-search
+B -> D: Query advanced search options
+D --> B: Advanced search data
+B --> F: Advanced search interface
+F --> U: Hiển thị form tìm kiếm nâng cao
+
+U -> F: Nhập tiêu chí tìm kiếm nâng cao
+F -> B: POST /api/contracts/advanced-search
+note right: { criteria: object, logic: string, date_ranges: object, value_ranges: object }
+
+B -> SS: Process advanced search
+SS -> SS: Build complex query
+SS -> D: Execute advanced search
+D --> SS: Advanced search results
+SS -> SS: Apply relevance ranking
+SS --> B: Advanced search results
+B --> F: Advanced search results
+F --> U: Hiển thị kết quả tìm kiếm nâng cao
+
+== Sắp xếp Kết quả ==
+
+U -> F: Chọn tiêu chí sắp xếp
+F -> B: GET /api/contracts/search
+note right: { sort_by: string, sort_order: string, filters: object }
+
+B -> B: Apply sorting criteria
+B -> D: Query sorted contracts
+D --> B: Sorted contract results
+B --> F: Sorted results
+F --> U: Hiển thị kết quả đã sắp xếp
+
+== Xem Preview ==
+
+U -> F: Nhấn "Xem preview" hợp đồng
+F -> B: GET /api/contracts/{id}/preview
+B -> D: Query contract preview data
+D --> B: Contract preview data
+B --> F: Contract preview
+F --> U: Hiển thị preview hợp đồng
+
+== Lưu Bộ lọc ==
+
+U -> F: Nhấn "Lưu bộ lọc"
+F -> B: POST /api/contracts/filters
+note right: { name: string, filters: object, is_public: boolean }
+
+B -> D: Save filter configuration
+D --> B: Filter saved
+B --> F: Filter saved successfully
+F --> U: Hiển thị thông báo lưu thành công
+
+== Tải Bộ lọc Đã lưu ==
+
+U -> F: Nhấn "Tải bộ lọc"
+F -> B: GET /api/contracts/filters
+B -> D: Query saved filters
+D --> B: Saved filters data
+B --> F: Saved filters list
+F --> U: Hiển thị danh sách bộ lọc đã lưu
+
+U -> F: Chọn bộ lọc để tải
+F -> B: GET /api/contracts/filters/{filter_id}
+B -> D: Query filter details
+D --> B: Filter details
+B --> F: Filter configuration
+F --> U: Áp dụng bộ lọc đã chọn
+
+== Xuất Kết quả ==
+
+U -> F: Nhấn "Xuất kết quả"
+F -> B: POST /api/contracts/search/export
+note right: { format: string, filters: object, columns: string[] }
+
+B -> B: Generate export file
+B -> D: Query data for export
+D --> B: Export data
+B -> B: Format export file
+B --> F: Export file
+F --> U: Cung cấp file xuất
+
+== Phân trang ==
+
+U -> F: Chuyển trang
+F -> B: GET /api/contracts/search
+note right: { page: number, limit: number, filters: object }
+
+B -> B: Calculate pagination
+B -> D: Query paginated results
+D --> B: Paginated contract data
+B --> F: Paginated results
+F --> U: Hiển thị trang mới
+
+== Cache Kết quả ==
+
+B -> CS: Cache search results
+CS -> CS: Store results in cache
+CS --> B: Cache stored
+B -> B: Update search statistics
+B -> D: Log search activity
+D --> B: Activity logged
+
+== Tìm kiếm Gợi ý ==
+
+U -> F: Nhập từ khóa (autocomplete)
+F -> B: GET /api/contracts/search/suggestions
+note right: { keyword: string }
+
+B -> SS: Generate search suggestions
+SS -> D: Query suggestion data
+D --> SS: Suggestion results
+SS --> B: Search suggestions
+B --> F: Suggestions
+F --> U: Hiển thị gợi ý tìm kiếm
+
+== Xử lý Lỗi ==
+
+alt Không có quyền tìm kiếm
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền tìm kiếm"
+else Không có kết quả tìm kiếm
+    B --> F: 200 OK (empty results)
+    F --> U: Hiển thị thông báo "Không tìm thấy kết quả"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi database
+else Lỗi xuất file
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi xuất file
+end
+
+@enduml

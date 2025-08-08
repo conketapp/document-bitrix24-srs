@@ -1,0 +1,62 @@
+@startuml DMDA-1.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+skinparam activityFontName Arial
+skinparam activityDiamondFontSize 10
+skinparam activityDiamondFontName Arial
+
+title DMDA-1.1: Activity Diagram - Tạo Danh mục Dự án theo Năm và Phân loại
+
+start
+
+:User truy cập trang Danh mục dự án;
+
+:User chọn năm từ dropdown;
+note right
+  Chỉ có các năm cụ thể
+  (2024, 2025, v.v.)
+  Không có option "Tất cả"
+end note
+
+:User chọn loại dự án từ dropdown;
+note right
+  Có các option:
+  - Dự án đầu tư
+  - Mua sắm tài sản
+  - Thuê dịch vụ
+  - Bảo trì
+  - Tất cả
+end note
+
+:System gọi API để lấy dữ liệu;
+note right
+  GET /api/projects
+  Parameters: year, category_id
+end note
+
+if (Có dữ liệu?) then (có)
+  :Hiển thị danh sách dự án;
+  :Hiển thị thông tin dự án;
+  note right
+    - Tên dự án
+    - Năm thực hiện
+    - Loại dự án
+    - Trạng thái
+    - Ngày bắt đầu
+    - Ngày kết thúc
+    - Ngân sách
+  end note
+else (không)
+  :Hiển thị thông báo "Không có dự án";
+endif
+
+:User có thể tương tác với danh sách;
+note right
+  - Xem chi tiết
+  - Phân trang
+  - Sắp xếp
+end note
+
+stop
+
+@enduml

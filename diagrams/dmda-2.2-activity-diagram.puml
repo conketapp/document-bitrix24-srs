@@ -1,0 +1,40 @@
+@startuml DMDA-2.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-2.2: Activity Diagram - Chỉnh sửa Dự án
+
+start
+
+:Người dùng chọn dự án cần chỉnh sửa;
+
+:Kiểm tra quyền chỉnh sửa;
+
+if (Có quyền chỉnh sửa?) then (Không)
+    :Hiển thị thông báo "Không có quyền";
+    stop
+else (Có)
+    :Kiểm tra trạng thái dự án;
+    
+    if (Trạng thái = draft/pending_approval?) then (Có)
+        :Hiển thị nút "Chỉnh sửa";
+        :Mở form chỉnh sửa;
+        :Người dùng chỉnh sửa thông tin;
+        :Lưu thay đổi vào database;
+        :Tạo log thay đổi;
+        :Hiển thị thông báo thành công;
+        
+    else (Trạng thái khác)
+        :Hiển thị nút "Yêu cầu chỉnh sửa";
+        :Mở form yêu cầu chỉnh sửa;
+        :Người dùng nhập lý do chỉnh sửa;
+        :Gửi yêu cầu chỉnh sửa;
+        :Cập nhật trạng thái dự án;
+        :Gửi thông báo cho người phê duyệt;
+        :Hiển thị thông báo "Đã gửi yêu cầu";
+    endif
+endif
+
+stop
+
+@enduml

@@ -1,0 +1,74 @@
+@startuml GT-4.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title GT-4.1: Activity Diagram - Ghi nhận Lịch sử Thao tác Gói thầu
+
+start
+
+:Người dùng thực hiện hành động trên gói thầu;
+
+:Hệ thống phát hiện hành động cần log;
+
+:Thu thập thông tin hành động;
+note right
+**Thông tin cần thu thập:**
+- Thời gian thực hiện
+- Người thực hiện (user_id)
+- Loại hành động
+- Chi tiết thay đổi
+- IP address
+- Session ID
+end note
+
+:Kiểm tra loại hành động;
+
+if (Hành động quan trọng?) then (Có)
+    :Thu thập thông tin chi tiết;
+    :Ghi log với mức độ HIGH;
+else (Thông thường)
+    :Ghi log với mức độ NORMAL;
+endif
+
+:Tạo log entry;
+
+:Kiểm tra thay đổi dữ liệu;
+
+if (Có thay đổi dữ liệu?) then (Có)
+    :So sánh giá trị trước và sau;
+    :Ghi lại chi tiết thay đổi;
+else (Không)
+    :Ghi log hành động đơn giản;
+endif
+
+:Mã hóa dữ liệu log;
+
+:Lưu log vào database;
+
+:Tạo digital signature;
+
+:Kiểm tra log retention policy;
+
+if (Log cũ hơn 7 năm?) then (Có)
+    :Archive log;
+    :Chuyển sang storage dài hạn;
+else (Không)
+    :Giữ trong database chính;
+endif
+
+:Backup log hàng ngày;
+
+:Kiểm tra real-time notification;
+
+if (Hành động quan trọng?) then (Có)
+    :Gửi thông báo real-time;
+    :Thông báo cho stakeholders;
+else (Không)
+    :Chỉ ghi log;
+endif
+
+:Hiển thị thông báo thành công;
+
+stop
+
+@enduml

@@ -1,0 +1,131 @@
+@startuml DMDA-4.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title DMDA-4.1: Sequence Diagram - Ghi nhận Lịch sử Thao tác Dự án (Log)
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Log Service" as L
+participant "Audit Service" as AS
+participant "Notification Service" as N
+
+== Thực hiện Hành động Dự án ==
+
+U -> F: Thực hiện hành động trên dự án
+F -> B: POST /api/projects/{id}/actions
+note right: { action_type: string, action_details: object }
+
+B -> B: Validate action request
+B -> D: Check project permissions
+D --> B: Permission result
+
+alt Không có quyền thực hiện
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền thực hiện"
+else Có quyền thực hiện
+    B -> D: Update project data
+    D --> B: Project updated
+    B -> L: Log project action
+    L -> D: Insert project_activity_logs
+    D --> L: Log record created
+    L -> AS: Create audit trail
+    AS --> L: Audit trail created
+    L --> B: Action logged successfully
+    B -> N: Send action notification
+    N --> B: Notification sent
+    B --> F: Action completed successfully
+    F --> U: Hiển thị thông báo thành công
+end
+
+== Xem Lịch sử Hoạt động ==
+
+U -> F: Truy cập trang lịch sử dự án
+F -> B: GET /api/projects/{id}/activity-logs
+B -> D: Query project activity logs
+D --> B: Activity logs data
+B --> F: Activity logs
+F --> U: Hiển thị danh sách hoạt động
+
+== Lọc và Tìm kiếm Log ==
+
+U -> F: Chọn bộ lọc và nhập từ khóa
+F -> B: GET /api/projects/{id}/activity-logs/filter
+note right: { action_type?: string, user_id?: number, date_range?: object, keyword?: string }
+
+B -> D: Query filtered logs
+D --> B: Filtered logs data
+B --> F: Filtered logs
+F --> U: Hiển thị kết quả lọc
+
+== Xuất Log ==
+
+U -> F: Nhấn "Xuất Log"
+F -> B: POST /api/projects/{id}/activity-logs/export
+note right: { format: string, date_range?: object, filters?: object }
+
+B -> D: Query logs for export
+D --> B: Export data
+B -> B: Generate export file
+B --> F: Export file URL
+F --> U: Cung cấp file xuất
+
+== Xem Chi tiết Log ==
+
+U -> F: Nhấn vào bản ghi log
+F -> B: GET /api/projects/{id}/activity-logs/{log_id}
+B -> D: Query log details
+D --> B: Log details data
+B --> F: Log details
+F --> U: Hiển thị chi tiết log
+
+== Quản lý Log (Admin) ==
+
+U -> F: Truy cập trang quản lý log (Admin)
+F -> B: GET /api/admin/activity-logs
+B -> D: Query all activity logs
+D --> B: All logs data
+B --> F: Admin logs view
+F --> U: Hiển thị giao diện quản lý log
+
+U -> F: Thực hiện hành động quản lý
+F -> B: POST /api/admin/activity-logs/actions
+note right: { action: string, log_ids?: number[], filters?: object }
+
+B -> B: Validate admin permissions
+B -> D: Execute admin action
+D --> B: Action result
+B --> F: Admin action completed
+F --> U: Hiển thị kết quả hành động
+
+== Backup và Archive Log ==
+
+B -> D: Create log backup
+D --> B: Backup created
+B -> AS: Log backup action
+AS --> B: Backup logged
+
+B -> D: Archive old logs
+D --> B: Old logs archived
+B -> AS: Log archive action
+AS --> B: Archive logged
+
+== Xử lý Lỗi ==
+
+alt Lỗi quyền truy cập
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền"
+else Lỗi validation
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị lỗi validation
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+else Lỗi log service
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo "Lỗi ghi log"
+end
+
+@enduml

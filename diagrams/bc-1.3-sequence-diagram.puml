@@ -1,0 +1,328 @@
+@startuml BC-1.3 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title BC-1.3: Sequence Diagram - Phát triển các mẫu báo cáo theo yêu cầu đặc thù của Agribank
+
+actor "Quản trị viên" as A
+actor "Approver" as AP
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Template Builder" as TB
+participant "Formula Engine" as FE
+participant "Agribank Standards" as AS
+participant "Workflow Engine" as WE
+participant "Audit Service" as AUD
+
+== Khởi tạo Template Builder ==
+
+A -> F: Truy cập Template Builder
+F -> B: GET /api/templates/builder
+B -> B: Check admin permissions
+B -> D: Query available template types
+D --> B: Template types
+B -> D: Query Agribank standards
+D --> B: Agribank standards
+B --> F: Template builder interface
+F --> A: Hiển thị giao diện Template Builder
+
+== Thiết kế Template ==
+
+A -> F: Chọn loại template
+F -> B: POST /api/templates/select-type
+note right: { template_type: string, agribank_standards: object }
+
+B -> TB: Process template type selection
+TB -> AS: Apply Agribank standards
+AS -> AS: Load corporate branding
+AS -> AS: Set standard fonts and colors
+AS --> TB: Standards applied
+TB --> B: Template type configured
+B --> F: Template type accepted
+F --> A: Hiển thị thông báo chọn loại thành công
+
+== Thiết kế Layout ==
+
+A -> F: Thiết kế layout
+F -> B: POST /api/templates/design-layout
+note right: { layout_config: object, visual_design: object }
+
+B -> TB: Process layout design
+TB -> TB: Apply drag-and-drop interface
+TB -> TB: Configure visual template designer
+TB -> TB: Set field mapping tools
+TB -> TB: Configure layout designer
+TB --> B: Layout designed
+B --> F: Layout design completed
+F --> A: Hiển thị layout đã thiết kế
+
+== Thiết lập Trường Dữ liệu ==
+
+A -> F: Thiết lập trường dữ liệu
+F -> B: POST /api/templates/set-fields
+note right: { data_fields: string[], field_mapping: object }
+
+B -> TB: Configure data fields
+TB -> TB: Map field sources
+TB -> TB: Set field properties
+TB -> TB: Configure field validation
+TB --> B: Fields configured
+B --> F: Data fields setup completed
+F --> A: Hiển thị thông báo thiết lập trường thành công
+
+== Tạo Công thức Tính toán ==
+
+A -> F: Tạo công thức tính toán
+F -> B: POST /api/templates/create-formula
+note right: { formula: string, calculation_type: string }
+
+B -> FE: Process formula creation
+FE -> FE: Parse mathematical calculations
+FE -> FE: Validate financial formulas
+FE -> FE: Check statistical functions
+FE -> FE: Validate custom functions
+FE --> B: Formula validation result
+
+alt Formula không hợp lệ
+    B --> F: 400 Bad Request
+    F --> A: Hiển thị thông báo lỗi công thức
+    B --> F: Formula error details
+    F --> A: Hiển thị chi tiết lỗi
+else Formula hợp lệ
+    B --> F: Formula accepted
+    F --> A: Hiển thị thông báo công thức hợp lệ
+end
+
+== Thiết lập Định dạng ==
+
+A -> F: Thiết lập định dạng trình bày
+F -> B: POST /api/templates/set-formatting
+note right: { formatting: object, print_layout: object }
+
+B -> TB: Apply formatting settings
+TB -> AS: Apply corporate standards
+AS -> AS: Set standard fonts
+AS -> AS: Configure colors
+AS -> AS: Set spacing and alignment
+AS --> TB: Formatting applied
+TB --> B: Formatting configured
+B --> F: Formatting setup completed
+F --> A: Hiển thị định dạng đã thiết lập
+
+== Thiết lập Quyền Truy cập ==
+
+A -> F: Thiết lập quyền truy cập
+F -> B: POST /api/templates/set-permissions
+note right: { permissions: object, role_access: object }
+
+B -> TB: Configure access permissions
+TB -> TB: Set role-based access
+TB -> TB: Configure department permissions
+TB -> TB: Set audit trail
+TB -> TB: Configure approval workflow
+TB --> B: Permissions configured
+B --> F: Permissions setup completed
+F --> A: Hiển thị thông báo thiết lập quyền thành công
+
+== Thiết lập Version Control ==
+
+A -> F: Thiết lập version control
+F -> B: POST /api/templates/set-versioning
+note right: { version_config: object, backup_settings: object }
+
+B -> TB: Configure version control
+TB -> TB: Set template versioning
+TB -> TB: Configure change tracking
+TB -> TB: Set rollback capability
+TB -> TB: Configure backup/restore
+TB --> B: Version control configured
+B --> F: Version control setup completed
+F --> A: Hiển thị thông báo thiết lập version thành công
+
+== Tạo Preview ==
+
+A -> F: Nhấn "Tạo preview"
+F -> B: POST /api/templates/preview
+note right: { template_config: object }
+
+B -> TB: Generate template preview
+TB -> TB: Render layout
+TB -> TB: Test formulas
+TB -> TB: Validate data
+TB -> TB: Check formatting
+TB --> B: Preview generated
+B --> F: Template preview
+F --> A: Hiển thị preview template
+
+== Lưu Template ==
+
+A -> F: Nhấn "Lưu template"
+F -> B: POST /api/templates/save
+note right: { template_data: object, metadata: object }
+
+B -> D: Save template to database
+D --> B: Template saved
+B -> D: Create new version
+D --> B: Version created
+B -> D: Backup template
+D --> B: Backup completed
+B --> F: Template saved successfully
+F --> A: Hiển thị thông báo lưu thành công
+
+== Tạo Approval Workflow ==
+
+B -> WE: Create approval workflow
+WE -> WE: Set approval process
+WE -> WE: Configure notification system
+WE -> WE: Set status tracking
+WE --> B: Workflow created
+B --> F: Approval workflow initiated
+F --> A: Hiển thị thông báo gửi approval
+
+== Review Process ==
+
+AP -> F: Truy cập approval interface
+F -> B: GET /api/templates/approval
+B -> D: Query pending approvals
+D --> B: Pending approvals
+B --> F: Approval interface
+F --> AP: Hiển thị giao diện approval
+
+AP -> F: Review template
+F -> B: POST /api/templates/review
+note right: { approval_decision: string, feedback: string }
+
+B -> WE: Process approval decision
+WE -> WE: Update approval status
+WE -> WE: Send notifications
+WE --> B: Approval processed
+
+alt Template được approve
+    B -> D: Activate template
+    D --> B: Template activated
+    B -> D: Update template catalog
+    D --> B: Catalog updated
+    B --> F: Template approved
+    F --> A: Hiển thị thông báo template được approve
+else Template bị reject
+    B --> F: Template rejected
+    F --> A: Hiển thị feedback từ approver
+    A -> F: Chỉnh sửa template
+    F -> B: POST /api/templates/update
+    B -> D: Update template
+    D --> B: Template updated
+    B --> F: Template updated successfully
+    F --> A: Hiển thị thông báo cập nhật thành công
+end
+
+== Publish Template ==
+
+B -> D: Publish template
+D --> B: Template published
+B -> D: Update template availability
+D --> B: Availability updated
+B -> D: Send notifications
+D --> B: Notifications sent
+B --> F: Template published successfully
+F --> A: Hiển thị thông báo publish thành công
+
+== Export Template ==
+
+A -> F: Nhấn "Export template"
+F -> B: POST /api/templates/export
+note right: { format: string, include_data: boolean }
+
+B -> TB: Export template
+TB -> TB: Generate export file
+TB -> TB: Package template data
+TB --> B: Export file generated
+B --> F: Export file
+F --> A: Cung cấp link download
+
+== Import Template ==
+
+A -> F: Upload template file
+F -> B: POST /api/templates/import
+note right: { file: object, import_options: object }
+
+B -> TB: Import template
+TB -> TB: Validate import file
+TB -> TB: Parse template data
+TB -> TB: Validate template structure
+TB --> B: Import validation result
+
+alt Import thành công
+    B -> D: Import template to database
+    D --> B: Template imported
+    B --> F: Import completed
+    F --> A: Hiển thị thông báo import thành công
+else Import thất bại
+    B --> F: 400 Bad Request
+    F --> A: Hiển thị thông báo lỗi import
+end
+
+== Thiết lập Lịch trình ==
+
+A -> F: Thiết lập lịch trình
+F -> B: POST /api/templates/schedule
+note right: { frequency: string, time: string, recipients: string[] }
+
+B -> D: Save schedule configuration
+D --> B: Schedule saved
+B --> F: Schedule created successfully
+F --> A: Hiển thị thông báo lên lịch thành công
+
+== Thiết lập Multi-language ==
+
+A -> F: Thiết lập multi-language
+F -> B: POST /api/templates/multilang
+note right: { languages: string[], content: object }
+
+B -> TB: Configure multi-language
+TB -> TB: Set language support
+TB -> TB: Configure content translation
+TB --> B: Multi-language configured
+B --> F: Multi-language setup completed
+F --> A: Hiển thị thông báo thiết lập multi-language thành công
+
+== Tích hợp Workflow ==
+
+B -> WE: Integrate with Agribank workflow
+WE -> WE: Connect approval system
+WE -> WE: Integrate notification system
+WE -> WE: Link audit trail
+WE -> WE: Sync user management
+WE --> B: Workflow integrated
+B --> F: Integration completed
+F --> A: Hiển thị thông báo tích hợp thành công
+
+== Ghi Audit Trail ==
+
+B -> AUD: Log template activities
+AUD -> AUD: Record template creation
+AUD -> AUD: Track changes
+AUD -> AUD: Log approvals
+AUD --> B: Audit trail recorded
+B -> D: Update template statistics
+D --> B: Statistics updated
+B -> D: Send stakeholder notifications
+D --> B: Notifications sent
+
+== Xử lý Lỗi ==
+
+alt Không có quyền tạo template
+    B --> F: 403 Forbidden
+    F --> A: Hiển thị thông báo "Không có quyền tạo template"
+else Lỗi công thức
+    B --> F: 400 Bad Request
+    F --> A: Hiển thị thông báo lỗi công thức
+else Lỗi approval workflow
+    B --> F: 500 Internal Server Error
+    F --> A: Hiển thị thông báo lỗi approval
+else Lỗi publish template
+    B --> F: 500 Internal Server Error
+    F --> A: Hiển thị thông báo lỗi publish
+end
+
+@enduml

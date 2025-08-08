@@ -1,0 +1,183 @@
+@startuml CP-5.6 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam activityStart {
+  BackgroundColor #C8E6C9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam activityEnd {
+  BackgroundColor #FFCDD2
+  BorderColor #D32F2F
+  FontColor #B71C1C
+}
+
+title CP-5.6: Cảnh báo khi Tổng Chi phí Vượt quá Ngân sách Dự án - Activity Diagram
+
+start
+
+:Hệ thống khởi động quy trình kiểm tra ngân sách;
+
+partition "Thu thập Dữ liệu Dự án" {
+  :Tải danh sách tất cả dự án;
+  :Tải ngân sách được duyệt cho từng dự án;
+  :Tải kế hoạch vốn trong năm;
+  :Tải tổng mức đầu tư đã phê duyệt;
+}
+
+partition "Thu thập Dữ liệu Chi phí" {
+  :Tải tổng chi phí thực tế đã phát sinh;
+  :Tải chi phí dự kiến cho phần còn lại của năm;
+  :Tính tổng chi phí thực tế + dự kiến;
+  :Phân loại chi phí theo dự án;
+}
+
+partition "So sánh Chi phí với Ngân sách" {
+  :So sánh tổng chi phí với ngân sách được giao;
+  :Tính tỷ lệ sử dụng ngân sách;
+  :Kiểm tra ngưỡng cảnh báo;
+  
+  if (Chi phí vượt ngưỡng cảnh báo?) then (Có)
+    :Tạo cảnh báo vượt ngân sách;
+    :Xác định mức độ nghiêm trọng;
+  else (Không)
+    :Bỏ qua, không tạo cảnh báo;
+  endif
+}
+
+partition "Phân loại Mức độ Cảnh báo" {
+  if (Tỷ lệ sử dụng ngân sách?) then (80-90%)
+    :Mức độ thấp - Cảnh báo thông tin;
+  elseif (90-95%) then
+    :Mức độ trung bình - Cảnh báo chú ý;
+  elseif (95-100%) then
+    :Mức độ cao - Cảnh báo nghiêm trọng;
+  else (Trên 100%)
+    :Mức độ nghiêm trọng - Cảnh báo khẩn cấp;
+  endif
+}
+
+partition "Tạo Cảnh báo" {
+  :Tạo nội dung cảnh báo;
+  :Xác định người nhận cảnh báo;
+  :Chọn kênh gửi cảnh báo;
+  :Lưu cảnh báo vào database;
+}
+
+partition "Gửi Cảnh báo qua Giao diện" {
+  if (Cấu hình cảnh báo giao diện?) then (Có)
+    :Hiển thị biểu tượng cảnh báo màu đỏ;
+    :Hiển thị thông báo popup;
+    :Cập nhật dashboard với cảnh báo;
+    :Hiển thị trong danh sách cảnh báo;
+  else (Không)
+    :Bỏ qua cảnh báo giao diện;
+  endif
+}
+
+partition "Gửi Cảnh báo qua Email" {
+  if (Cấu hình cảnh báo email?) then (Có)
+    :Tạo nội dung email cảnh báo;
+    :Gửi email cho người quản lý dự án;
+    :Gửi email cho quản lý cấp cao;
+    :Gửi email cho bộ phận tài chính;
+  else (Không)
+    :Bỏ qua gửi email;
+  endif
+}
+
+partition "Gửi Cảnh báo qua SMS" {
+  if (Cấu hình cảnh báo SMS?) then (Có)
+    :Tạo nội dung SMS ngắn gọn;
+    :Gửi SMS cho người quản lý;
+  else (Không)
+    :Bỏ qua gửi SMS;
+  endif
+}
+
+partition "Cập nhật Trạng thái Cảnh báo" {
+  :Đánh dấu cảnh báo đã gửi;
+  :Ghi timestamp gửi cảnh báo;
+  :Cập nhật trạng thái chờ xác nhận;
+}
+
+partition "Tùy chọn: Xác nhận Cảnh báo" {
+  if (Người dùng xác nhận cảnh báo?) then (Có)
+    :Đánh dấu cảnh báo đã xác nhận;
+    :Ghi thời gian xác nhận;
+    :Ghi người xác nhận;
+  else (Không)
+    :Cảnh báo vẫn ở trạng thái chờ;
+  endif
+}
+
+partition "Tùy chọn: Giải quyết Cảnh báo" {
+  if (Người dùng giải quyết cảnh báo?) then (Có)
+    :Nhập hành động khắc phục;
+    :Nhập biện pháp điều chỉnh;
+    :Đánh dấu cảnh báo đã giải quyết;
+    :Ghi thời gian giải quyết;
+  else (Không)
+    :Cảnh báo vẫn chưa được giải quyết;
+  endif
+}
+
+partition "Tùy chọn: Thiết lập Cấu hình" {
+  if (Người dùng muốn cấu hình?) then (Có)
+    :Thiết lập ngưỡng cảnh báo (80%, 90%, 95%);
+    :Chọn kênh gửi cảnh báo;
+    :Chọn người nhận cảnh báo;
+    :Thiết lập tần suất cảnh báo;
+    :Lưu cấu hình cảnh báo;
+  else (Không)
+    :Bỏ qua thiết lập cấu hình;
+  endif
+}
+
+partition "Tùy chọn: Xem Lịch sử Cảnh báo" {
+  if (Xem lịch sử cảnh báo?) then (Có)
+    :Hiển thị danh sách tất cả cảnh báo;
+    :Lọc theo mức độ nghiêm trọng;
+    :Lọc theo thời gian;
+    :Lọc theo dự án;
+    :Hiển thị chi tiết từng cảnh báo;
+  else (Không)
+    :Bỏ qua xem lịch sử;
+  endif
+}
+
+partition "Tùy chọn: Xuất Báo cáo Cảnh báo" {
+  if (Xuất báo cáo cảnh báo?) then (Có)
+    :Tạo báo cáo cảnh báo vượt ngân sách;
+    :Bao gồm thống kê và phân tích;
+    :Xuất file Excel/PDF;
+    :Gửi báo cáo qua email;
+  else (Không)
+    :Bỏ qua xuất báo cáo;
+  endif
+}
+
+partition "Tùy chọn: Lên lịch Cảnh báo Định kỳ" {
+  if (Lên lịch cảnh báo định kỳ?) then (Có)
+    :Thiết lập tần suất kiểm tra (hàng ngày/tuần/tháng);
+    :Chọn thời gian gửi cảnh báo;
+    :Chọn người nhận định kỳ;
+    :Lưu lịch trình cảnh báo;
+  else (Không)
+    :Bỏ qua lên lịch định kỳ;
+  endif
+}
+
+stop
+
+@enduml

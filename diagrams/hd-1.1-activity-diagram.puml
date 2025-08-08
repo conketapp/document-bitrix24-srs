@@ -1,0 +1,131 @@
+@startuml HD-1.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title HD-1.1: Activity Diagram - Tạo Hợp đồng mới và nhập thông tin cần thiết
+
+start
+
+:Người dùng truy cập trang tạo hợp đồng mới;
+
+:Kiểm tra quyền tạo hợp đồng;
+
+if (Có quyền tạo hợp đồng?) then (Không)
+    :Hiển thị thông báo "Không có quyền tạo hợp đồng";
+    stop
+else (Có)
+    :Hiển thị form tạo hợp đồng mới;
+    
+    :Người dùng nhập thông tin cơ bản hợp đồng;
+    note right
+    **Thông tin Cơ bản:**
+    - Số hợp đồng (mã hợp đồng)
+    - Tên hợp đồng
+    - Loại hợp đồng
+    - Mô tả hợp đồng
+    - Trạng thái hợp đồng
+    end note
+    
+    :Validation thông tin cơ bản;
+    
+    if (Thông tin cơ bản hợp lệ?) then (Không)
+        :Hiển thị lỗi validation;
+        :Yêu cầu sửa lỗi;
+    else (OK)
+        :Người dùng nhập thông tin tài chính;
+        note right
+        **Thông tin Tài chính:**
+        - Giá trị hợp đồng
+        - Đơn vị tiền tệ
+        - Điều khoản thanh toán
+        - Lịch thanh toán
+        - Phân bổ ngân sách
+        end note
+        
+        :Validation thông tin tài chính;
+        
+        if (Thông tin tài chính hợp lệ?) then (Không)
+            :Hiển thị lỗi validation;
+            :Yêu cầu sửa lỗi;
+        else (OK)
+            :Người dùng nhập thông tin thời gian;
+            note right
+            **Thông tin Thời gian:**
+            - Ngày bắt đầu hợp đồng
+            - Ngày kết thúc hợp đồng
+            - Ngày ký hợp đồng
+            - Ngày có hiệu lực
+            - Ngày hoàn thành
+            end note
+            
+            :Validation thông tin thời gian;
+            
+            if (Thông tin thời gian hợp lệ?) then (Không)
+                :Hiển thị lỗi validation;
+                :Yêu cầu sửa lỗi;
+            else (OK)
+                :Người dùng nhập thông tin các bên;
+                note right
+                **Thông tin Các bên:**
+                - Chủ đầu tư
+                - Nhà thầu
+                - Người quản lý hợp đồng
+                - Người giám sát hợp đồng
+                end note
+                
+                :Validation thông tin các bên;
+                
+                if (Thông tin các bên hợp lệ?) then (Không)
+                    :Hiển thị lỗi validation;
+                    :Yêu cầu sửa lỗi;
+                else (OK)
+                    :Người dùng liên kết với gói thầu;
+                    
+                    if (Gói thầu tồn tại?) then (Có)
+                        :Kiểm tra tính nhất quán dữ liệu;
+                        :So sánh giá trị hợp đồng với giá trúng thầu;
+                        
+                        if (Giá trị hợp lệ?) then (Không)
+                            :Hiển thị cảnh báo "Giá trị không khớp";
+                            :Yêu cầu kiểm tra lại;
+                        else (OK)
+                            :Liên kết hợp đồng với gói thầu;
+                            :Cập nhật trạng thái gói thầu;
+                        endif
+                    else (Không)
+                        :Hiển thị cảnh báo "Gói thầu không tồn tại";
+                        :Yêu cầu chọn gói thầu khác;
+                    endif
+                    
+                    :Người dùng upload tài liệu hợp đồng;
+                    
+                    :Người dùng tạo phụ lục hợp đồng (tùy chọn);
+                    
+                    :Người dùng chọn lưu nháp hoặc hoàn thành;
+                    
+                    if (Lưu nháp?) then (Có)
+                        :Lưu hợp đồng với trạng thái "draft";
+                        :Hiển thị thông báo "Đã lưu nháp";
+                    else (Hoàn thành)
+                        :Hiển thị preview thông tin hợp đồng;
+                        :Người dùng xác nhận thông tin;
+                        
+                        if (Xác nhận thông tin?) then (Có)
+                            :Lưu hợp đồng vào database;
+                            :Cập nhật trạng thái "created";
+                            :Tạo version control;
+                            :Gửi thông báo thành công;
+                            :Chuyển đến trang chi tiết hợp đồng;
+                        else (Không)
+                            :Quay lại form chỉnh sửa;
+                        endif
+                    endif
+                endif
+            endif
+        endif
+    endif
+endif
+
+stop
+
+@enduml

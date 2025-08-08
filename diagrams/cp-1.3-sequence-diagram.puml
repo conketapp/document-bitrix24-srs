@@ -1,0 +1,134 @@
+@startuml CP-1.3 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title CP-1.3: Cập nhật Trạng thái Thanh toán - Sequence Diagram
+
+actor "Cán bộ\nChi phí" as User
+participant "Giao diện\nQuản lý Chi phí" as UI
+participant "Payment Status\nController" as Controller
+participant "Payment Status\nService" as Service
+participant "Cost Item\nRepository" as Repository
+participant "Payment Status\nRepository" as PaymentRepo
+participant "History\nService" as HistoryService
+participant "Database" as DB
+
+User -> UI: Truy cập trang quản lý chi phí
+UI -> Controller: GET /api/cost-items
+Controller -> Service: getCostItems()
+Service -> Repository: findAll()
+Repository -> DB: SELECT * FROM cost_items
+DB --> Repository: Cost items data
+Repository --> Service: Cost items list
+Service --> Controller: Cost items response
+Controller --> UI: Hiển thị danh sách chi phí
+
+User -> UI: Chọn khoản mục chi phí
+UI -> Controller: GET /api/cost-items/{id}
+Controller -> Service: getCostItemById(id)
+Service -> Repository: findById(id)
+Repository -> DB: SELECT * FROM cost_items WHERE id = ?
+DB --> Repository: Cost item data
+Repository --> Service: Cost item details
+Service --> Controller: Cost item response
+Controller --> UI: Hiển thị chi tiết chi phí
+
+User -> UI: Nhấn "Cập nhật trạng thái"
+UI -> Controller: GET /api/cost-items/{id}/payment-status
+Controller -> Service: getPaymentStatus(id)
+Service -> PaymentRepo: getPaymentStatus(id)
+PaymentRepo -> DB: SELECT * FROM cost_items WHERE id = ?
+DB --> PaymentRepo: Payment status data
+PaymentRepo --> Service: Payment status
+Service --> Controller: Payment status response
+Controller --> UI: Hiển thị form cập nhật
+
+User -> UI: Cập nhật thông tin thanh toán
+note right of User
+  - Đã thực hiện: Có/Không
+  - Ngày thực hiện
+  - Đã nghiệm thu: Có/Không
+  - Ngày nghiệm thu
+  - Ngày hoàn thành thanh toán
+  - Số tiền đã thanh toán
+  - Phương thức thanh toán
+  - Số chứng từ thanh toán
+end note
+
+UI -> Controller: PUT /api/cost-items/{id}/payment-status
+note right of UI
+{
+  "is_implemented": true,
+  "implementation_date": "2024-01-15",
+  "implementation_notes": "Đã hoàn thành triển khai",
+  "is_accepted": true,
+  "acceptance_date": "2024-01-20",
+  "acceptance_notes": "Đã nghiệm thu thành công",
+  "actual_payment_date": "2024-01-25",
+  "actual_payment_amount": 50000000,
+  "payment_method": "Chuyển khoản",
+  "payment_reference": "TT-2024-001"
+}
+end note
+
+Controller -> Service: updatePaymentStatus(id, paymentData)
+Service -> Service: validatePaymentData(paymentData)
+Service -> Service: calculatePaymentStatus(paymentData)
+
+alt Có ngày hoàn thành thanh toán
+  Service -> Service: setStatus("paid")
+else Chưa đến thời hạn dự kiến
+  Service -> Service: setStatus("not_due")
+else Đã quá hạn
+  Service -> Service: setStatus("overdue")
+end
+
+Service -> PaymentRepo: updatePaymentStatus(id, paymentData)
+PaymentRepo -> DB: UPDATE cost_items SET payment_status = ?, actual_payment_date = ?, ...
+DB --> PaymentRepo: Update success
+PaymentRepo --> Service: Updated payment status
+
+Service -> HistoryService: logPaymentStatusChange(id, oldStatus, newStatus)
+HistoryService -> DB: INSERT INTO payment_status_history (...)
+DB --> HistoryService: Log created
+HistoryService --> Service: History logged
+
+Service -> Service: generatePaymentStatusReason(newStatus)
+Service --> Controller: Updated payment status
+Controller --> UI: Thông báo cập nhật thành công
+
+UI -> Controller: GET /api/cost-items/{id}/payment-status
+Controller -> Service: getPaymentStatus(id)
+Service -> PaymentRepo: getPaymentStatus(id)
+PaymentRepo -> DB: SELECT * FROM cost_items WHERE id = ?
+DB --> PaymentRepo: Updated payment status data
+PaymentRepo --> Service: Updated payment status
+Service --> Controller: Updated payment status response
+Controller --> UI: Cập nhật hiển thị trạng thái
+
+User -> UI: Xem báo cáo trạng thái (tùy chọn)
+UI -> Controller: GET /api/payment-status-reports
+Controller -> Service: generatePaymentStatusReport()
+Service -> PaymentRepo: getPaymentStatusStatistics()
+PaymentRepo -> DB: SELECT COUNT(*) FROM cost_items WHERE payment_status = ?
+DB --> PaymentRepo: Statistics data
+PaymentRepo --> Service: Payment statistics
+Service --> Controller: Payment status report
+Controller --> UI: Hiển thị báo cáo trạng thái
+
+@enduml

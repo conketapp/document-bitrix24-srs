@@ -1,0 +1,206 @@
+@startuml HD-3.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title HD-3.1: Sequence Diagram - Đính kèm Tài liệu Hợp đồng và Phụ lục
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Document Service" as DS
+participant "Virus Scanner" as VS
+participant "Storage Service" as SS
+participant "Audit Service" as AS
+
+== Khởi tạo Trang Quản lý Tài liệu ==
+
+U -> F: Truy cập trang quản lý tài liệu hợp đồng
+F -> B: GET /api/contracts/{id}/documents
+B -> D: Query contract documents
+D --> B: Documents data
+B --> F: Documents list
+F --> U: Hiển thị danh sách tài liệu hợp đồng
+
+== Upload Tài liệu ==
+
+U -> F: Chọn file để upload
+F -> F: Validate file format và size
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Drag & drop hoặc chọn file
+F -> B: POST /api/contracts/{id}/documents/upload
+note right: Multipart form data với file
+
+B -> B: Validate file metadata
+B -> DS: Process file upload
+DS -> DS: Check file format và size
+DS --> B: File validation result
+
+alt File không hợp lệ
+    B --> F: 400 Bad Request - Invalid file
+    F --> U: Hiển thị thông báo lỗi file
+else File hợp lệ
+    B -> VS: Scan file for viruses
+    VS --> B: Virus scan result
+    
+    alt File có virus
+        B --> F: 400 Bad Request - Virus detected
+        F --> U: Hiển thị thông báo "File có virus"
+    else File an toàn
+        B -> SS: Store file in secure storage
+        SS --> B: File stored successfully
+        B -> D: Insert contract_documents
+        D --> B: Document record created
+        B -> AS: Log document upload
+        AS --> B: Upload logged
+        B --> F: Document uploaded successfully
+        F --> U: Hiển thị thông báo upload thành công
+    end
+end
+
+== Quản lý Metadata ==
+
+U -> F: Nhập thông tin tài liệu
+F -> B: PUT /api/contracts/{id}/documents/{doc_id}/metadata
+note right: { title: string, category: string, description: string, tags: string[] }
+
+B -> B: Validate metadata
+B -> D: Update document metadata
+D --> B: Metadata updated
+B --> F: Metadata updated successfully
+F --> U: Hiển thị thông báo cập nhật thành công
+
+== Preview Tài liệu ==
+
+U -> F: Nhấn "Xem trước" tài liệu
+F -> B: GET /api/contracts/{id}/documents/{doc_id}/preview
+B -> SS: Get document for preview
+SS --> B: Document data
+B -> B: Generate preview (PDF, image)
+B --> F: Document preview
+F --> U: Hiển thị preview tài liệu
+
+== Download Tài liệu ==
+
+U -> F: Nhấn "Tải xuống" tài liệu
+F -> B: GET /api/contracts/{id}/documents/{doc_id}/download
+B -> SS: Get document for download
+SS --> B: Document data
+B -> AS: Log download action
+AS --> B: Download logged
+B --> F: Document download
+F --> U: Cung cấp file cho download
+
+== Tìm kiếm Tài liệu ==
+
+U -> F: Nhập từ khóa tìm kiếm
+F -> B: GET /api/contracts/{id}/documents/search
+note right: { query: string, category: string, date_range: object }
+
+B -> D: Search documents
+D --> B: Search results
+B --> F: Search results
+F --> U: Hiển thị kết quả tìm kiếm
+
+== Phân loại Tài liệu ==
+
+U -> F: Chọn phân loại tài liệu
+F -> B: PUT /api/contracts/{id}/documents/{doc_id}/category
+note right: { category: string, subcategory: string }
+
+B -> B: Validate category
+B -> D: Update document category
+D --> B: Category updated
+B --> F: Category updated successfully
+F --> U: Hiển thị thông báo phân loại thành công
+
+== Version Control ==
+
+U -> F: Upload phiên bản mới của tài liệu
+F -> B: POST /api/contracts/{id}/documents/{doc_id}/version
+note right: Multipart form data với file mới
+
+B -> B: Validate new version
+B -> VS: Scan new version for viruses
+VS --> B: Virus scan result
+
+alt File có virus
+    B --> F: 400 Bad Request - Virus detected
+    F --> U: Hiển thị thông báo "File có virus"
+else File an toàn
+    B -> SS: Store new version
+    SS --> B: New version stored
+    B -> D: Insert document_version
+    D --> B: Version record created
+    B -> D: Update document current version
+    D --> B: Current version updated
+    B -> AS: Log version update
+    AS --> B: Version update logged
+    B --> F: Version updated successfully
+    F --> U: Hiển thị thông báo cập nhật phiên bản thành công
+end
+
+== Xóa Tài liệu ==
+
+U -> F: Nhấn "Xóa" tài liệu
+F -> B: DELETE /api/contracts/{id}/documents/{doc_id}
+B -> B: Check delete permissions
+B -> D: Check document dependencies
+D --> B: Dependencies data
+
+alt Có dependencies
+    B --> F: 409 Conflict - Document has dependencies
+    F --> U: Hiển thị thông báo "Không thể xóa tài liệu có dependencies"
+else Không có dependencies
+    B -> SS: Delete document from storage
+    SS --> B: Document deleted from storage
+    B -> D: Soft delete document record
+    D --> B: Document soft deleted
+    B -> AS: Log document deletion
+    AS --> B: Deletion logged
+    B --> F: Document deleted successfully
+    F --> U: Hiển thị thông báo xóa thành công
+end
+
+== Bulk Operations ==
+
+U -> F: Chọn nhiều tài liệu để thao tác
+F -> B: POST /api/contracts/{id}/documents/bulk-operations
+note right: { operation: string, document_ids: number[], data: object }
+
+B -> B: Validate bulk operation
+B -> D: Process bulk operation
+D --> B: Bulk operation results
+B -> AS: Log bulk operation
+AS --> B: Bulk operation logged
+B --> F: Bulk operation results
+F --> U: Hiển thị kết quả thao tác hàng loạt
+
+== Backup Tài liệu ==
+
+B -> SS: Trigger automatic backup
+SS -> SS: Create backup of important documents
+SS --> B: Backup completed
+B -> D: Update backup status
+D --> B: Backup status updated
+B -> AS: Log backup action
+AS --> B: Backup logged
+
+== Xử lý Lỗi ==
+
+alt File quá lớn
+    B --> F: 413 Payload Too Large
+    F --> U: Hiển thị thông báo "File quá lớn"
+else Định dạng không hỗ trợ
+    B --> F: 400 Bad Request - Unsupported format
+    F --> U: Hiển thị thông báo "Định dạng không hỗ trợ"
+else Không có quyền upload
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền upload"
+else Lỗi storage
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi storage
+end
+
+@enduml

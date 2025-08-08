@@ -1,0 +1,101 @@
+@startuml DMDA-3.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-3.2: Activity Diagram - Gửi Phê duyệt Nhiều Dự án Cùng lúc (Multiselect)
+
+start
+
+:Người dùng truy cập danh sách dự án;
+
+:Kiểm tra quyền gửi phê duyệt hàng loạt;
+
+if (Có quyền gửi phê duyệt hàng loạt?) then (Không)
+    :Hiển thị thông báo "Không có quyền gửi phê duyệt hàng loạt";
+    stop
+else (Có)
+    :Hiển thị danh sách dự án với checkbox;
+    :Hiển thị checkbox chỉ cho dự án có thể gửi phê duyệt;
+    note right
+    **Dự án có thể gửi phê duyệt:**
+    - Trạng thái "draft"
+    - Trạng thái "edit_requested"
+    end note
+    
+    :Người dùng chọn dự án cần gửi phê duyệt;
+    
+    if (Có dự án nào được chọn?) then (Không)
+        :Hiển thị thông báo "Vui lòng chọn ít nhất một dự án";
+    else (Có)
+        :Kiểm tra số lượng dự án đã chọn;
+        
+        if (Số lượng dự án > 50?) then (Có)
+            :Hiển thị cảnh báo "Tối đa 50 dự án mỗi lần gửi";
+            :Yêu cầu giảm số lượng dự án;
+        else (OK)
+            :Hiển thị nút "Gửi Phê duyệt (X dự án)";
+            :Hiển thị counter số dự án đã chọn;
+            
+            :Người dùng nhấn "Gửi Phê duyệt";
+            :Hiển thị form chọn người phê duyệt;
+            
+            :Người dùng chọn người phê duyệt;
+            :Người dùng nhập comment (tùy chọn);
+            
+            :Hiển thị confirmation dialog;
+            :Hiển thị danh sách dự án sẽ gửi phê duyệt;
+            note right
+            **Thông tin hiển thị:**
+            - Tên dự án
+            - Mã dự án
+            - Trạng thái hiện tại
+            - Người phê duyệt được chọn
+            end note
+            
+            :Người dùng xác nhận gửi phê duyệt hàng loạt;
+            
+            if (Xác nhận gửi phê duyệt?) then (Có)
+                :Bắt đầu xử lý hàng loạt;
+                :Hiển thị progress indicator;
+                
+                :Xử lý từng dự án đã chọn;
+                note right
+                **Quy trình xử lý mỗi dự án:**
+                1. Kiểm tra quyền gửi phê duyệt
+                2. Validation dự án
+                3. Cập nhật trạng thái
+                4. Tạo bản ghi phê duyệt
+                5. Gửi thông báo
+                6. Ghi log
+                end note
+                
+                :Cập nhật progress indicator;
+                
+                if (Tất cả dự án xử lý thành công?) then (Có)
+                    :Hiển thị thông báo thành công;
+                    :Hiển thị summary report;
+                    :Cập nhật danh sách dự án;
+                else (Có lỗi)
+                    :Hiển thị thông báo lỗi;
+                    :Hiển thị danh sách dự án lỗi;
+                    :Hiển thị danh sách dự án thành công;
+                endif
+            else (Không)
+                :Hủy thao tác gửi phê duyệt hàng loạt;
+            endif
+        endif
+    endif
+endif
+
+:Người dùng có thể xem lịch sử gửi phê duyệt hàng loạt;
+
+if (Xem lịch sử?) then (Có)
+    :Hiển thị danh sách bulk approval logs;
+    :Hiển thị chi tiết từng lần gửi hàng loạt;
+else (Không)
+    :Tiếp tục quản lý dự án;
+endif
+
+stop
+
+@enduml

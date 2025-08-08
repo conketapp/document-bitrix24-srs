@@ -1,0 +1,183 @@
+@startuml HD-5.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title HD-5.1: Sequence Diagram - Ghi nhận Lịch sử Thao tác Hợp đồng (Log)
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Log Service" as LS
+participant "Audit Service" as AS
+participant "File System" as FS
+
+== Thực hiện Hành động và Ghi Log ==
+
+U -> F: Thực hiện hành động trên hợp đồng
+F -> B: POST /api/contracts/{id}/actions
+note right: { action_type: string, action_data: object }
+
+B -> B: Validate action permissions
+B -> D: Query contract current state
+D --> B: Contract current state
+B -> B: Execute action
+B -> D: Update contract data
+D --> B: Contract updated
+
+B -> LS: Log contract action
+note right: { contract_id: number, user_id: number, action_type: string, old_data: object, new_data: object }
+
+LS -> LS: Create log entry
+LS -> D: Insert contract_logs
+D --> LS: Log entry created
+LS -> FS: Write to log file
+FS --> LS: Log file written
+LS -> AS: Update audit trail
+AS --> LS: Audit trail updated
+LS --> B: Log action completed
+B --> F: Action completed successfully
+F --> U: Hiển thị thông báo thành công
+
+== Xem Lịch sử Hợp đồng ==
+
+U -> F: Nhấn "Lịch sử hợp đồng"
+F -> B: GET /api/contracts/{id}/logs
+B -> D: Query contract logs
+D --> B: Log entries data
+B -> B: Format log entries
+B --> F: Log history data
+F --> U: Hiển thị lịch sử hợp đồng
+
+== Tìm kiếm Log ==
+
+U -> F: Nhấn "Tìm kiếm log"
+F -> B: GET /api/contracts/{id}/logs/search
+note right: { time_range: object, user_id: number, action_type: string, keyword: string }
+
+B -> D: Search log entries
+D --> B: Search results
+B -> B: Format search results
+B --> F: Search results
+F --> U: Hiển thị kết quả tìm kiếm
+
+== Lọc Log ==
+
+U -> F: Áp dụng bộ lọc
+F -> B: GET /api/contracts/{id}/logs/filter
+note right: { filters: object, pagination: object }
+
+B -> D: Filter log entries
+D --> B: Filtered results
+B -> B: Apply pagination
+B --> F: Filtered log data
+F --> U: Hiển thị log đã lọc
+
+== Xem Chi tiết Log ==
+
+U -> F: Nhấn "Xem chi tiết" log entry
+F -> B: GET /api/contracts/{id}/logs/{log_id}
+B -> D: Query log entry details
+D --> B: Log entry details
+B -> B: Decrypt sensitive data if needed
+B --> F: Log entry details
+F --> U: Hiển thị chi tiết log entry
+
+== Xuất Báo cáo Log ==
+
+U -> F: Nhấn "Xuất báo cáo log"
+F -> B: POST /api/contracts/{id}/logs/export
+note right: { format: string, date_range: object, action_types: string[] }
+
+B -> D: Query log entries for export
+D --> B: Log entries for export
+B -> B: Generate report file
+B -> B: Format report according to type
+B --> F: Report file
+F --> U: Cung cấp file báo cáo
+
+== Quản lý Retention Policy ==
+
+B -> LS: Check retention policy
+LS -> D: Query old log entries
+D --> LS: Old log entries
+LS -> LS: Check retention rules
+
+alt Log entries quá hạn
+    LS -> D: Delete expired log entries
+    D --> LS: Expired entries deleted
+    LS -> FS: Archive important logs
+    FS --> LS: Logs archived
+    LS -> B: Retention policy applied
+    B --> F: Retention policy status
+    F --> U: Hiển thị thông báo retention policy
+end
+
+== Bảo mật Log ==
+
+B -> LS: Encrypt sensitive log entries
+LS -> LS: Apply encryption
+LS -> D: Update encrypted log entries
+D --> LS: Log entries encrypted
+LS --> B: Encryption completed
+
+B -> LS: Backup log files
+LS -> FS: Create backup
+FS --> LS: Backup created
+LS --> B: Backup completed
+
+== Xem Thống kê Log ==
+
+U -> F: Nhấn "Thống kê log"
+F -> B: GET /api/contracts/{id}/logs/statistics
+B -> D: Query log statistics
+D --> B: Log statistics data
+B -> B: Calculate statistics
+B --> F: Log statistics
+F --> U: Hiển thị thống kê log
+
+== Quản lý Quyền Truy cập Log ==
+
+U -> F: Nhấn "Quản lý quyền log"
+F -> B: GET /api/contracts/{id}/logs/permissions
+B -> D: Query log access permissions
+D --> B: Permission data
+B --> F: Permission management interface
+F --> U: Hiển thị quản lý quyền log
+
+U -> F: Cập nhật quyền truy cập log
+F -> B: PUT /api/contracts/{id}/logs/permissions
+note right: { user_id: number, permission_level: string }
+
+B -> D: Update log access permissions
+D --> B: Permissions updated
+B --> F: Permissions updated successfully
+F --> U: Hiển thị thông báo cập nhật quyền
+
+== Real-time Log Monitoring ==
+
+B -> LS: Monitor log activities
+LS -> LS: Check for suspicious activities
+LS -> AS: Alert on suspicious activities
+AS --> LS: Alert sent
+LS -> B: Monitoring status
+B --> F: Real-time monitoring data
+F --> U: Hiển thị cảnh báo nếu có
+
+== Xử lý Lỗi ==
+
+alt Không có quyền xem log
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xem log"
+else Log entry không tồn tại
+    B --> F: 404 Not Found
+    F --> U: Hiển thị thông báo "Log entry không tồn tại"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi database
+else Lỗi encryption
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi mã hóa
+end
+
+@enduml

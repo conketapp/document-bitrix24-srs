@@ -1,0 +1,108 @@
+@startuml DMDA-4.5 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-4.5: Activity Diagram - Phân quyền Truy cập và Thao tác Dự án Chi tiết
+
+start
+
+:Quản trị viên truy cập trang quản lý phân quyền;
+
+:Kiểm tra quyền quản lý phân quyền;
+
+if (Có quyền quản lý phân quyền?) then (Không)
+    :Hiển thị thông báo "Không có quyền quản lý phân quyền";
+    stop
+else (Có)
+    :Hiển thị giao diện quản lý phân quyền;
+    note right
+    **Giao diện quản lý phân quyền:**
+    - Danh sách vai trò (roles)
+    - Ma trận phân quyền
+    - Quản lý người dùng
+    - Lịch sử thay đổi phân quyền
+    end note
+    
+    :Quản trị viên chọn loại quản lý phân quyền;
+    
+    if (Quản lý vai trò?) then (Có)
+        :Hiển thị danh sách vai trò;
+        :Cho phép tạo/sửa/xóa vai trò;
+        
+        :Quản trị viên tạo vai trò mới;
+        :Nhập tên và mô tả vai trò;
+        :Chọn các quyền cho vai trò;
+        note right
+        **Các quyền có thể chọn:**
+        - Xem danh mục dự án
+        - Tạo dự án mới
+        - Chỉnh sửa dự án nháp
+        - Chỉnh sửa dự án đã gửi phê duyệt
+        - Xóa dự án
+        - Gửi phê duyệt
+        - Phê duyệt dự án
+        - Từ chối dự án
+        - Quản lý phân quyền
+        end note
+        
+        :Lưu vai trò mới;
+        :Ghi log tạo vai trò;
+    else (Không)
+        :Tiếp tục quản lý phân quyền;
+    endif
+    
+    if (Quản lý người dùng?) then (Có)
+        :Hiển thị danh sách người dùng;
+        :Cho phép gán vai trò cho người dùng;
+        
+        :Quản trị viên chọn người dùng;
+        :Chọn vai trò cần gán;
+        :Áp dụng vai trò cho người dùng;
+        :Ghi log thay đổi vai trò;
+    else (Không)
+        :Tiếp tục quản lý phân quyền;
+    endif
+    
+    if (Quản lý phân quyền chi tiết?) then (Có)
+        :Hiển thị ma trận phân quyền;
+        :Cho phép chỉnh sửa phân quyền chi tiết;
+        
+        :Quản trị viên chọn đối tượng (danh mục/dự án);
+        :Chọn người dùng hoặc nhóm người dùng;
+        :Chọn quyền cần cấp/thu hồi;
+        :Áp dụng thay đổi phân quyền;
+        :Ghi log thay đổi phân quyền;
+    else (Không)
+        :Tiếp tục quản lý phân quyền;
+    endif
+    
+    if (Xem lịch sử phân quyền?) then (Có)
+        :Hiển thị lịch sử thay đổi phân quyền;
+        note right
+        **Thông tin lịch sử:**
+        - Ngày thay đổi
+        - Người thực hiện
+        - Loại thay đổi
+        - Đối tượng bị thay đổi
+        - Chi tiết thay đổi
+        end note
+    else (Không)
+        :Tiếp tục quản lý phân quyền;
+    endif
+    
+    if (Kiểm tra xung đột phân quyền?) then (Có)
+        :Hệ thống kiểm tra xung đột phân quyền;
+        :Hiển thị cảnh báo nếu có xung đột;
+        :Đề xuất giải pháp xung đột;
+    else (Không)
+        :Tiếp tục quản lý phân quyền;
+    endif
+    
+    :Hệ thống áp dụng phân quyền real-time;
+    :Cập nhật cache phân quyền;
+    :Thông báo thay đổi cho các người dùng liên quan;
+endif
+
+stop
+
+@enduml

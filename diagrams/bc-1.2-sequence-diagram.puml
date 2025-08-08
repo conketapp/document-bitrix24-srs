@@ -1,0 +1,298 @@
+@startuml BC-1.2 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title BC-1.2: Sequence Diagram - Lựa chọn loại biểu đồ và định dạng hiển thị
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Chart Service" as CS
+participant "Data Analyzer" as DA
+participant "Chart Renderer" as CR
+
+== Khởi tạo Chart Builder ==
+
+U -> F: Truy cập trang tạo biểu đồ
+F -> B: GET /api/charts/builder
+B -> B: Check chart creation permissions
+B -> D: Query available chart types
+D --> B: Chart types
+B -> D: Query chart templates
+D --> B: Chart templates
+B --> F: Chart builder interface
+F --> U: Hiển thị giao diện Chart Builder
+
+== Phân tích Dữ liệu ==
+
+U -> F: Chọn dữ liệu cho biểu đồ
+F -> B: POST /api/charts/analyze-data
+note right: { data_source: string, data_fields: string[] }
+
+B -> DA: Analyze data structure
+DA -> DA: Determine data type
+DA -> DA: Check data compatibility
+DA -> DA: Suggest chart types
+DA --> B: Analysis results
+B --> F: Suggested chart types
+F --> U: Hiển thị gợi ý loại biểu đồ
+
+== Chọn Loại Biểu đồ ==
+
+U -> F: Chọn loại biểu đồ
+F -> B: POST /api/charts/select-type
+note right: { chart_type: string, data_config: object }
+
+B -> CS: Validate chart type
+CS -> CS: Check data compatibility
+CS -> CS: Validate configuration
+CS --> B: Validation result
+
+alt Chart type không phù hợp
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị cảnh báo không phù hợp
+    B --> F: Alternative chart suggestions
+    F --> U: Hiển thị đề xuất biểu đồ thay thế
+else Chart type phù hợp
+    B --> F: Chart type accepted
+    F --> U: Hiển thị thông báo chọn thành công
+end
+
+== Tùy chỉnh Màu sắc ==
+
+U -> F: Tùy chỉnh màu sắc
+F -> B: POST /api/charts/customize-colors
+note right: { color_scheme: string, custom_colors: object }
+
+B -> CS: Apply color customization
+CS -> CS: Validate color accessibility
+CS -> CS: Apply color scheme
+CS --> B: Colors applied
+B --> F: Color customization completed
+F --> U: Hiển thị biểu đồ với màu sắc mới
+
+== Tùy chỉnh Font ==
+
+U -> F: Tùy chỉnh font chữ
+F -> B: POST /api/charts/customize-fonts
+note right: { font_family: string, font_size: number, font_weight: string }
+
+B -> CS: Apply font customization
+CS -> CS: Validate font availability
+CS -> CS: Apply font settings
+CS --> B: Fonts applied
+B --> F: Font customization completed
+F --> U: Hiển thị biểu đồ với font mới
+
+== Thiết lập Tiêu đề ==
+
+U -> F: Thiết lập tiêu đề biểu đồ
+F -> B: POST /api/charts/set-title
+note right: { main_title: string, subtitle: string, title_position: string }
+
+B -> CS: Apply title settings
+CS -> CS: Format title text
+CS -> CS: Position title
+CS --> B: Title applied
+B --> F: Title settings completed
+F --> U: Hiển thị biểu đồ với tiêu đề
+
+== Thiết lập Nhãn Trục ==
+
+U -> F: Thiết lập nhãn trục
+F -> B: POST /api/charts/set-axis-labels
+note right: { x_axis_label: string, y_axis_label: string, label_format: object }
+
+B -> CS: Apply axis label settings
+CS -> CS: Format axis labels
+CS -> CS: Position labels
+CS --> B: Axis labels applied
+B --> F: Axis label settings completed
+F --> U: Hiển thị biểu đồ với nhãn trục
+
+== Thiết lập Nhãn Dữ liệu ==
+
+U -> F: Thiết lập nhãn dữ liệu
+F -> B: POST /api/charts/set-data-labels
+note right: { show_values: boolean, show_percentages: boolean, label_position: string }
+
+B -> CS: Apply data label settings
+CS -> CS: Calculate label values
+CS -> CS: Position data labels
+CS --> B: Data labels applied
+B --> F: Data label settings completed
+F --> U: Hiển thị biểu đồ với nhãn dữ liệu
+
+== Thiết lập Legend ==
+
+U -> F: Thiết lập legend
+F -> B: POST /api/charts/set-legend
+note right: { show_legend: boolean, legend_position: string, legend_format: object }
+
+B -> CS: Apply legend settings
+CS -> CS: Generate legend items
+CS -> CS: Position legend
+CS --> B: Legend applied
+B --> F: Legend settings completed
+F --> U: Hiển thị biểu đồ với legend
+
+== Thiết lập Grid ==
+
+U -> F: Thiết lập grid lines
+F -> B: POST /api/charts/set-grid
+note right: { show_grid: boolean, grid_style: string, grid_color: string }
+
+B -> CS: Apply grid settings
+CS -> CS: Generate grid lines
+CS -> CS: Style grid
+CS --> B: Grid applied
+B --> F: Grid settings completed
+F --> U: Hiển thị biểu đồ với grid
+
+== Thiết lập Background ==
+
+U -> F: Thiết lập background
+F -> B: POST /api/charts/set-background
+note right: { background_color: string, background_image: string, transparency: number }
+
+B -> CS: Apply background settings
+CS -> CS: Set background color
+CS -> CS: Apply background image
+CS --> B: Background applied
+B --> F: Background settings completed
+F --> U: Hiển thị biểu đồ với background
+
+== Tạo Biểu đồ ==
+
+U -> F: Nhấn "Tạo biểu đồ"
+F -> B: POST /api/charts/generate
+note right: { chart_config: object }
+
+B -> CR: Generate chart
+CR -> CR: Render chart with settings
+CR -> CR: Apply styling
+CR -> CR: Add interactions
+CR --> B: Chart generated
+B --> F: Chart generation completed
+F --> U: Hiển thị biểu đồ hoàn chỉnh
+
+== Thiết lập Tương tác ==
+
+U -> F: Thiết lập tương tác
+F -> B: POST /api/charts/set-interactions
+note right: { zoom_enabled: boolean, pan_enabled: boolean, drill_down: boolean, tooltips: boolean }
+
+B -> CS: Apply interaction settings
+CS -> CS: Enable zoom functionality
+CS -> CS: Enable pan navigation
+CS -> CS: Enable drill-down
+CS --> B: Interactions applied
+B --> F: Interaction settings completed
+F --> U: Hiển thị biểu đồ với tương tác
+
+== Thiết lập Animation ==
+
+U -> F: Thiết lập animation
+F -> B: POST /api/charts/set-animation
+note right: { animation_type: string, animation_duration: number, animation_easing: string }
+
+B -> CS: Apply animation settings
+CS -> CS: Configure animation
+CS -> CS: Set animation timing
+CS --> B: Animation applied
+B --> F: Animation settings completed
+F --> U: Hiển thị biểu đồ với animation
+
+== Thiết lập Layout ==
+
+U -> F: Thiết lập layout
+F -> B: POST /api/charts/set-layout
+note right: { chart_size: object, chart_position: object, responsive: boolean }
+
+B -> CS: Apply layout settings
+CS -> CS: Set chart dimensions
+CS -> CS: Position chart
+CS -> CS: Configure responsive design
+CS --> B: Layout applied
+B --> F: Layout settings completed
+F --> U: Hiển thị biểu đồ với layout
+
+== Thêm Nhiều Biểu đồ ==
+
+U -> F: Nhấn "Thêm biểu đồ"
+F -> B: GET /api/charts/add-chart
+B -> D: Query existing charts
+D --> B: Existing charts
+B --> F: Add chart interface
+F --> U: Hiển thị giao diện thêm biểu đồ
+
+U -> F: Chọn biểu đồ để thêm
+F -> B: POST /api/charts/add-chart
+note right: { chart_type: string, chart_config: object }
+
+B -> CS: Create additional chart
+CS -> CS: Generate new chart
+CS -> CS: Integrate with existing charts
+CS --> B: Additional chart created
+B --> F: Chart added successfully
+F --> U: Hiển thị layout với nhiều biểu đồ
+
+== Xuất Biểu đồ ==
+
+U -> F: Nhấn "Xuất biểu đồ"
+F -> B: POST /api/charts/export
+note right: { format: string, size: object, quality: string }
+
+B -> CR: Export chart
+CR -> CR: Render chart for export
+CR -> CR: Convert to image format
+CR -> CR: Optimize image quality
+CR --> B: Chart exported
+B --> F: Export file
+F --> U: Cung cấp link tải xuống
+
+== Lưu Template ==
+
+U -> F: Nhấn "Lưu template"
+F -> B: POST /api/charts/templates
+note right: { name: string, config: object, is_public: boolean }
+
+B -> D: Save chart template
+D --> B: Template saved
+B --> F: Template saved successfully
+F --> U: Hiển thị thông báo lưu template thành công
+
+== Tích hợp vào Báo cáo ==
+
+B -> D: Save chart configuration
+D --> B: Configuration saved
+B -> D: Update report with chart
+D --> B: Report updated
+B --> F: Chart integrated successfully
+F --> U: Hiển thị thông báo tích hợp thành công
+
+== Ghi Log ==
+
+B -> D: Log chart creation activity
+D --> B: Activity logged
+B -> D: Update chart statistics
+D --> B: Statistics updated
+
+== Xử lý Lỗi ==
+
+alt Không có quyền tạo biểu đồ
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền tạo biểu đồ"
+else Loại biểu đồ không phù hợp
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo lỗi loại biểu đồ
+else Lỗi render biểu đồ
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi render
+else Lỗi xuất biểu đồ
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi xuất
+end
+
+@enduml

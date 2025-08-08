@@ -1,0 +1,154 @@
+@startuml HD-3.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title HD-3.1: Activity Diagram - Đính kèm Tài liệu Hợp đồng và Phụ lục
+
+start
+
+:Người dùng truy cập trang quản lý tài liệu hợp đồng;
+
+:Kiểm tra quyền truy cập tài liệu;
+
+if (Có quyền truy cập?) then (Không)
+    :Hiển thị thông báo "Không có quyền truy cập";
+    stop
+else (Có)
+    :Hiển thị danh sách tài liệu hiện tại;
+    :Hiển thị nút "Tải lên tài liệu";
+    
+    :Người dùng chọn tài liệu để tải lên;
+    note right
+    **Các định dạng hỗ trợ:**
+    - PDF, DOCX, XLSX
+    - JPG, PNG, TIFF
+    - Kích thước tối đa: 50MB
+    end note
+    
+    :Kiểm tra định dạng file;
+    
+    if (Định dạng file hợp lệ?) then (Không)
+        :Hiển thị lỗi "Định dạng file không được hỗ trợ";
+        :Yêu cầu chọn file khác;
+    else (OK)
+        :Kiểm tra kích thước file;
+        
+        if (Kích thước file hợp lệ?) then (Không)
+            :Hiển thị lỗi "File quá lớn (tối đa 50MB)";
+            :Yêu cầu chọn file khác;
+        else (OK)
+            :Quét virus file;
+            
+            if (File an toàn?) then (Không)
+                :Hiển thị cảnh báo "File có thể chứa virus";
+                :Từ chối upload;
+            else (OK)
+                :Người dùng chọn loại tài liệu;
+                note right
+                **Phân loại tài liệu:**
+                - Hợp đồng gốc
+                - Phụ lục hợp đồng
+                - Quyết định phê duyệt
+                - Tài liệu đấu thầu
+                - Báo cáo tiến độ
+                - Chứng từ thanh toán
+                end note
+                
+                :Người dùng nhập mô tả tài liệu (tùy chọn);
+                
+                :Người dùng xác nhận tải lên;
+                
+                if (Xác nhận tải lên?) then (Có)
+                    :Tải lên file lên server;
+                    :Kiểm tra tính toàn vẹn file;
+                    
+                    if (File upload thành công?) then (Có)
+                        :Lưu metadata tài liệu vào database;
+                        :Tạo version control;
+                        :Mã hóa file (nếu cần);
+                        :Tạo backup tự động;
+                        :Ghi log upload;
+                        :Cập nhật danh sách tài liệu;
+                        :Hiển thị thông báo thành công;
+                    else (Thất bại)
+                        :Hiển thị lỗi upload;
+                        :Xóa file tạm (nếu có);
+                    endif
+                else (Không)
+                    :Hủy thao tác upload;
+                endif
+            endif
+        endif
+    endif
+    
+    :Người dùng có thể xem trước tài liệu;
+    
+    if (Xem trước tài liệu?) then (Có)
+        :Kiểm tra quyền xem trước;
+        
+        if (Có quyền xem?) then (Có)
+            :Tải file từ storage;
+            :Chuyển đổi sang format xem trước;
+            :Hiển thị preview;
+        else (Không)
+            :Hiển thị thông báo "Không có quyền xem";
+        endif
+    else (Không)
+        :Tiếp tục quản lý tài liệu;
+    endif
+    
+    :Người dùng có thể tải xuống tài liệu;
+    
+    if (Tải xuống tài liệu?) then (Có)
+        :Kiểm tra quyền tải xuống;
+        
+        if (Có quyền tải?) then (Có)
+            :Ghi log tải xuống;
+            :Tạo link tải xuống an toàn;
+            :Cung cấp file cho người dùng;
+        else (Không)
+            :Hiển thị thông báo "Không có quyền tải xuống";
+        endif
+    else (Không)
+        :Tiếp tục quản lý tài liệu;
+    endif
+    
+    :Người dùng có thể xóa tài liệu;
+    
+    if (Xóa tài liệu?) then (Có)
+        :Kiểm tra quyền xóa;
+        
+        if (Có quyền xóa?) then (Có)
+            :Hiển thị confirmation dialog;
+            :Người dùng xác nhận xóa;
+            
+            if (Xác nhận xóa?) then (Có)
+                :Xóa file từ storage;
+                :Cập nhật database;
+                :Ghi log xóa;
+                :Hiển thị thông báo "Đã xóa tài liệu";
+            else (Không)
+                :Hủy thao tác xóa;
+            endif
+        else (Không)
+            :Hiển thị thông báo "Không có quyền xóa";
+        endif
+    else (Không)
+        :Tiếp tục quản lý tài liệu;
+    endif
+    
+    :Người dùng có thể tìm kiếm tài liệu;
+    
+    if (Tìm kiếm tài liệu?) then (Có)
+        :Nhập từ khóa tìm kiếm;
+        :Chọn bộ lọc (tên, loại, ngày);
+        :Thực hiện tìm kiếm;
+        :Hiển thị kết quả tìm kiếm;
+    else (Không)
+        :Tiếp tục quản lý tài liệu;
+    endif
+endif
+
+stop
+
+@enduml

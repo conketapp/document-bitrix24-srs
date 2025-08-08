@@ -1,0 +1,157 @@
+@startuml HD-2.1 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title HD-2.1: Activity Diagram - Chỉnh sửa thông tin Hợp đồng
+
+start
+
+:Người dùng truy cập trang chi tiết hợp đồng;
+
+:Kiểm tra quyền chỉnh sửa hợp đồng;
+
+if (Có quyền chỉnh sửa hợp đồng?) then (Không)
+    :Hiển thị thông báo "Không có quyền chỉnh sửa hợp đồng";
+    stop
+else (Có)
+    :Hiển thị thông tin hợp đồng hiện tại;
+    :Hiển thị nút "Chỉnh sửa";
+    
+    :Người dùng nhấn "Chỉnh sửa";
+    :Hiển thị form chỉnh sửa với thông tin hiện tại;
+    
+    :Người dùng chỉnh sửa thông tin cơ bản;
+    note right
+    **Thông tin Cơ bản:**
+    - Tên hợp đồng
+    - Mô tả hợp đồng
+    - Loại hợp đồng
+    - Trạng thái hợp đồng
+    end note
+    
+    :Validation thông tin cơ bản;
+    
+    if (Thông tin cơ bản hợp lệ?) then (Không)
+        :Hiển thị lỗi validation;
+        :Yêu cầu sửa lỗi;
+    else (OK)
+        :Người dùng chỉnh sửa thông tin tài chính;
+        note right
+        **Thông tin Tài chính:**
+        - Giá trị hợp đồng (cần approval)
+        - Điều khoản thanh toán
+        - Lịch thanh toán
+        - Phân bổ ngân sách
+        end note
+        
+        :Validation thông tin tài chính;
+        
+        if (Thay đổi giá trị hợp đồng?) then (Có)
+            :Kiểm tra quyền thay đổi giá trị;
+            if (Có quyền thay đổi giá trị?) then (Không)
+                :Hiển thị thông báo "Cần phê duyệt để thay đổi giá trị";
+                :Yêu cầu gửi yêu cầu phê duyệt;
+            else (Có)
+                :Cho phép thay đổi giá trị;
+                :Ghi log thay đổi quan trọng;
+            endif
+        else (Không)
+            :Tiếp tục chỉnh sửa;
+        endif
+        
+        if (Thông tin tài chính hợp lệ?) then (Không)
+            :Hiển thị lỗi validation;
+            :Yêu cầu sửa lỗi;
+        else (OK)
+            :Người dùng chỉnh sửa thông tin thời gian;
+            note right
+            **Thông tin Thời gian:**
+            - Ngày bắt đầu hợp đồng
+            - Ngày kết thúc hợp đồng
+            - Ngày có hiệu lực
+            - Ngày hoàn thành
+            end note
+            
+            :Validation thông tin thời gian;
+            
+            if (Thay đổi ngày hợp đồng?) then (Có)
+                :Kiểm tra tính hợp lý của ngày;
+                if (Ngày hợp lý?) then (Không)
+                    :Hiển thị cảnh báo "Ngày không hợp lý";
+                    :Yêu cầu kiểm tra lại;
+                else (OK)
+                    :Cho phép thay đổi ngày;
+                    :Ghi log thay đổi quan trọng;
+                endif
+            else (Không)
+                :Tiếp tục chỉnh sửa;
+            endif
+            
+            if (Thông tin thời gian hợp lệ?) then (Không)
+                :Hiển thị lỗi validation;
+                :Yêu cầu sửa lỗi;
+            else (OK)
+                :Người dùng chỉnh sửa thông tin các bên;
+                note right
+                **Thông tin Các bên:**
+                - Người quản lý hợp đồng
+                - Người giám sát hợp đồng
+                - Các bên liên quan khác
+                end note
+                
+                :Validation thông tin các bên;
+                
+                if (Thông tin các bên hợp lệ?) then (Không)
+                    :Hiển thị lỗi validation;
+                    :Yêu cầu sửa lỗi;
+                else (OK)
+                    :Người dùng chỉnh sửa phụ lục hợp đồng;
+                    
+                    if (Có thay đổi phụ lục?) then (Có)
+                        :Hiển thị form chỉnh sửa phụ lục;
+                        :Người dùng nhập thông tin phụ lục;
+                        :Validation thông tin phụ lục;
+                        :Lưu thông tin phụ lục;
+                    else (Không)
+                        :Tiếp tục chỉnh sửa;
+                    endif
+                    
+                    :Người dùng cập nhật tài liệu hợp đồng;
+                    
+                    if (Có thay đổi tài liệu?) then (Có)
+                        :Upload tài liệu mới;
+                        :Validation tài liệu;
+                        :Lưu tài liệu mới;
+                        :Ghi log thay đổi tài liệu;
+                    else (Không)
+                        :Tiếp tục chỉnh sửa;
+                    endif
+                    
+                    :Người dùng chọn lưu nháp hoặc hoàn thành;
+                    
+                    if (Lưu nháp?) then (Có)
+                        :Lưu thay đổi với trạng thái "draft";
+                        :Hiển thị thông báo "Đã lưu nháp";
+                    else (Hoàn thành)
+                        :Hiển thị preview thay đổi;
+                        :Người dùng xác nhận thay đổi;
+                        
+                        if (Xác nhận thay đổi?) then (Có)
+                            :Lưu thay đổi vào database;
+                            :Tạo version mới;
+                            :Ghi log tất cả thay đổi;
+                            :Gửi thông báo cho các bên liên quan;
+                            :Hiển thị thông báo thành công;
+                        else (Không)
+                            :Quay lại form chỉnh sửa;
+                        endif
+                    endif
+                endif
+            endif
+        endif
+    endif
+endif
+
+stop
+
+@enduml

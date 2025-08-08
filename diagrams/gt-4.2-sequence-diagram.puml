@@ -1,0 +1,171 @@
+@startuml GT-4.2 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title GT-4.2: Sequence Diagram - Tìm kiếm & Lọc Gói thầu Đa tiêu chí
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Search Engine" as S
+participant "Analytics Service" as A
+
+== Khởi tạo Trang Tìm kiếm ==
+
+U -> F: Truy cập trang danh sách gói thầu
+F -> B: GET /api/tender-packages/search-page
+B -> D: Query filter options
+D --> B: Filter data
+B --> F: Search page data
+F --> U: Hiển thị giao diện tìm kiếm và lọc
+
+== Tìm kiếm Cơ bản ==
+
+U -> F: Nhập từ khóa tìm kiếm
+F -> B: GET /api/tender-packages/search-suggestions
+note right: { keyword: string }
+
+B -> D: Search for suggestions
+D --> B: Suggestions data
+B --> F: Autocomplete suggestions
+F --> U: Hiển thị suggestions
+
+U -> F: Chọn từ khóa hoặc nhập từ khóa
+F -> B: GET /api/tender-packages/search
+note right: { keyword: string, filters: object }
+
+B -> S: Execute search query
+S -> D: Query tender packages
+D --> S: Search results
+S --> B: Processed results
+B --> F: Search results
+F --> U: Hiển thị kết quả tìm kiếm
+
+== Lọc Nâng cao ==
+
+U -> F: Chọn bộ lọc trạng thái
+F -> B: GET /api/tender-packages/filter-options
+note right: { filter_type: string }
+
+B -> D: Query filter options
+D --> B: Filter options
+B --> F: Filter dropdown data
+F --> U: Hiển thị options cho bộ lọc
+
+U -> F: Thiết lập điều kiện lọc
+F -> B: POST /api/tender-packages/advanced-search
+note right: { filters: object, sort_by: string, page: number }
+
+B -> S: Execute advanced search
+S -> D: Query with filters
+D --> S: Filtered results
+S --> B: Processed results
+B -> A: Track search analytics
+A --> B: Analytics recorded
+B --> F: Advanced search results
+F --> U: Hiển thị kết quả lọc nâng cao
+
+== Sắp xếp và Phân trang ==
+
+U -> F: Chọn sắp xếp theo tiêu chí
+F -> B: GET /api/tender-packages/search
+note right: { sort_by: string, sort_order: string }
+
+B -> S: Re-sort results
+S -> D: Query with sorting
+D --> S: Sorted results
+S --> B: Processed results
+B --> F: Sorted results
+F --> U: Hiển thị kết quả đã sắp xếp
+
+U -> F: Chọn trang tiếp theo
+F -> B: GET /api/tender-packages/search
+note right: { page: number, page_size: number }
+
+B -> S: Get paginated results
+S -> D: Query with pagination
+D --> S: Paginated results
+S --> B: Processed results
+B --> F: Paginated results
+F --> U: Hiển thị trang tiếp theo
+
+== Lưu Bộ lọc ==
+
+U -> F: Nhấn "Lưu bộ lọc"
+F -> B: POST /api/tender-packages/saved-filters
+note right: { name: string, filters: object }
+
+B -> D: Insert saved_filter
+D --> B: Filter saved
+B --> F: Filter saved successfully
+F --> U: Hiển thị thông báo "Đã lưu bộ lọc"
+
+== Sử dụng Bộ lọc Đã lưu ==
+
+U -> F: Chọn bộ lọc đã lưu
+F -> B: GET /api/tender-packages/saved-filters
+B -> D: Query saved filters
+D --> B: Saved filters data
+B --> F: Saved filters list
+F --> U: Hiển thị danh sách bộ lọc đã lưu
+
+U -> F: Áp dụng bộ lọc đã lưu
+F -> B: GET /api/tender-packages/search
+note right: { saved_filter_id: number }
+
+B -> D: Get saved filter
+D --> B: Saved filter data
+B -> S: Execute search with saved filter
+S -> D: Query with saved filter
+D --> S: Filtered results
+S --> B: Processed results
+B --> F: Search results with saved filter
+F --> U: Hiển thị kết quả với bộ lọc đã lưu
+
+== Export Kết quả ==
+
+U -> F: Nhấn "Export kết quả"
+F -> B: GET /api/tender-packages/export
+note right: { format: string, filters: object }
+
+B -> S: Get export data
+S -> D: Query for export
+D --> S: Export data
+S --> B: Processed export data
+B -> B: Generate export file
+B --> F: Export file (Excel/PDF)
+F --> U: Tải xuống file export
+
+== Tìm kiếm Nâng cao ==
+
+U -> F: Mở tìm kiếm nâng cao
+F -> B: GET /api/tender-packages/advanced-search-form
+B --> F: Advanced search form data
+F --> U: Hiển thị form tìm kiếm nâng cao
+
+U -> F: Thiết lập nhiều điều kiện
+F -> B: POST /api/tender-packages/advanced-search
+note right: { multiple_criteria: object }
+
+B -> S: Execute complex search
+S -> D: Query with multiple criteria
+D --> S: Complex search results
+S --> B: Processed results
+B --> F: Advanced search results
+F --> U: Hiển thị kết quả tìm kiếm nâng cao
+
+== Xử lý Lỗi ==
+
+alt Timeout tìm kiếm
+    B --> F: 408 Request Timeout
+    F --> U: Hiển thị thông báo "Tìm kiếm quá thời gian"
+else Không có kết quả
+    B --> F: 200 OK - Empty results
+    F --> U: Hiển thị "Không tìm thấy kết quả"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+@enduml

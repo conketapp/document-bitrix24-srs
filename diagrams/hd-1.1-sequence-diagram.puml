@@ -1,0 +1,190 @@
+@startuml HD-1.1 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title HD-1.1: Sequence Diagram - Tạo Hợp đồng mới và nhập thông tin cần thiết
+
+actor "Người dùng" as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Tender Package Module" as T
+participant "Document Service" as DS
+participant "Notification Service" as N
+
+== Khởi tạo Form ==
+
+U -> F: Truy cập trang tạo hợp đồng mới
+F -> B: GET /api/contracts/create
+B -> D: Query tender packages for linking
+D --> B: Tender packages data
+B -> T: GET /api/tender-packages/available
+T --> B: Available tender packages
+B --> F: Form data with tender packages
+F --> U: Hiển thị form tạo hợp đồng mới
+
+== Nhập Thông tin Cơ bản ==
+
+U -> F: Nhập thông tin cơ bản hợp đồng
+F -> F: Validation real-time
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Nhập số hợp đồng
+F -> B: POST /api/contracts/validate-contract-number
+note right: { contract_number: string }
+
+B -> D: Check contract number uniqueness
+D --> B: Validation result
+B --> F: Contract number validation
+F --> U: Hiển thị kết quả validation
+
+== Nhập Thông tin Tài chính ==
+
+U -> F: Nhập thông tin tài chính
+F -> F: Validation real-time
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Nhập giá trị hợp đồng
+F -> F: Format currency display
+F --> U: Hiển thị giá trị đã format
+
+== Nhập Thông tin Thời gian ==
+
+U -> F: Nhập thông tin thời gian
+F -> F: Validation date ranges
+F --> U: Hiển thị validation errors (nếu có)
+
+U -> F: Chọn ngày bắt đầu/kết thúc
+F -> F: Validate date logic (start < end)
+F --> U: Hiển thị validation errors (nếu có)
+
+== Nhập Thông tin Các bên ==
+
+U -> F: Nhập thông tin các bên
+F -> B: GET /api/contractors
+B -> D: Query contractors list
+D --> B: Contractors data
+B --> F: Contractors list
+F --> U: Hiển thị dropdown nhà thầu
+
+U -> F: Chọn chủ đầu tư và nhà thầu
+F -> B: POST /api/contracts/validate-parties
+note right: { client_id: number, contractor_id: number }
+
+B -> D: Validate party information
+D --> B: Party validation result
+B --> F: Party validation
+F --> U: Hiển thị kết quả validation
+
+== Liên kết với Gói thầu ==
+
+U -> F: Chọn gói thầu liên kết
+F -> B: POST /api/contracts/link-tender-package
+note right: { tender_package_id: number }
+
+B -> T: GET /api/tender-packages/{id}
+T -> D: Query tender package details
+D --> T: Tender package data
+T --> B: Tender package information
+
+B -> B: Validate contract value vs tender value
+B -> B: Check tender package status
+
+alt Giá trị hợp đồng không khớp
+    B --> F: 400 Bad Request - Value mismatch
+    F --> U: Hiển thị cảnh báo "Giá trị không khớp"
+else Gói thầu không tồn tại
+    B --> F: 404 Not Found - Tender package not found
+    F --> U: Hiển thị thông báo "Gói thầu không tồn tại"
+else Liên kết thành công
+    B -> D: Update tender package contract link
+    D --> B: Link updated
+    B --> F: Tender package linked successfully
+    F --> U: Hiển thị thông báo liên kết thành công
+end
+
+== Upload Tài liệu ==
+
+U -> F: Upload tài liệu hợp đồng
+F -> B: POST /api/contracts/{id}/documents/upload
+note right: Multipart form data với file
+
+B -> DS: Process document upload
+DS -> DS: Validate file format và size
+DS --> B: Document processed
+B -> D: Insert contract_documents
+D --> B: Document saved
+B --> F: Document uploaded successfully
+F --> U: Hiển thị thông báo upload thành công
+
+== Tạo Phụ lục ==
+
+U -> F: Nhấn "Thêm phụ lục"
+F -> B: POST /api/contracts/{id}/appendices
+note right: { appendix_data: object }
+
+B -> D: Insert contract_appendices
+D --> B: Appendix created
+B --> F: Appendix created successfully
+F --> U: Hiển thị thông báo tạo phụ lục thành công
+
+== Lưu Hợp đồng ==
+
+U -> F: Nhấn "Lưu nháp"
+F -> B: POST /api/contracts/draft
+note right: { contract_data: object }
+
+B -> B: Validation contract data
+B -> D: Insert contracts (status = 'draft')
+D --> B: Contract created
+B -> D: Insert contract_versions
+D --> B: Version created
+B --> F: Contract saved as draft
+F --> U: Hiển thị thông báo "Đã lưu nháp"
+
+U -> F: Nhấn "Hoàn thành"
+F -> B: POST /api/contracts
+note right: { contract_data: object }
+
+B -> B: Final validation
+B -> D: Insert contracts (status = 'created')
+D --> B: Contract created
+B -> D: Insert contract_versions
+D --> B: Version created
+B -> N: Send contract creation notification
+N --> B: Notification sent
+B --> F: Contract created successfully
+F --> U: Hiển thị thông báo thành công
+F -> F: Chuyển đến trang chi tiết hợp đồng
+
+== Preview và Xác nhận ==
+
+U -> F: Nhấn "Xem trước"
+F -> B: GET /api/contracts/{id}/preview
+B -> D: Query contract data
+D --> B: Contract data
+B -> B: Generate preview data
+B --> F: Preview information
+F --> U: Hiển thị preview hợp đồng
+
+U -> F: Xác nhận thông tin
+F -> B: PUT /api/contracts/{id}/confirm
+B -> D: Update contract status to 'confirmed'
+D --> B: Status updated
+B --> F: Contract confirmed
+F --> U: Hiển thị thông báo xác nhận
+
+== Xử lý Lỗi ==
+
+alt Validation lỗi
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị lỗi validation
+else Số hợp đồng trùng lặp
+    B --> F: 409 Conflict
+    F --> U: Hiển thị thông báo "Số hợp đồng đã tồn tại"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+@enduml

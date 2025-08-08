@@ -1,0 +1,169 @@
+@startuml TSDV-3.2 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title TSDV-3.2: Nhắc nhở khi Tài sản/Dịch vụ sắp hết hạn bảo hành/bảo trì/sử dụng - Sequence Diagram
+
+participant "Scheduler\nService" as Scheduler
+participant "Reminder\nService" as ReminderService
+participant "Asset\nRepository" as AssetRepo
+participant "Service\nRepository" as ServiceRepo
+participant "Notification\nService" as NotificationService
+participant "Email\nService" as EmailService
+participant "SMS\nService" as SMSService
+participant "Configuration\nService" as ConfigService
+participant "Database" as DB
+
+Scheduler -> ReminderService: checkExpiringItems()
+ReminderService -> AssetRepo: getAssetsWithExpiringWarranty()
+AssetRepo -> DB: SELECT * FROM assets WHERE warranty_end_date BETWEEN ? AND ?
+DB --> AssetRepo: Assets with expiring warranty
+AssetRepo --> ReminderService: Expiring warranty assets
+
+ReminderService -> ServiceRepo: getServicesWithExpiringUsage()
+ServiceRepo -> DB: SELECT * FROM services WHERE usage_end_date BETWEEN ? AND ?
+DB --> ServiceRepo: Services with expiring usage
+ServiceRepo --> ReminderService: Expiring usage services
+
+ReminderService -> AssetRepo: getAssetsWithUpcomingMaintenance()
+AssetRepo -> DB: SELECT * FROM assets WHERE next_maintenance_date BETWEEN ? AND ?
+DB --> AssetRepo: Assets with upcoming maintenance
+AssetRepo --> ReminderService: Upcoming maintenance assets
+
+ReminderService -> ReminderService: calculateDaysUntilExpiry()
+ReminderService -> ConfigService: getReminderThresholds()
+ConfigService -> DB: SELECT * FROM reminder_config WHERE is_active = true
+DB --> ConfigService: Reminder thresholds
+ConfigService --> ReminderService: Threshold configuration
+
+ReminderService -> ReminderService: filterItemsByThreshold()
+
+alt Có tài sản/dịch vụ cần thông báo
+  ReminderService -> ReminderService: createReminderNotifications()
+  
+  loop Cho mỗi tài sản/dịch vụ cần thông báo
+    ReminderService -> ReminderService: generateNotificationContent()
+    ReminderService -> ConfigService: getNotificationRecipients(itemType)
+    ConfigService -> DB: SELECT recipients FROM notification_config WHERE item_type = ?
+    DB --> ConfigService: Recipients list
+    ConfigService --> ReminderService: Recipients
+    
+    ReminderService -> NotificationService: createInAppNotification(recipients, content)
+    NotificationService -> DB: INSERT INTO notifications (recipient_id, content, type, created_at)
+    DB --> NotificationService: Notification created
+    NotificationService --> ReminderService: In-app notification sent
+    
+    alt Cấu hình gửi email
+      ReminderService -> EmailService: sendEmailNotification(recipients, content)
+      EmailService -> EmailService: generateEmailTemplate(content)
+      EmailService -> EmailService: sendEmail(recipients, template)
+      EmailService -> DB: INSERT INTO email_logs (recipient, subject, sent_at)
+      DB --> EmailService: Email log created
+      EmailService --> ReminderService: Email notification sent
+    end
+    
+    alt Cấu hình gửi SMS
+      ReminderService -> SMSService: sendSMSNotification(recipients, content)
+      SMSService -> SMSService: generateSMSTemplate(content)
+      SMSService -> SMSService: sendSMS(recipients, template)
+      SMSService -> DB: INSERT INTO sms_logs (recipient, message, sent_at)
+      DB --> SMSService: SMS log created
+      SMSService --> ReminderService: SMS notification sent
+    end
+    
+    ReminderService -> DB: UPDATE assets/services SET last_reminder_sent = ? WHERE id = ?
+    DB --> ReminderService: Reminder status updated
+  end
+  
+  ReminderService -> ReminderService: logReminderActivity()
+  ReminderService -> DB: INSERT INTO reminder_logs (total_notifications, sent_at)
+  DB --> ReminderService: Reminder log created
+  
+else Không có tài sản/dịch vụ cần thông báo
+  ReminderService -> ReminderService: logNoRemindersNeeded()
+  ReminderService -> DB: INSERT INTO reminder_logs (total_notifications = 0, sent_at)
+  DB --> ReminderService: No reminders log created
+end
+
+Scheduler --> ReminderService: Daily check completed
+
+note over ReminderService, DB
+  Tùy chọn: Người dùng thiết lập cấu hình thông báo
+end note
+
+participant "Người dùng" as User
+participant "Giao diện\nCấu hình" as UI
+
+User -> UI: Truy cập cấu hình thông báo
+UI -> ConfigService: GET /api/reminder-config
+ConfigService -> DB: SELECT * FROM reminder_config
+DB --> ConfigService: Current configuration
+ConfigService --> UI: Configuration data
+UI --> User: Hiển thị form cấu hình
+
+User -> UI: Cập nhật cấu hình thông báo
+note right of User
+  - Ngưỡng cảnh báo: 7, 30, 60 ngày
+  - Người nhận thông báo
+  - Kênh gửi thông báo
+  - Template thông báo
+end note
+
+UI -> ConfigService: PUT /api/reminder-config
+note right of UI
+{
+  "warranty_threshold": 30,
+  "maintenance_threshold": 7,
+  "service_threshold": 60,
+  "email_enabled": true,
+  "sms_enabled": false,
+  "in_app_enabled": true,
+  "recipients": ["user1", "user2"]
+}
+end note
+
+ConfigService -> ConfigService: validateConfiguration(config)
+ConfigService -> DB: UPDATE reminder_config SET ... WHERE id = ?
+DB --> ConfigService: Configuration updated
+ConfigService --> UI: Configuration saved successfully
+UI --> User: Thông báo lưu cấu hình thành công
+
+User -> UI: Xem lịch sử thông báo
+UI -> NotificationService: GET /api/notification-history
+NotificationService -> DB: SELECT * FROM notifications ORDER BY created_at DESC
+DB --> NotificationService: Notification history
+NotificationService --> UI: Notification history data
+UI --> User: Hiển thị lịch sử thông báo
+
+User -> UI: Xuất báo cáo tài sản/dịch vụ sắp hết hạn
+UI -> ReminderService: POST /api/expiring-items-report
+ReminderService -> AssetRepo: getExpiringAssets()
+AssetRepo -> DB: SELECT * FROM assets WHERE warranty_end_date <= ?
+DB --> AssetRepo: Expiring assets
+AssetRepo --> ReminderService: Expiring assets data
+
+ReminderService -> ServiceRepo: getExpiringServices()
+ServiceRepo -> DB: SELECT * FROM services WHERE usage_end_date <= ?
+DB --> ServiceRepo: Expiring services
+ServiceRepo --> ReminderService: Expiring services data
+
+ReminderService -> ReminderService: generateExpiringItemsReport()
+ReminderService --> UI: Report file
+UI --> User: Tải xuống báo cáo
+
+@enduml

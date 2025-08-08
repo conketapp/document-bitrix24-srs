@@ -1,0 +1,74 @@
+@startuml GT-4.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title GT-4.2: Activity Diagram - Tìm kiếm & Lọc Gói thầu Đa tiêu chí
+
+start
+
+:Người dùng truy cập trang danh sách gói thầu;
+
+:Hiển thị giao diện tìm kiếm và lọc;
+
+:Người dùng nhập từ khóa tìm kiếm;
+
+:Hiển thị autocomplete suggestions;
+
+:Người dùng chọn hoặc nhập từ khóa;
+
+:Người dùng chọn bộ lọc;
+
+note right
+**Các bộ lọc có sẵn:**
+- Trạng thái gói thầu
+- Hình thức lựa chọn nhà thầu
+- Khoảng giá trị
+- Khoảng thời gian
+- Người tạo/phụ trách
+- Loại tài liệu
+end note
+
+:Người dùng thiết lập điều kiện lọc;
+
+:Người dùng nhấn "Tìm kiếm";
+
+:Hệ thống thực hiện tìm kiếm;
+
+:Kiểm tra thời gian timeout (30 giây);
+
+if (Tìm kiếm thành công?) then (Không)
+    :Hiển thị thông báo lỗi;
+    :Gợi ý thử lại với điều kiện khác;
+else (OK)
+    :Hiển thị kết quả tìm kiếm;
+    :Hiển thị số lượng kết quả;
+    
+    :Người dùng xem kết quả;
+    
+    if (Có kết quả?) then (Có)
+        :Người dùng có thể sắp xếp kết quả;
+        :Người dùng có thể chọn trang tiếp theo;
+        :Người dùng có thể export kết quả;
+        
+        if (Người dùng muốn lưu bộ lọc?) then (Có)
+            :Người dùng nhập tên bộ lọc;
+            :Lưu bộ lọc vào database;
+            :Hiển thị thông báo "Đã lưu bộ lọc";
+        else (Không)
+            :Tiếp tục xem kết quả;
+        endif
+    else (Không)
+        :Hiển thị thông báo "Không tìm thấy kết quả";
+        :Gợi ý thử lại với từ khóa khác;
+    endif
+endif
+
+:Người dùng có thể tìm kiếm nâng cao;
+
+:Người dùng có thể kết hợp nhiều điều kiện;
+
+:Người dùng có thể sử dụng bộ lọc đã lưu;
+
+stop
+
+@enduml

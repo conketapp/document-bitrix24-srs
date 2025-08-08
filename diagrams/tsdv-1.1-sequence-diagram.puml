@@ -1,0 +1,201 @@
+@startuml TSDV-1.1 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam participant {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #0D47A1
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #E65100
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+title TSDV-1.1: Tạo mới một Tài sản/Dịch vụ đầu ra từ dự án - Sequence Diagram
+
+actor "Cán bộ\nQuản lý Tài sản" as User
+participant "Giao diện\nTạo Tài sản/Dịch vụ" as UI
+participant "Asset Service\nController" as Controller
+participant "Asset Service\nService" as Service
+participant "Project\nRepository" as ProjectRepo
+participant "Asset Service\nRepository" as AssetRepo
+participant "Code Generator\nService" as CodeService
+participant "File Upload\nService" as FileService
+participant "Notification\nService" as NotificationService
+participant "Database" as DB
+
+User -> UI: Truy cập trang quản lý tài sản/dịch vụ
+UI -> Controller: GET /api/assets-services
+Controller -> Service: getAssetServices()
+Service -> AssetRepo: findAll()
+AssetRepo -> DB: SELECT * FROM assets_services
+DB --> AssetRepo: Assets services data
+AssetRepo --> Service: Assets services list
+Service --> Controller: Assets services response
+Controller --> UI: Hiển thị danh sách tài sản/dịch vụ
+
+User -> UI: Nhấn nút "Tạo mới"
+UI -> Controller: GET /api/assets-services/create
+Controller -> Service: getCreateForm()
+Service --> Controller: Create form configuration
+Controller --> UI: Hiển thị form tạo mới
+
+User -> UI: Chọn loại tài sản/dịch vụ
+UI -> Controller: POST /api/assets-services/type-selection
+note right of UI
+{
+  "type": "asset",
+  "category": "hardware"
+}
+end note
+
+Controller -> Service: handleTypeSelection(typeData)
+Service -> Service: updateFormFields(typeData)
+Service --> Controller: Updated form fields
+Controller --> UI: Cập nhật form theo loại
+
+User -> UI: Chọn dự án nguồn
+UI -> Controller: GET /api/projects/available
+Controller -> ProjectRepo: getAvailableProjects()
+ProjectRepo -> DB: SELECT * FROM projects WHERE status IN ('active', 'completed')
+DB --> ProjectRepo: Available projects
+ProjectRepo --> Controller: Available projects response
+Controller --> UI: Hiển thị danh sách dự án
+
+User -> UI: Nhập thông tin tài sản/dịch vụ
+UI -> Controller: POST /api/assets-services/validate
+note right of UI
+{
+  "type": "asset",
+  "name": "Máy tính Dell OptiPlex 7090",
+  "description": "Máy tính văn phòng cho dự án",
+  "category": "hardware",
+  "subcategory": "computer",
+  "project_id": 123,
+  "responsible_person_id": 456,
+  "status": "active"
+}
+end note
+
+Controller -> Service: validateAssetServiceData(assetData)
+Service -> Service: validateRequiredFields(assetData)
+Service -> Service: validateBusinessRules(assetData)
+
+alt Dữ liệu hợp lệ
+  Service -> CodeService: generateAssetServiceCode(assetData)
+  CodeService -> CodeService: generateCode(assetData.type, assetData.category)
+  CodeService -> AssetRepo: checkCodeExists(generatedCode)
+  AssetRepo -> DB: SELECT COUNT(*) FROM assets_services WHERE asset_service_code = ?
+  DB --> AssetRepo: Code exists check
+  AssetRepo --> CodeService: Code availability
+  
+  alt Mã đã tồn tại
+    CodeService -> CodeService: regenerateCode()
+    CodeService --> Service: New unique code
+  else Mã chưa tồn tại
+    CodeService --> Service: Generated code
+  end
+  
+  Service -> Service: prepareAssetServiceData(assetData, generatedCode)
+  
+  Service -> AssetRepo: createAssetService(preparedData)
+  AssetRepo -> DB: INSERT INTO assets_services (...)
+  DB --> AssetRepo: Asset service created
+  AssetRepo --> Service: Asset service created
+  
+  Service -> FileService: handleFileUploads(assetData.files)
+  FileService -> FileService: processUploadedFiles()
+  FileService -> DB: INSERT INTO asset_service_files (...)
+  DB --> FileService: Files saved
+  FileService --> Service: Files processed
+  
+  Service -> NotificationService: notifyResponsiblePerson(assetData)
+  NotificationService -> DB: INSERT INTO notifications (...)
+  DB --> NotificationService: Notification created
+  NotificationService --> Service: Notification sent
+  
+  Service --> Controller: Asset service created successfully
+  Controller --> UI: Thông báo tạo thành công
+  
+  UI -> Controller: GET /api/assets-services/{id}
+  Controller -> Service: getAssetServiceById(id)
+  Service -> AssetRepo: findById(id)
+  AssetRepo -> DB: SELECT * FROM assets_services WHERE id = ?
+  DB --> AssetRepo: Asset service details
+  AssetRepo --> Service: Asset service details
+  Service --> Controller: Asset service response
+  Controller --> UI: Chuyển đến trang chi tiết
+  
+else Dữ liệu không hợp lệ
+  Service --> Controller: Validation errors
+  Controller --> UI: Hiển thị lỗi validation
+end
+
+User -> UI: Tải lên tài liệu đính kèm (tùy chọn)
+UI -> Controller: POST /api/assets-services/{id}/upload-files
+note right of UI
+{
+  "files": [file1, file2],
+  "file_descriptions": ["Hóa đơn mua", "Bảo hành"],
+  "file_types": ["invoice", "warranty"]
+}
+end note
+
+Controller -> FileService: uploadAssetServiceFiles(assetId, fileData)
+FileService -> FileService: validateFileTypes(fileData)
+FileService -> FileService: processFiles(fileData)
+FileService -> DB: INSERT INTO asset_service_files (...)
+DB --> FileService: Files uploaded
+FileService --> Controller: Files uploaded successfully
+Controller --> UI: Thông báo tải lên thành công
+
+User -> UI: Lưu bản nháp (tùy chọn)
+UI -> Controller: POST /api/assets-services/save-draft
+note right of UI
+{
+  "draft_data": {...},
+  "draft_name": "Bản nháp tài sản 1"
+}
+end note
+
+Controller -> Service: saveAssetServiceDraft(draftData)
+Service -> DB: INSERT INTO asset_service_drafts (...)
+DB --> Service: Draft saved
+Service --> Controller: Draft saved successfully
+Controller --> UI: Thông báo lưu bản nháp thành công
+
+User -> UI: Import từ Excel (tùy chọn)
+UI -> Controller: POST /api/assets-services/import-excel
+note right of UI
+{
+  "excel_file": file_data,
+  "import_config": {
+    "skip_duplicates": true,
+    "auto_generate_codes": true
+  }
+}
+end note
+
+Controller -> Service: importAssetServicesFromExcel(importData)
+Service -> FileService: processExcelFile(importData.excel_file)
+FileService --> Service: Excel data
+Service -> Service: validateImportData(excelData)
+Service -> Service: processImportData(excelData, importData.import_config)
+
+loop Cho mỗi tài sản/dịch vụ trong file
+  Service -> CodeService: generateAssetServiceCode(assetData)
+  Service -> AssetRepo: createAssetService(assetData)
+  AssetRepo -> DB: INSERT INTO assets_services (...)
+  DB --> AssetRepo: Asset service created
+end
+
+Service --> Controller: Import completed
+Controller --> UI: Thông báo import thành công
+
+@enduml

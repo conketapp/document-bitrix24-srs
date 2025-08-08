@@ -1,0 +1,152 @@
+@startuml GT-2.2 Sequence Diagram
+!theme plain
+skinparam sequenceFontSize 12
+
+title GT-2.2: Sequence Diagram - Xóa Gói thầu
+
+actor User as U
+participant "Frontend" as F
+participant "Backend API" as B
+participant "Database" as D
+participant "Audit Service" as A
+participant "Notification Service" as N
+
+== Kiểm tra Quyền và Trạng thái ==
+
+U -> F: Chọn gói thầu cần xóa
+F -> B: GET /api/tender-packages/{id}
+B -> D: Query tender package data
+D --> B: Tender package data
+B --> F: Tender package data
+
+F -> F: Kiểm tra quyền xóa gói thầu
+F -> F: Kiểm tra trạng thái gói thầu
+
+alt Trạng thái = in_progress/completed
+    F --> U: Hiển thị thông báo "Không thể xóa gói thầu đang triển khai/hoàn thành"
+else Trạng thái = draft/cancelled
+    F --> U: Hiển thị nút "Xóa"
+end
+
+== Kiểm tra Dependencies ==
+
+U -> F: Nhấn "Xóa"
+F -> B: GET /api/tender-packages/{id}/delete-check
+B -> D: Check for related contracts
+D --> B: Contract dependencies
+B -> D: Check for attached documents
+D --> B: Document dependencies
+B -> D: Check for active workflows
+D --> B: Workflow dependencies
+
+alt Có hợp đồng liên kết
+    B --> F: 400 Bad Request - Has contracts
+    F --> U: Hiển thị cảnh báo "Gói thầu có hợp đồng liên kết"
+else Có tài liệu đính kèm
+    B --> F: 400 Bad Request - Has documents
+    F --> U: Hiển thị cảnh báo "Gói thầu có tài liệu đính kèm"
+else Có quy trình đang hoạt động
+    B --> F: 400 Bad Request - Has active workflows
+    F --> U: Hiển thị cảnh báo "Gói thầu có quy trình đang hoạt động"
+else Không có dependencies
+    B --> F: OK to delete
+    F --> U: Hiển thị confirmation dialog
+end
+
+== Xác nhận Xóa ==
+
+U -> F: Nhập lý do xóa
+F -> F: Validation lý do
+
+alt Lý do không hợp lệ
+    F --> U: Hiển thị lỗi validation
+else Lý do hợp lệ
+    U -> F: Xác nhận xóa
+    F -> B: DELETE /api/tender-packages/{id}
+    note right: { delete_reason: string }
+    
+    B -> B: Validation quyền và dependencies
+    B -> D: Update tender_packages SET deleted_at = NOW()
+    D --> B: Update success
+    B -> D: Update tender_packages SET deleted_by = user_id
+    D --> B: Update success
+    B -> D: Update tender_packages SET delete_reason = reason
+    D --> B: Update success
+    B -> D: Update tender_packages SET status = 'deleted'
+    D --> B: Update success
+    
+    B -> D: Insert tender_package_changes
+    note right: action_type = 'delete', delete_reason = reason
+    D --> B: Change log created
+    
+    B -> A: Log delete operation
+    A --> B: Audit log created
+    
+    B -> N: Send notification
+    N --> B: Notification sent
+    
+    B --> F: Tender package deleted successfully
+    F --> U: Hiển thị thông báo thành công
+    F -> F: Cập nhật danh sách gói thầu
+    F --> U: Cập nhật UI
+end
+
+== Khôi phục Gói thầu ==
+
+U -> F: Nhấn "Khôi phục" (trong 30 ngày)
+F -> B: POST /api/tender-packages/{id}/restore
+B -> B: Kiểm tra thời gian khôi phục (30 ngày)
+
+alt Trong thời gian cho phép
+    B -> D: Update tender_packages SET deleted_at = NULL
+    D --> B: Restore success
+    B -> D: Update tender_packages SET status = original_status
+    D --> B: Update success
+    B -> D: Insert restore log
+    D --> B: Restore log created
+    B --> F: Tender package restored
+    F --> U: Hiển thị thông báo "Đã khôi phục gói thầu"
+else Quá thời gian cho phép
+    B --> F: 400 Bad Request
+    F --> U: Hiển thị thông báo "Không thể khôi phục"
+end
+
+== Bulk Delete ==
+
+U -> F: Chọn nhiều gói thầu
+F -> B: POST /api/tender-packages/bulk-delete-check
+note right: { tender_ids: number[] }
+
+B -> D: Check permissions for all tender packages
+D --> B: Permission results
+B -> D: Check dependencies for all tender packages
+D --> B: Dependency results
+
+B --> F: Bulk delete check results
+F --> U: Hiển thị kết quả kiểm tra
+
+U -> F: Xác nhận bulk delete
+F -> B: DELETE /api/tender-packages/bulk
+note right: { tender_ids: number[], delete_reason: string }
+
+B -> D: Bulk soft delete tender packages
+D --> B: Bulk delete success
+B -> D: Insert bulk delete logs
+D --> B: Logs created
+B --> F: Bulk delete completed
+F --> U: Hiển thị thông báo "Đã xóa thành công X gói thầu"
+
+== Xử lý Lỗi ==
+
+alt Không có quyền xóa
+    B --> F: 403 Forbidden
+    F --> U: Hiển thị thông báo "Không có quyền xóa gói thầu"
+else Gói thầu không tồn tại
+    B --> F: 404 Not Found
+    F --> U: Hiển thị thông báo "Gói thầu không tồn tại"
+else Lỗi database
+    B --> F: 500 Internal Server Error
+    F --> U: Hiển thị thông báo lỗi
+end
+
+@enduml

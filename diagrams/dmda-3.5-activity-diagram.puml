@@ -1,0 +1,59 @@
+@startuml DMDA-3.5 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-3.5: Activity Diagram - Phân biệt & Hiển thị Dự án Chính thức
+
+start
+
+:Người dùng truy cập danh sách dự án;
+
+:Hiển thị danh sách dự án với toggle "Chỉ dự án chính thức";
+
+:Người dùng chọn loại hiển thị;
+
+if (Hiển thị tất cả dự án?) then (Có)
+    :Hiển thị tất cả dự án;
+    :Phân biệt dự án chính thức và không chính thức;
+    note right
+    **Phân biệt dự án:**
+    - Dự án chính thức: Badge "Chính thức"
+    - Dự án không chính thức: Không có badge
+    - Dự án Bitrix24: Badge "Bitrix24"
+    end note
+else (Chỉ dự án chính thức)
+    :Lọc chỉ dự án có trạng thái "approved";
+    :Hiển thị danh sách dự án chính thức;
+    :Hiển thị thống kê dự án chính thức;
+endif
+
+:Người dùng có thể tìm kiếm dự án;
+
+if (Tìm kiếm dự án?) then (Có)
+    :Nhập từ khóa tìm kiếm;
+    :Thực hiện tìm kiếm trong dự án đã chọn;
+    :Hiển thị kết quả tìm kiếm;
+else (Không)
+    :Tiếp tục xem danh sách dự án;
+endif
+
+:Người dùng có thể xem chi tiết dự án chính thức;
+
+if (Xem chi tiết dự án?) then (Có)
+    :Truy cập trang chi tiết dự án;
+    :Hiển thị thông tin dự án chính thức;
+    :Hiển thị badge "Chính thức";
+    note right
+    **Thông tin dự án chính thức:**
+    - Ngày phê duyệt
+    - Người phê duyệt
+    - Ghi chú phê duyệt
+    - Trạng thái chính thức
+    end note
+else (Không)
+    :Tiếp tục quản lý dự án;
+endif
+
+stop
+
+@enduml

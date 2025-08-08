@@ -1,0 +1,114 @@
+@startuml DMDA-4.3 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title DMDA-4.3: Activity Diagram - Xuất Dữ liệu Danh mục Dự án ra Excel
+
+start
+
+:Người dùng truy cập trang danh mục dự án;
+
+:Hiển thị danh sách dự án với các bộ lọc;
+
+:Người dùng áp dụng bộ lọc (tùy chọn);
+note right
+**Các bộ lọc có thể áp dụng:**
+- Loại dự án
+- Trạng thái dự án
+- Người tạo dự án
+- Khoảng thời gian
+- Từ khóa tìm kiếm
+end note
+
+:Người dùng nhấn nút "Xuất Excel";
+
+:Kiểm tra quyền xuất dữ liệu;
+
+if (Có quyền xuất?) then (Không)
+    :Hiển thị thông báo "Không có quyền xuất dữ liệu";
+    stop
+else (Có)
+    :Hiển thị form tùy chọn xuất;
+    note right
+    **Tùy chọn xuất:**
+    - Định dạng file (Excel, CSV, PDF)
+    - Chọn trường dữ liệu
+    - Tên file xuất
+    - Bao gồm metadata
+    end note
+    
+    :Người dùng chọn tùy chọn xuất;
+    
+    :Người dùng nhấn "Bắt đầu xuất";
+    
+    :Hệ thống kiểm tra dữ liệu cần xuất;
+    
+    if (Có dữ liệu để xuất?) then (Không)
+        :Hiển thị thông báo "Không có dữ liệu để xuất";
+    else (Có)
+        :Hiển thị progress indicator;
+        :Bắt đầu quá trình xuất;
+        
+        :Hệ thống thu thập dữ liệu theo bộ lọc;
+        
+        :Hệ thống định dạng dữ liệu;
+        note right
+        **Định dạng dữ liệu:**
+        - Định dạng ngày tháng
+        - Định dạng số tiền
+        - Định dạng trạng thái
+        - Định dạng văn bản
+        end note
+        
+        :Hệ thống tạo file Excel;
+        
+        if (Tạo file thành công?) then (Có)
+            :Lưu file vào storage;
+            :Tạo bản ghi lịch sử xuất;
+            :Ghi log hành động xuất;
+            :Cập nhật progress indicator;
+            :Hiển thị thông báo xuất thành công;
+            :Cung cấp link tải xuống file;
+        else (Thất bại)
+            :Hiển thị thông báo lỗi;
+            :Ghi log lỗi xuất;
+        endif
+    endif
+endif
+
+:Người dùng có thể xem lịch sử xuất;
+
+if (Xem lịch sử xuất?) then (Có)
+    :Truy cập trang lịch sử xuất;
+    :Hiển thị danh sách các lần xuất;
+    note right
+    **Thông tin lịch sử:**
+    - Ngày xuất
+    - Loại file
+    - Số lượng bản ghi
+    - Trạng thái xuất
+    - Link tải xuống
+    end note
+else (Không)
+    :Tiếp tục quản lý dự án;
+endif
+
+:Người dùng có thể quản lý template xuất;
+
+if (Quản lý template xuất?) then (Có)
+    :Kiểm tra quyền quản lý template;
+    
+    if (Có quyền quản lý?) then (Có)
+        :Hiển thị danh sách template;
+        :Cho phép tạo/sửa/xóa template;
+        :Lưu cấu hình template;
+    else (Không có quyền)
+        :Hiển thị thông báo "Không có quyền quản lý template";
+    endif
+else (Không)
+    :Tiếp tục quản lý dự án;
+endif
+
+stop
+
+@enduml

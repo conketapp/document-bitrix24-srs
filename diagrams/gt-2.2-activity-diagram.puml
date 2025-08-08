@@ -1,0 +1,65 @@
+@startuml GT-2.2 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title GT-2.2: Activity Diagram - Xóa Gói thầu
+
+start
+
+:Người dùng chọn gói thầu cần xóa;
+
+:Kiểm tra quyền xóa gói thầu;
+
+if (Có quyền xóa gói thầu?) then (Không)
+    :Hiển thị thông báo "Không có quyền xóa";
+    stop
+else (Có)
+    :Kiểm tra trạng thái gói thầu;
+    
+    if (Trạng thái = in_progress/completed?) then (Có)
+        :Hiển thị thông báo "Không thể xóa gói thầu đang triển khai/hoàn thành";
+        stop
+    else (draft/cancelled)
+        :Kiểm tra dependencies;
+        
+        if (Có hợp đồng liên kết?) then (Có)
+            :Hiển thị cảnh báo "Gói thầu có hợp đồng liên kết";
+            :Yêu cầu xóa hợp đồng trước;
+            stop
+        else (Không)
+            if (Có documents attached?) then (Có)
+                :Hiển thị cảnh báo "Gói thầu có tài liệu đính kèm";
+                :Yêu cầu xóa tài liệu trước;
+                stop
+            else (Không)
+                if (Có active workflows?) then (Có)
+                    :Hiển thị cảnh báo "Gói thầu có quy trình đang hoạt động";
+                    :Yêu cầu dừng quy trình trước;
+                    stop
+                else (Không)
+                    :Hiển thị confirmation dialog;
+                    :Hiển thị thông tin chi tiết gói thầu sẽ xóa;
+                    :Yêu cầu nhập lý do xóa;
+                    
+                    :Người dùng nhập lý do xóa;
+                    :Người dùng xác nhận xóa;
+                    
+                    if (Xác nhận xóa?) then (Có)
+                        :Thực hiện soft delete;
+                        :Cập nhật deleted_at, deleted_by, delete_reason;
+                        :Cập nhật status = 'deleted';
+                        :Ghi log xóa gói thầu;
+                        :Gửi thông báo thành công;
+                        :Cập nhật danh sách gói thầu;
+                    else (Không)
+                        :Hủy thao tác xóa;
+                    endif
+                endif
+            endif
+        endif
+    endif
+endif
+
+stop
+
+@enduml

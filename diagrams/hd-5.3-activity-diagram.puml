@@ -1,0 +1,206 @@
+@startuml HD-5.3 Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+
+title HD-5.3: Activity Diagram - Xuất Dữ liệu Hợp đồng ra Excel
+
+start
+
+:Người dùng truy cập danh sách hợp đồng;
+
+:Kiểm tra quyền xuất dữ liệu hợp đồng;
+
+if (Có quyền xuất dữ liệu?) then (Không)
+    :Hiển thị thông báo "Không có quyền xuất dữ liệu";
+    stop
+else (Có)
+    :Hiển thị nút "Xuất Excel";
+    
+    :Người dùng nhấn "Xuất Excel";
+    
+    :Hiển thị dialog tùy chọn xuất;
+    note right
+    **Các tùy chọn xuất:**
+    - Phạm vi xuất (tất cả/đã chọn/lọc/tìm kiếm)
+    - Định dạng file (Excel/CSV/PDF)
+    - Template xuất
+    - Cột cần xuất
+    end note
+    
+    :Người dùng chọn phạm vi xuất;
+    note right
+    **Phạm vi xuất:**
+    - Tất cả hợp đồng
+    - Hợp đồng đã chọn
+    - Hợp đồng theo bộ lọc
+    - Kết quả tìm kiếm
+    end note
+    
+    :Người dùng chọn định dạng file;
+    note right
+    **Định dạng file:**
+    - Excel (.xlsx)
+    - Excel cũ (.xls)
+    - CSV (.csv)
+    - PDF (.pdf)
+    end note
+    
+    :Người dùng chọn template xuất;
+    note right
+    **Template xuất:**
+    - Template cơ bản
+    - Template tài chính
+    - Template quản lý
+    - Template tùy chỉnh
+    end note
+    
+    :Người dùng chọn cột cần xuất;
+    note right
+    **Các cột có thể xuất:**
+    - Thông tin hợp đồng
+    - Dữ liệu tài chính
+    - Tài liệu liên quan
+    - Lịch sử hoạt động
+    end note
+    
+    :Hệ thống xác thực tùy chọn xuất;
+    
+    if (Tùy chọn hợp lệ?) then (Không)
+        :Hiển thị thông báo lỗi;
+        :Yêu cầu người dùng sửa tùy chọn;
+    else (Có)
+        :Bắt đầu quá trình xuất;
+        :Hiển thị tiến trình xuất;
+        
+        :Hệ thống thu thập dữ liệu;
+        note right
+        **Thu thập dữ liệu:**
+        - Lấy danh sách hợp đồng
+        - Thu thập thông tin chi tiết
+        - Lấy dữ liệu tài chính
+        - Lấy tài liệu liên quan
+        end note
+        
+        :Hệ thống xử lý dữ liệu;
+        note right
+        **Xử lý dữ liệu:**
+        - Tổng hợp dữ liệu
+        - Chuyển đổi định dạng
+        - Áp dụng template
+        - Tối ưu hóa hiệu suất
+        end note
+        
+        :Hệ thống tạo file Excel;
+        note right
+        **Tạo file Excel:**
+        - Tạo workbook mới
+        - Tạo các sheet cần thiết
+        - Ghi dữ liệu vào sheet
+        - Áp dụng styling và formatting
+        end note
+        
+        :Hệ thống tạo multiple sheets;
+        note right
+        **Các sheet:**
+        - Summary (Tổng quan)
+        - Details (Chi tiết)
+        - Financial (Tài chính)
+        - Documents (Tài liệu)
+        end note
+        
+        :Hệ thống áp dụng styling;
+        note right
+        **Styling:**
+        - Header formatting
+        - Column width
+        - Cell styling
+        - Color coding
+        end note
+        
+        :Hệ thống kiểm tra kích thước file;
+        
+        if (File size > 50MB?) then (Có)
+            :Hiển thị cảnh báo kích thước file;
+            :Đề xuất chia nhỏ file;
+            :Hỏi người dùng có tiếp tục không;
+            
+            if (Người dùng đồng ý tiếp tục?) then (Có)
+                :Tiếp tục tạo file;
+            else (Không)
+                :Hủy quá trình xuất;
+                :Hiển thị thông báo hủy;
+                stop
+            endif
+        else (Không)
+            :Tiếp tục tạo file;
+        endif
+        
+        :Hệ thống nén file nếu cần;
+        :Hệ thống lưu file tạm thời;
+        
+        :Hệ thống cập nhật lịch sử xuất;
+        note right
+        **Lịch sử xuất:**
+        - Ghi log xuất file
+        - Lưu thông tin xuất
+        - Cập nhật thống kê
+        end note
+        
+        :Hiển thị thông báo xuất hoàn thành;
+        
+        :Người dùng chọn cách nhận file;
+        
+        if (Tải xuống ngay?) then (Có)
+            :Cung cấp link tải xuống;
+            :Người dùng tải file;
+        else (Gửi email)
+            :Hiển thị form nhập email;
+            :Người dùng nhập email;
+            :Hệ thống gửi file qua email;
+            :Hiển thị thông báo gửi thành công;
+        endif
+        
+        :Hệ thống dọn dẹp file tạm;
+        :Cập nhật thống kê xuất;
+    endif
+    
+    :Người dùng có thể lên lịch xuất tự động;
+    
+    if (Lên lịch xuất tự động?) then (Có)
+        :Hiển thị form lên lịch;
+        :Người dùng chọn tần suất xuất;
+        :Người dùng chọn thời gian xuất;
+        :Người dùng chọn email nhận;
+        :Hệ thống lưu lịch xuất;
+        :Hiển thị thông báo lên lịch thành công;
+    else (Không)
+        :Tiếp tục xuất thủ công;
+    endif
+    
+    :Người dùng có thể xem lịch sử xuất;
+    
+    if (Xem lịch sử xuất?) then (Có)
+        :Hiển thị danh sách lịch sử xuất;
+        :Cho phép tải lại file đã xuất;
+        :Cho phép xem chi tiết xuất;
+        :Cho phép xóa lịch sử xuất;
+    else (Không)
+        :Tiếp tục sử dụng hệ thống;
+    endif
+    
+    :Hệ thống quản lý template xuất;
+    
+    if (Quản lý template?) then (Có)
+        :Hiển thị danh sách template;
+        :Cho phép tạo template mới;
+        :Cho phép chỉnh sửa template;
+        :Cho phép xóa template;
+        :Cho phép chia sẻ template;
+    else (Không)
+        :Tiếp tục sử dụng template có sẵn;
+    endif
+endif
+
+stop
+
+@enduml
