@@ -72,13 +72,27 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 - Người phê duyệt phải có quyền "APPROVE_PROJECT"
 
 #### 3.3 Mapping Trạng thái Dự án
+
+**Trạng thái Phê duyệt Dự án:**
 | Key (Database) | Label (Hiển thị) | Mô tả |
 |----------------|-------------------|-------|
 | initialized | Khởi tạo | Dự án mới được tạo |
 | pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
 | approved | Đã phê duyệt | Dự án đã được phê duyệt |
 | rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
-| suspended | Dừng thực hiện | Dự án tạm dừng thực hiện |
+
+**Trạng thái Thực hiện Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| not_started | Chưa bắt đầu | Dự án chưa triển khai |
+| in_progress | Đang thực hiện | Dự án đang được triển khai |
+| suspended | Tạm dừng | Dự án tạm dừng thực hiện |
+| completed | Hoàn thành | Dự án đã hoàn thành |
+
+**Trạng thái Yêu cầu Chỉnh sửa:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| none | Không có yêu cầu | Không có yêu cầu chỉnh sửa |
 | edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 ---
@@ -184,7 +198,9 @@ interface Project {
     id: number;
     project_code: string;
     name: string;
-    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
+    approval_status: 'initialized' | 'pending_approval' | 'approved' | 'rejected';
+    execution_status: 'not_started' | 'in_progress' | 'suspended' | 'completed';
+    edit_request_status: 'none' | 'edit_requested';
     submitted_for_approval_at?: string;
     submitted_by?: number;
     // ... other fields
