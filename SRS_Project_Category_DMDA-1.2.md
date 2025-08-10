@@ -26,16 +26,16 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 2.2 Mô tả User Story
 **Với vai trò là** Cán bộ quản lý dự án,  
-**Tôi muốn** các dự án trong danh mục năm được hệ thống tự động phân biệt và đánh dấu là "Dự án Chuyển tiếp" (có ngày bắt đầu từ năm trước và chưa hoàn thành) hoặc "Dự án Mới" (có ngày bắt đầu trong năm hiện tại),  
+**Tôi muốn** các dự án trong danh mục được hệ thống tự động phân biệt và đánh dấu là "Dự án Chuyển tiếp" (dự án từ năm trước chưa hoàn thành) hoặc "Dự án Mới" (dự án bắt đầu trong năm hiện tại),  
 **Để** tôi có thể nhanh chóng xác định nguồn gốc và tình trạng liên tục của dự án phục vụ công tác báo cáo và quản lý ngân sách mà không cần nhập liệu thủ công.
 
 #### 2.3 Điều kiện chấp nhận (Acceptance Criteria)
-- [ ] Hệ thống tự động gán trạng thái "Chuyển tiếp" hoặc "Mới" dựa trên ngày bắt đầu dự án và năm hiện tại
-- [ ] "Dự án Mới" nếu năm bắt đầu = năm hiện tại
-- [ ] "Dự án Chuyển tiếp" nếu năm bắt đầu < năm hiện tại và trạng thái ≠ "Đã hoàn thành"
+- [ ] Hệ thống tự động gán trạng thái "Chuyển tiếp" hoặc "Mới" dựa trên năm tạo dự án và năm hiện tại
+- [ ] "Dự án Mới" nếu năm tạo = năm hiện tại
+- [ ] "Dự án Chuyển tiếp" nếu năm tạo < năm hiện tại và trạng thái ≠ "approved"
 - [ ] Thông tin này hiển thị rõ ràng trong danh sách dự án và chi tiết dự án
 - [ ] Người dùng không thể chỉnh sửa thủ công trường này
-- [ ] Hệ thống tự động cập nhật khi ngày bắt đầu hoặc trạng thái dự án thay đổi
+- [ ] Hệ thống tự động cập nhật khi năm tạo hoặc trạng thái dự án thay đổi
 
 #### 2.4 Activity Diagram
 ![DMDA-1.2 Activity Diagram](diagrams/DMDA-1.2%20Activity%20Diagram.png)
@@ -53,8 +53,8 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
    - Không cho phép chỉnh sửa thủ công
 
 2. **Quy tắc Phân loại**
-   - **Dự án Mới**: start_date.year = current_year
-   - **Dự án Chuyển tiếp**: start_date.year < current_year AND status ≠ "completed"
+   - **Dự án Mới**: YEAR(created_at) = current_year
+   - **Dự án Chuyển tiếp**: YEAR(created_at) < current_year AND status ≠ "approved"
 
 3. **Hiển thị Thông tin**
    - Badge/Label rõ ràng trong danh sách
@@ -63,8 +63,8 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 3.2 Business Rules
 - Phân loại được tính toán tự động, không thể chỉnh sửa
-- Cập nhật ngay khi ngày bắt đầu hoặc trạng thái thay đổi
-- Dự án hoàn thành không được phân loại là "Chuyển tiếp"
+- Cập nhật ngay khi năm tạo hoặc trạng thái thay đổi
+- Dự án đã phê duyệt không được phân loại là "Chuyển tiếp"
 - Năm hiện tại được lấy từ hệ thống
 
 #### 3.3 Validation Rules
@@ -79,21 +79,21 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 **Logic Phân loại:**
 | Điều kiện | Kết quả | Validation |
 |-----------|---------|------------|
-| startDate.year = currentYear | Dự án Mới | projectType = 'new' |
-| startDate.year < currentYear AND status ≠ 'completed' | Dự án Chuyển tiếp | projectType = 'carryover' |
-| status = 'completed' | Dự án Mới | projectType = 'new' |
+| YEAR(created_at) = currentYear | Dự án Mới | projectType = 'new' |
+| YEAR(created_at) < currentYear AND status ≠ 'approved' | Dự án Chuyển tiếp | projectType = 'carryover' |
+| status = 'approved' | Dự án Mới | projectType = 'new' |
 
 **Validation cho Database:**
 | Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc |
 |--------|-----------|---------------|------------|----------|
 | project_type | ENUM | Text | 'new', 'carryover', NOT NULL | ✅ |
-| start_date | DATE | Date | NOT NULL | ✅ |
+| created_at | TIMESTAMP | DateTime | NOT NULL | ✅ |
 | status | ENUM | Text | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ✅ |
 
 **Quy tắc chung:**
 - Phân loại được tính toán tự động, không thể chỉnh sửa thủ công
-- Cập nhật real-time khi có thay đổi ngày bắt đầu hoặc trạng thái
-- Dự án hoàn thành luôn được phân loại là "Mới"
+- Cập nhật real-time khi có thay đổi năm tạo hoặc trạng thái
+- Dự án đã phê duyệt luôn được phân loại là "Mới"
 - Năm hiện tại được lấy từ hệ thống, không phụ thuộc vào user input
 
 ---

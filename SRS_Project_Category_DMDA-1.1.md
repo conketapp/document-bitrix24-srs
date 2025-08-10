@@ -29,13 +29,18 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 **Để** tôi có thể dễ dàng tìm kiếm, quản lý và có cái nhìn tổng quan về tất cả các dự án đang triển khai hoặc đã hoàn thành.
 
 #### 2.3 Điều kiện chấp nhận (Acceptance Criteria)
-- [ ] Người dùng có thể xem danh sách dự án được lọc theo năm và loại
-- [ ] Hệ thống hiển thị danh sách dự án với thông tin cơ bản
-- [ ] Người dùng có thể chọn năm từ dropdown (2024, 2025, v.v.)
-- [ ] Người dùng có thể chọn loại dự án từ dropdown
-- [ ] Hệ thống hỗ trợ lọc theo "Tất cả" cho cả năm và loại
-- [ ] Kết quả lọc được hiển thị ngay lập tức
-- [ ] Giao diện responsive và dễ sử dụng
+- [ ] Người dùng có thể xem danh sách dự án được lọc theo năm, loại dự án và nguồn gốc dự án
+- [ ] Hệ thống hiển thị danh sách dự án với đầy đủ thông tin: Mã dự án, Tên dự án, Nguồn gốc dự án, TMĐT dự kiến, TMĐT phê duyệt, Lũy kế vốn đã ứng, Vốn đã ứng năm hiện tại, Dự kiến vốn sẽ ứng, Đề xuất kế hoạch vốn năm sau, Trạng thái phê duyệt
+- [ ] Người dùng có thể chọn năm từ dropdown (2024, 2025, v.v.) - mặc định là năm hiện tại
+- [ ] Người dùng có thể chọn loại dự án từ dropdown: Dự án Đầu tư, Dự án Mua sắm, Dự án Thuê dịch vụ, Dự án Bảo trì, Tất cả - mặc định là "Tất cả"
+- [ ] Người dùng có thể chọn nguồn gốc dự án từ dropdown: Dự án Mới, Dự án Chuyển tiếp, Tất cả - mặc định là "Tất cả"
+- [ ] Người dùng có thể lọc theo trạng thái phê duyệt: Khởi tạo, Chờ phê duyệt, Đã phê duyệt, Từ chối phê duyệt, Dừng thực hiện, Yêu cầu chỉnh sửa
+- [ ] Hệ thống tự động phân loại dự án mới/chuyển tiếp dựa trên năm tạo và trạng thái
+- [ ] Mã dự án được tạo tự động theo format PRJ-YYYY-XXXX
+- [ ] Kết quả lọc được hiển thị ngay lập tức với thời gian phản hồi < 1 giây
+- [ ] Giao diện responsive và dễ sử dụng trên cả desktop và mobile
+- [ ] Hỗ trợ phân trang khi có nhiều dự án (>20 dự án)
+- [ ] Hiển thị thông báo khi không có dự án nào thỏa mãn điều kiện lọc
 
 #### 2.4 Activity Diagram
 ![DMDA-1.1 Activity Diagram](diagrams/DMDA-1.1%20Activity%20Diagram.png)
@@ -54,10 +59,17 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 2. **Lọc theo Loại Dự án**
    - Dropdown chọn loại dự án:
-     - Dự án đầu tư
-     - Mua sắm tài sản
-     - Thuê dịch vụ
-     - Bảo trì
+     - Dự án Đầu tư
+     - Dự án Mua sắm
+     - Dự án Thuê dịch vụ
+     - Dự án Bảo trì
+     - Tất cả
+   - Mặc định hiển thị "Tất cả"
+
+3. **Lọc theo Nguồn gốc Dự án**
+   - Dropdown chọn nguồn gốc dự án:
+     - Dự án Mới
+     - Dự án Chuyển tiếp
      - Tất cả
    - Mặc định hiển thị "Tất cả"
 
@@ -83,7 +95,8 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 | Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc |
 |--------|-----------|---------------|------------|----------|
 | Năm | year | Number | 4 chữ số (2024, 2025, v.v.) | ✅ |
-| Loại dự án | categoryId | Number | ID hợp lệ từ bảng project_categories | ❌ |
+| Loại dự án | projectSource | String | 'INV', 'PUR', 'SER', 'MAI' | ❌ |
+| Nguồn gốc dự án | projectType | ENUM | 'new', 'carryover' | ❌ |
 | Trạng thái | status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ❌ |
 
 **Validation cho Hiển thị Dự án:**
@@ -123,6 +136,20 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 | rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
 | suspended | Dừng thực hiện | Dự án tạm dừng thực hiện |
 | edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
+
+**Mapping Loại Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| INV | Dự án Đầu tư | Dự án đầu tư mới |
+| PUR | Dự án Mua sắm | Dự án mua sắm tài sản |
+| SER | Dự án Thuê dịch vụ | Dự án thuê dịch vụ |
+| MAI | Dự án Bảo trì | Dự án bảo trì, sửa chữa |
+
+**Mapping Nguồn gốc Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| new | Dự án Mới | Dự án bắt đầu trong năm hiện tại |
+| carryover | Dự án Chuyển tiếp | Dự án từ năm trước chưa hoàn thành |
 
 **Quy tắc chung:**
 - Mã dự án phải theo format PRJ-YYYY-XXXX và không được trùng lặp
@@ -164,6 +191,7 @@ CREATE TABLE projects (
     project_code VARCHAR(20) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     project_source VARCHAR(100) NOT NULL,
+    project_type ENUM('new', 'carryover') NOT NULL,
     planned_budget DECIMAL(15,2),
     approved_budget DECIMAL(15,2),
     total_disbursed DECIMAL(15,2) DEFAULT 0,
