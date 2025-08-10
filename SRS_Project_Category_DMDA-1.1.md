@@ -97,7 +97,9 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 | Năm | year | Number | 4 chữ số (2024, 2025, v.v.) | ✅ |
 | Loại dự án | projectSource | String | 'INV', 'PUR', 'SER', 'MAI' | ❌ |
 | Nguồn gốc dự án | projectType | ENUM | 'new', 'carryover' | ❌ |
-| Trạng thái | status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ❌ |
+| Trạng thái phê duyệt | approval_status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected' | ❌ |
+| Trạng thái thực hiện | execution_status | ENUM | 'not_started', 'in_progress', 'suspended', 'completed' | ❌ |
+| Trạng thái yêu cầu chỉnh sửa | edit_request_status | ENUM | 'none', 'edit_requested' | ❌ |
 
 **Validation cho Hiển thị Dự án:**
 | Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc |
@@ -111,7 +113,9 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 | Tổng vốn đã ứng từ trong năm đến hiện tại | current_year_disbursed | Decimal | Số dương, định dạng tiền tệ | ❌ |
 | Dự kiến vốn sẽ ứng | expected_disbursement | Decimal | Số dương, định dạng tiền tệ | ❌ |
 | Đề xuất kế hoạch vốn năm sau | next_year_plan | Decimal | Số dương, định dạng tiền tệ | ❌ |
-| Trạng thái phê duyệt | status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ✅ |
+| Trạng thái phê duyệt | approval_status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected' | ✅ |
+| Trạng thái thực hiện | execution_status | ENUM | 'not_started', 'in_progress', 'suspended', 'completed' | ✅ |
+| Trạng thái yêu cầu chỉnh sửa | edit_request_status | ENUM | 'none', 'edit_requested' | ✅ |
 
 **Validation cho Database:**
 | Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc |
@@ -125,16 +129,32 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 | current_year_disbursed | DECIMAL(15,2) | Decimal | NULL | ❌ |
 | expected_disbursement | DECIMAL(15,2) | Decimal | NULL | ❌ |
 | next_year_plan | DECIMAL(15,2) | Decimal | NULL | ❌ |
-| status | ENUM | Text | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ✅ |
+| approval_status | ENUM | Text | 'initialized', 'pending_approval', 'approved', 'rejected' | ✅ |
+| execution_status | ENUM | Text | 'not_started', 'in_progress', 'suspended', 'completed' | ✅ |
+| edit_request_status | ENUM | Text | 'none', 'edit_requested' | ✅ |
 
 **Mapping Trạng thái Dự án:**
+
+**Trạng thái Phê duyệt Dự án:**
 | Key (Database) | Label (Hiển thị) | Mô tả |
 |----------------|-------------------|-------|
 | initialized | Khởi tạo | Dự án mới được tạo |
 | pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
 | approved | Đã phê duyệt | Dự án đã được phê duyệt |
 | rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
-| suspended | Dừng thực hiện | Dự án tạm dừng thực hiện |
+
+**Trạng thái Thực hiện Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| not_started | Chưa bắt đầu | Dự án chưa triển khai |
+| in_progress | Đang thực hiện | Dự án đang được triển khai |
+| suspended | Tạm dừng | Dự án tạm dừng thực hiện |
+| completed | Hoàn thành | Dự án đã hoàn thành |
+
+**Trạng thái Yêu cầu Chỉnh sửa:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| none | Không có yêu cầu | Không có yêu cầu chỉnh sửa |
 | edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 **Mapping Loại Dự án:**
@@ -198,7 +218,9 @@ CREATE TABLE projects (
     current_year_disbursed DECIMAL(15,2) DEFAULT 0,
     expected_disbursement DECIMAL(15,2),
     next_year_plan DECIMAL(15,2),
-    status ENUM('initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested') DEFAULT 'initialized',
+    approval_status ENUM('initialized', 'pending_approval', 'approved', 'rejected') DEFAULT 'initialized',
+    execution_status ENUM('not_started', 'in_progress', 'suspended', 'completed') DEFAULT 'not_started',
+    edit_request_status ENUM('none', 'edit_requested') DEFAULT 'none',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

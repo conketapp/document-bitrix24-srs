@@ -73,7 +73,9 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 |--------|-----------|---------------|------------|----------|
 | Loại dự án | projectType | ENUM | 'new' hoặc 'carryover' | ✅ |
 | Ngày bắt đầu | startDate | Date | Định dạng YYYY-MM-DD | ✅ |
-| Trạng thái dự án | status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ✅ |
+| Trạng thái phê duyệt | approval_status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected' | ✅ |
+| Trạng thái thực hiện | execution_status | ENUM | 'not_started', 'in_progress', 'suspended', 'completed' | ✅ |
+| Trạng thái yêu cầu chỉnh sửa | edit_request_status | ENUM | 'none', 'edit_requested' | ✅ |
 | Năm hiện tại | currentYear | Number | Lấy từ hệ thống | ✅ |
 
 **Logic Phân loại:**
@@ -88,7 +90,9 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 |--------|-----------|---------------|------------|----------|
 | project_type | ENUM | Text | 'new', 'carryover', NOT NULL | ✅ |
 | created_at | TIMESTAMP | DateTime | NOT NULL | ✅ |
-| status | ENUM | Text | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ✅ |
+| approval_status | ENUM | Text | 'initialized', 'pending_approval', 'approved', 'rejected' | ✅ |
+| execution_status | ENUM | Text | 'not_started', 'in_progress', 'suspended', 'completed' | ✅ |
+| edit_request_status | ENUM | Text | 'none', 'edit_requested' | ✅ |
 
 **Quy tắc chung:**
 - Phân loại được tính toán tự động, không thể chỉnh sửa thủ công

@@ -62,12 +62,21 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
    - Thông báo kết quả phê duyệt
 
 3. **Quản lý Trạng thái Dự án**
-   - **Khởi tạo**: Có thể chỉnh sửa trực tiếp
-   - **Chờ phê duyệt**: Có thể chỉnh sửa trực tiếp
-   - **Đã phê duyệt**: Chỉ có thể yêu cầu chỉnh sửa
-   - **Yêu cầu chỉnh sửa**: Chờ phê duyệt yêu cầu
-   - **Đang thực hiện**: Chỉ có thể yêu cầu chỉnh sửa
-   - **Hoàn thành**: Không thể chỉnh sửa
+
+   **Trạng thái Phê duyệt Dự án:**
+   - **Khởi tạo**: Dự án mới được tạo, có thể chỉnh sửa trực tiếp
+   - **Chờ phê duyệt**: Dự án đã gửi phê duyệt, có thể chỉnh sửa trực tiếp
+   - **Đã phê duyệt**: Dự án đã được phê duyệt, chỉ có thể yêu cầu chỉnh sửa
+   - **Từ chối phê duyệt**: Dự án bị từ chối, có thể chỉnh sửa trực tiếp
+
+   **Trạng thái Thực hiện Dự án:**
+   - **Chưa bắt đầu**: Dự án chưa triển khai
+   - **Đang thực hiện**: Dự án đang được triển khai, chỉ có thể yêu cầu chỉnh sửa
+   - **Tạm dừng**: Dự án tạm dừng thực hiện, chỉ có thể yêu cầu chỉnh sửa
+   - **Hoàn thành**: Dự án đã hoàn thành, không thể chỉnh sửa
+
+   **Trạng thái Yêu cầu Chỉnh sửa:**
+   - **Yêu cầu chỉnh sửa**: Chờ phê duyệt yêu cầu chỉnh sửa
 
 #### 3.2 Business Rules
 - Chỉ người tạo dự án hoặc người được phân quyền mới có thể chỉnh sửa
@@ -76,13 +85,26 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 - Người phê duyệt yêu cầu chỉnh sửa phải có quyền "APPROVE_EDIT_REQUEST"
 
 #### 3.3 Mapping Trạng thái Dự án
+
+**Trạng thái Phê duyệt Dự án:**
 | Key (Database) | Label (Hiển thị) | Mô tả |
 |----------------|-------------------|-------|
 | initialized | Khởi tạo | Dự án mới được tạo |
 | pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
 | approved | Đã phê duyệt | Dự án đã được phê duyệt |
 | rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
-| suspended | Dừng thực hiện | Dự án tạm dừng thực hiện |
+
+**Trạng thái Thực hiện Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| not_started | Chưa bắt đầu | Dự án chưa triển khai |
+| in_progress | Đang thực hiện | Dự án đang được triển khai |
+| suspended | Tạm dừng | Dự án tạm dừng thực hiện |
+| completed | Hoàn thành | Dự án đã hoàn thành |
+
+**Trạng thái Yêu cầu Chỉnh sửa:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
 | edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 ---
@@ -113,15 +135,27 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 5.1 Database Schema Updates
 ```sql
--- Cập nhật bảng projects với trạng thái mới
-ALTER TABLE projects MODIFY COLUMN status ENUM(
+-- Cập nhật bảng projects với trạng thái tách riêng
+ALTER TABLE projects 
+ADD COLUMN approval_status ENUM(
     'initialized',     -- Khởi tạo
     'pending_approval', -- Chờ phê duyệt
     'approved',        -- Đã phê duyệt
-    'rejected',        -- Từ chối phê duyệt
-    'suspended',       -- Dừng thực hiện
+    'rejected'         -- Từ chối phê duyệt
+) DEFAULT 'initialized' AFTER name,
+ADD COLUMN execution_status ENUM(
+    'not_started',     -- Chưa bắt đầu
+    'in_progress',     -- Đang thực hiện
+    'suspended',       -- Tạm dừng
+    'completed'        -- Hoàn thành
+) DEFAULT 'not_started' AFTER approval_status,
+ADD COLUMN edit_request_status ENUM(
+    'none',            -- Không có yêu cầu
     'edit_requested'   -- Yêu cầu chỉnh sửa
-) DEFAULT 'initialized';
+) DEFAULT 'none' AFTER execution_status;
+
+-- Xóa cột status cũ nếu cần
+-- ALTER TABLE projects DROP COLUMN status;
 
 -- Bảng lưu lịch sử thay đổi dự án
 CREATE TABLE project_change_logs (

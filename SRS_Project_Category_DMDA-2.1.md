@@ -213,7 +213,9 @@ CREATE TABLE projects (
     current_year_disbursed DECIMAL(15,2) DEFAULT 0,
     expected_disbursement DECIMAL(15,2),
     next_year_plan DECIMAL(15,2),
-    status ENUM('initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested') DEFAULT 'initialized',
+    approval_status ENUM('initialized', 'pending_approval', 'approved', 'rejected') DEFAULT 'initialized',
+    execution_status ENUM('not_started', 'in_progress', 'suspended', 'completed') DEFAULT 'not_started',
+    edit_request_status ENUM('none', 'edit_requested') DEFAULT 'none',
     created_by INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -281,7 +283,9 @@ interface Project {
     current_year_disbursed: number;
     expected_disbursement?: number;
     next_year_plan?: number;
-    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
+    approval_status: 'initialized' | 'pending_approval' | 'approved' | 'rejected';
+    execution_status: 'not_started' | 'in_progress' | 'suspended' | 'completed';
+    edit_request_status: 'none' | 'edit_requested';
     created_by: number;
     created_by_name: string;
     created_at: string;
