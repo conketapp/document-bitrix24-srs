@@ -49,12 +49,14 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 3.1 Core Features
 1. **Dừng Thực hiện Dự án**
-   - Chỉ cho phép dừng dự án có trạng thái: "approved", "in_progress"
+   - Chỉ cho phép dừng dự án có trạng thái phê duyệt: "approved" và trạng thái thực hiện: "in_progress"
    - Form xác nhận với lý do dừng thực hiện
    - Validation lý do dừng thực hiện
 
 2. **Quản lý Trạng thái Dự án**
-   - Thêm trạng thái mới: "suspended" (DỪNG THỰC HIỆN)
+   - **Trạng thái Phê duyệt**: initialized, pending_approval, approved, rejected
+   - **Trạng thái Thực hiện**: not_started, in_progress, suspended, completed
+   - **Trạng thái Yêu cầu Chỉnh sửa**: none, edit_requested
    - Cập nhật workflow trạng thái dự án
    - Hiển thị trạng thái rõ ràng trong UI
 
@@ -95,18 +97,27 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 5.1 Database Schema Updates
 ```sql
--- Cập nhật bảng projects với trạng thái mới
-ALTER TABLE projects MODIFY COLUMN status ENUM(
-    'draft',           -- Khởi tạo
+-- Cập nhật bảng projects với trạng thái tách riêng
+ALTER TABLE projects 
+ADD COLUMN approval_status ENUM(
+    'initialized',     -- Khởi tạo
     'pending_approval', -- Chờ phê duyệt
     'approved',        -- Đã phê duyệt
-    'edit_requested',  -- Yêu cầu chỉnh sửa
+    'rejected'         -- Từ chối phê duyệt
+) DEFAULT 'initialized' AFTER name,
+ADD COLUMN execution_status ENUM(
+    'not_started',     -- Chưa bắt đầu
     'in_progress',     -- Đang thực hiện
-    'suspended',       -- DỪNG THỰC HIỆN
-    'completed',       -- Hoàn thành
-    'cancelled',       -- Đã hủy
-    'deleted'          -- Đã xóa
-) DEFAULT 'draft';
+    'suspended',       -- Tạm dừng
+    'completed'        -- Hoàn thành
+) DEFAULT 'not_started' AFTER approval_status,
+ADD COLUMN edit_request_status ENUM(
+    'none',            -- Không có yêu cầu
+    'edit_requested'   -- Yêu cầu chỉnh sửa
+) DEFAULT 'none' AFTER execution_status;
+
+-- Xóa cột status cũ nếu cần
+-- ALTER TABLE projects DROP COLUMN status;
 
 -- Bảng lưu lịch sử dừng dự án
 CREATE TABLE project_suspension_logs (
@@ -124,7 +135,7 @@ CREATE TABLE project_suspension_logs (
 );
 
 -- Thêm index cho trạng thái suspended
-CREATE INDEX idx_projects_suspended ON projects(status, suspended_at);
+CREATE INDEX idx_projects_execution_suspended ON projects(execution_status, suspended_at);
 ```
 
 #### 5.2 API Endpoints
@@ -153,7 +164,9 @@ interface Project {
     id: number;
     project_code: string;
     name: string;
-    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
+    approval_status: 'initialized' | 'pending_approval' | 'approved' | 'rejected';
+    execution_status: 'not_started' | 'in_progress' | 'suspended' | 'completed';
+    edit_request_status: 'none' | 'edit_requested';
     suspended_at?: string;
     suspended_by?: number;
     suspension_reason?: string;
@@ -338,11 +351,27 @@ describe('Dừng Thực hiện Dự án', () => {
 ```sql
 -- Script di chuyển
 BEGIN;
--- Cập nhật bảng projects với trạng thái mới
-ALTER TABLE projects MODIFY COLUMN status ENUM(
-    'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested', 
-    'in_progress', 'suspended', 'completed', 'cancelled', 'deleted'
-) DEFAULT 'draft';
+-- Cập nhật bảng projects với trạng thái tách riêng
+ALTER TABLE projects 
+ADD COLUMN approval_status ENUM(
+    'initialized',     -- Khởi tạo
+    'pending_approval', -- Chờ phê duyệt
+    'approved',        -- Đã phê duyệt
+    'rejected'         -- Từ chối phê duyệt
+) DEFAULT 'initialized' AFTER name,
+ADD COLUMN execution_status ENUM(
+    'not_started',     -- Chưa bắt đầu
+    'in_progress',     -- Đang thực hiện
+    'suspended',       -- Tạm dừng
+    'completed'        -- Hoàn thành
+) DEFAULT 'not_started' AFTER approval_status,
+ADD COLUMN edit_request_status ENUM(
+    'none',            -- Không có yêu cầu
+    'edit_requested'   -- Yêu cầu chỉnh sửa
+) DEFAULT 'none' AFTER execution_status;
+
+-- Xóa cột status cũ nếu cần
+-- ALTER TABLE projects DROP COLUMN status;
 
 -- Thêm các trường dừng dự án
 ALTER TABLE projects ADD COLUMN suspended_at TIMESTAMP NULL;
@@ -365,7 +394,7 @@ CREATE TABLE project_suspension_logs (
 );
 
 -- Thêm các index
-CREATE INDEX idx_projects_suspended ON projects(status, suspended_at);
+CREATE INDEX idx_projects_execution_suspended ON projects(execution_status, suspended_at);
 CREATE INDEX idx_suspension_logs_project ON project_suspension_logs(project_id);
 
 COMMIT;
@@ -433,21 +462,19 @@ COMMIT;
 ### 14. Ma trận Quy tắc Dừng Dự án
 
 #### 14.1 Trạng thái Dự án vs Quyền Dừng
-| Trạng thái Dự án | Có thể Dừng | Văn bản Nút | Yêu cầu Xác nhận |
-|------------------|-------------|-------------|------------------|
-| Khởi tạo | Không | Ẩn | Không áp dụng |
-| Chờ phê duyệt | Không | Ẩn | Không áp dụng |
-| Đã phê duyệt | Có | "Dừng thực hiện" | Có |
-| Yêu cầu chỉnh sửa | Không | Ẩn | Không áp dụng |
-| Đang thực hiện | Có | "Dừng thực hiện" | Có |
-| Dừng thực hiện | Không | "Khôi phục" | Có |
-| Hoàn thành | Không | Ẩn | Không áp dụng |
-| Đã hủy | Không | Ẩn | Không áp dụng |
-| Đã xóa | Không | Ẩn | Không áp dụng |
+| Trạng thái Phê duyệt | Trạng thái Thực hiện | Có thể Dừng | Văn bản Nút | Yêu cầu Xác nhận |
+|---------------------|---------------------|-------------|-------------|------------------|
+| Khởi tạo | Chưa bắt đầu | Không | Ẩn | Không áp dụng |
+| Chờ phê duyệt | Chưa bắt đầu | Không | Ẩn | Không áp dụng |
+| Đã phê duyệt | Chưa bắt đầu | Có | "Dừng thực hiện" | Có |
+| Đã phê duyệt | Đang thực hiện | Có | "Dừng thực hiện" | Có |
+| Đã phê duyệt | Tạm dừng | Không | "Khôi phục" | Có |
+| Đã phê duyệt | Hoàn thành | Không | Ẩn | Không áp dụng |
+| Từ chối phê duyệt | Chưa bắt đầu | Không | Ẩn | Không áp dụng |
 
 #### 14.2 Vai trò Người dùng vs Quyền Dừng
-| Vai trò Người dùng | Đã phê duyệt | Đang thực hiện | Dừng thực hiện | Hoàn thành |
-|-------------------|---------------|----------------|----------------|------------|
+| Vai trò Người dùng | Đã phê duyệt + Chưa bắt đầu | Đã phê duyệt + Đang thực hiện | Đã phê duyệt + Tạm dừng | Đã phê duyệt + Hoàn thành |
+|-------------------|------------------------------|--------------------------------|-------------------------|---------------------------|
 | Người tạo | Dừng | Dừng | Khôi phục | Không |
 | Quản lý | Dừng | Dừng | Khôi phục | Không |
 | Quản trị viên | Dừng | Dừng | Khôi phục | Không |
