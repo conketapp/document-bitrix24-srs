@@ -71,13 +71,27 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 - Xóa dự án sẽ xóa tất cả related data (edit requests, change logs)
 
 #### 3.3 Mapping Trạng thái Dự án
+
+**Trạng thái Phê duyệt Dự án:**
 | Key (Database) | Label (Hiển thị) | Mô tả |
 |----------------|-------------------|-------|
 | initialized | Khởi tạo | Dự án mới được tạo |
 | pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
 | approved | Đã phê duyệt | Dự án đã được phê duyệt |
 | rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
-| suspended | Dừng thực hiện | Dự án tạm dừng thực hiện |
+
+**Trạng thái Thực hiện Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| not_started | Chưa bắt đầu | Dự án chưa triển khai |
+| in_progress | Đang thực hiện | Dự án đang được triển khai |
+| suspended | Tạm dừng | Dự án tạm dừng thực hiện |
+| completed | Hoàn thành | Dự án đã hoàn thành |
+
+**Trạng thái Yêu cầu Chỉnh sửa:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| none | Không có yêu cầu | Không có yêu cầu chỉnh sửa |
 | edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 ---
@@ -113,7 +127,8 @@ ALTER TABLE projects ADD COLUMN delete_reason TEXT;
 
 -- Thêm index cho soft delete
 CREATE INDEX idx_projects_deleted ON projects(deleted_at);
-CREATE INDEX idx_projects_status_deleted ON projects(status, deleted_at);
+CREATE INDEX idx_projects_approval_status_deleted ON projects(approval_status, deleted_at);
+CREATE INDEX idx_projects_execution_status_deleted ON projects(execution_status, deleted_at);
 
 -- Bảng log xóa dự án
 CREATE TABLE project_deletion_logs (
@@ -132,7 +147,7 @@ CREATE TRIGGER update_deleted_at
 BEFORE UPDATE ON projects
 FOR EACH ROW
 BEGIN
-    IF NEW.status = 'deleted' AND OLD.status != 'deleted' THEN
+    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN
         SET NEW.deleted_at = CURRENT_TIMESTAMP;
     END IF;
 END//
@@ -162,7 +177,9 @@ interface Project {
     id: number;
     project_code: string;
     name: string;
-    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
+    approval_status: 'initialized' | 'pending_approval' | 'approved' | 'rejected';
+    execution_status: 'not_started' | 'in_progress' | 'suspended' | 'completed';
+    edit_request_status: 'none' | 'edit_requested';
     deleted_at?: string;
     deleted_by?: number;
     delete_reason?: string;
