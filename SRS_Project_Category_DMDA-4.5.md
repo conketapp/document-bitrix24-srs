@@ -67,6 +67,30 @@
 - Kế thừa phân quyền từ danh mục xuống dự án
 - Mẫu vai trò có thể được tái sử dụng
 
+#### Mapping Trạng thái Dự án
+
+**Trạng thái Phê duyệt Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| initialized | Khởi tạo | Dự án mới được tạo |
+| pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
+| approved | Đã phê duyệt | Dự án đã được phê duyệt |
+| rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
+
+**Trạng thái Thực hiện Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| not_started | Chưa bắt đầu | Dự án chưa triển khai |
+| in_progress | Đang thực hiện | Dự án đang được triển khai |
+| suspended | Tạm dừng | Dự án tạm dừng thực hiện |
+| completed | Hoàn thành | Dự án đã hoàn thành |
+
+**Trạng thái Yêu cầu Chỉnh sửa:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| none | Không có yêu cầu | Không có yêu cầu chỉnh sửa |
+| edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
+
 #### Các Loại Phân quyền
 1. **Phân quyền Danh mục**
    - VIEW_CATEGORY: Xem danh mục
@@ -78,8 +102,8 @@
 2. **Phân quyền Dự án**
    - VIEW_PROJECT: Xem thông tin dự án
    - CREATE_PROJECT: Tạo dự án mới
-   - EDIT_DRAFT_PROJECT: Sửa dự án nháp
-   - EDIT_SUBMITTED_PROJECT: Sửa dự án đã gửi phê duyệt
+   - EDIT_INITIALIZED_PROJECT: Sửa dự án khởi tạo
+- EDIT_PENDING_APPROVAL_PROJECT: Sửa dự án chờ phê duyệt
    - DELETE_PROJECT: Xóa dự án
    - SUBMIT_FOR_APPROVAL: Gửi phê duyệt
    - APPROVE_PROJECT: Phê duyệt dự án
@@ -187,8 +211,8 @@ INSERT INTO permissions (name, display_name, description, resource_type, action)
 -- Project permissions
 ('VIEW_PROJECT', 'Xem dự án', 'Quyền xem thông tin dự án', 'project', 'view'),
 ('CREATE_PROJECT', 'Tạo dự án', 'Quyền tạo dự án mới', 'project', 'create'),
-('EDIT_DRAFT_PROJECT', 'Sửa dự án nháp', 'Quyền chỉnh sửa dự án ở trạng thái nháp', 'project', 'edit_draft'),
-('EDIT_SUBMITTED_PROJECT', 'Sửa dự án đã gửi', 'Quyền chỉnh sửa dự án đã gửi phê duyệt', 'project', 'edit_submitted'),
+('EDIT_INITIALIZED_PROJECT', 'Sửa dự án khởi tạo', 'Quyền chỉnh sửa dự án ở trạng thái khởi tạo', 'project', 'edit_initialized'),
+('EDIT_PENDING_APPROVAL_PROJECT', 'Sửa dự án chờ phê duyệt', 'Quyền chỉnh sửa dự án đã gửi chờ phê duyệt', 'project', 'edit_pending_approval'),
 ('DELETE_PROJECT', 'Xóa dự án', 'Quyền xóa dự án', 'project', 'delete'),
 ('SUBMIT_FOR_APPROVAL', 'Gửi phê duyệt', 'Quyền gửi dự án để phê duyệt', 'project', 'submit'),
 ('APPROVE_PROJECT', 'Phê duyệt dự án', 'Quyền phê duyệt dự án', 'project', 'approve'),
@@ -393,3 +417,9 @@ interface UserPermissionOverview {
 - Database schema documentation
 - Security implementation details
 - Performance optimization guidelines 
+
+---
+
+**Document Version:** 1.0  
+**Last Updated:** 08-2024  
+**Next Review:** Sprint 4
