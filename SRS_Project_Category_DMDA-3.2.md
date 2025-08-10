@@ -55,23 +55,47 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
    - Select all/none functionality
    - Counter hiển thị số dự án đã chọn
 
-2. **Bulk Approval Submission**
+2. **Gửi Phê duyệt Hàng loạt**
    - Nút "Gửi Phê duyệt (X dự án)" sau khi chọn
    - Form chọn người phê duyệt cho tất cả dự án
    - Validation trước khi gửi hàng loạt
    - Confirmation dialog với danh sách dự án
 
-3. **Batch Processing**
+3. **Xử lý Hàng loạt**
    - Xử lý từng dự án đã chọn
    - Progress indicator cho quá trình xử lý
    - Error handling cho từng dự án
    - Summary report sau khi hoàn thành
 
 #### 3.2 Business Rules
-- Chỉ dự án có trạng thái "initialized" hoặc "edit_requested" mới có thể được chọn
+- Chỉ dự án có trạng thái phê duyệt "initialized" hoặc trạng thái yêu cầu chỉnh sửa "edit_requested" mới có thể được chọn
 - Tối đa 50 dự án có thể được gửi phê duyệt cùng lúc
 - Người phê duyệt được chọn sẽ áp dụng cho tất cả dự án
 - Mỗi dự án sẽ được xử lý riêng lẻ, không ảnh hưởng đến nhau
+
+#### 3.3 Mapping Trạng thái Dự án
+
+**Trạng thái Phê duyệt Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| initialized | Khởi tạo | Dự án mới được tạo |
+| pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
+| approved | Đã phê duyệt | Dự án đã được phê duyệt |
+| rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
+
+**Trạng thái Thực hiện Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| not_started | Chưa bắt đầu | Dự án chưa triển khai |
+| in_progress | Đang thực hiện | Dự án đang được triển khai |
+| suspended | Tạm dừng | Dự án tạm dừng thực hiện |
+| completed | Hoàn thành | Dự án đã hoàn thành |
+
+**Trạng thái Yêu cầu Chỉnh sửa:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| none | Không có yêu cầu | Không có yêu cầu chỉnh sửa |
+| edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 ---
 
@@ -85,9 +109,9 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 4.2 Usability
 - UI responsive và dễ sử dụng
-- Clear visual feedback cho selection state
-- Intuitive bulk action workflow
-- Comprehensive error reporting
+- Phản hồi trực quan rõ ràng cho trạng thái chọn
+- Quy trình thao tác hàng loạt trực quan
+- Báo cáo lỗi chi tiết và đầy đủ
 
 #### 4.3 Security
 - Xác thực người dùng trước khi bulk action
@@ -101,7 +125,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 5.1 Database Schema Updates
 ```sql
--- Bảng lưu lịch sử bulk approval
+-- Bảng lưu lịch sử phê duyệt hàng loạt
 CREATE TABLE bulk_approval_logs (
     id INT PRIMARY KEY AUTO_INCREMENT,
     batch_id VARCHAR(36) NOT NULL, -- UUID cho batch
@@ -117,7 +141,7 @@ CREATE TABLE bulk_approval_logs (
     FOREIGN KEY (approver_id) REFERENCES users(id)
 );
 
--- Bảng chi tiết bulk approval
+-- Bảng chi tiết phê duyệt hàng loạt
 CREATE TABLE bulk_approval_details (
     id INT PRIMARY KEY AUTO_INCREMENT,
     batch_id VARCHAR(36) NOT NULL,
@@ -167,7 +191,7 @@ GET /api/projects/can-bulk-submit
 }
 
 GET /api/projects/bulk-approval-history
-- Response: List of bulk approval batches
+- Response: Danh sách các batch phê duyệt hàng loạt
 ```
 
 #### 5.3 Data Models
@@ -246,7 +270,7 @@ interface ProjectSelection {
 #### 6.1 Bitrix24 Integration
 - Batch update deal status thành "PENDING_APPROVAL"
 - Create tasks cho người phê duyệt cho từng dự án
-- Sync bulk approval workflow với Bitrix24
+- Đồng bộ quy trình phê duyệt hàng loạt với Bitrix24
 - Log bulk action trong Bitrix24 activity feed
 
 #### 6.2 Notification System
@@ -259,7 +283,7 @@ interface ProjectSelection {
 1. User select multiple projects via checkboxes
 2. User click "Gửi Phê duyệt (X dự án)" button
 3. System validate selected projects
-4. Show bulk approval form với approver selection
+4. Hiển thị form phê duyệt hàng loạt với lựa chọn người phê duyệt
 5. User confirm và submit
 6. System create batch record và process each project
 7. Update progress indicator
@@ -284,7 +308,7 @@ interface ProjectSelection {
 └─────────────────────────────────────────────────────────┘
 ```
 
-#### 7.2 Bulk Approval Modal
+#### 7.2 Modal Phê duyệt Hàng loạt
 ```
 ┌─────────────────────────────────────┐
 │ Gửi Phê duyệt Hàng loạt            │
@@ -455,21 +479,21 @@ COMMIT;
 ### 11. Risks and Mitigation
 
 #### 11.1 Technical Risks
-- **Risk:** Performance issues với large batch processing
-- **Mitigation:** Implement batch size limits và progress tracking
+- **Rủi ro:** Vấn đề hiệu suất với xử lý hàng loạt lớn
+- **Giải pháp:** Triển khai giới hạn kích thước batch và theo dõi tiến trình
 
-- **Risk:** Partial failures affecting user experience
-- **Mitigation:** Comprehensive error handling và detailed reporting
+- **Rủi ro:** Lỗi một phần ảnh hưởng đến trải nghiệm người dùng
+- **Giải pháp:** Xử lý lỗi toàn diện và báo cáo chi tiết
 
-- **Risk:** Memory issues với large selections
-- **Mitigation:** Implement pagination và lazy loading
+- **Rủi ro:** Vấn đề bộ nhớ với lựa chọn lớn
+- **Giải pháp:** Triển khai phân trang và tải lười
 
 #### 11.2 Business Risks
-- **Risk:** User confusion about bulk operations
-- **Mitigation:** Clear UI indicators và help documentation
+- **Rủi ro:** Người dùng nhầm lẫn về thao tác hàng loạt
+- **Giải pháp:** Chỉ báo UI rõ ràng và tài liệu hướng dẫn
 
-- **Risk:** Accidental bulk submissions
-- **Mitigation:** Confirmation dialogs và undo functionality
+- **Rủi ro:** Gửi hàng loạt do vô tình
+- **Giải pháp:** Hộp thoại xác nhận và chức năng hoàn tác
 
 ---
 
