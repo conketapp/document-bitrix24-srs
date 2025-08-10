@@ -14,7 +14,7 @@
 
 #### Mô tả User Story
 **Với vai trò là** Cán bộ quản lý dự án,  
-**Tôi muốn** có thể xem danh mục dự án dưới dạng bảng Kanban (với các cột đại diện cho trạng thái của dự án, ví dụ: "Bản nháp", "Chờ phê duyệt", "Đã phê duyệt", "Đã từ chối"),  
+**Tôi muốn** có thể xem danh mục dự án dưới dạng bảng Kanban (với các cột đại diện cho trạng thái của dự án, ví dụ: "Khởi tạo", "Chờ phê duyệt", "Đã phê duyệt", "Từ chối phê duyệt", "Dừng thực hiện", "Yêu cầu chỉnh sửa"),  
 **Để** tôi có thể trực quan hóa quy trình làm việc và nhanh chóng nắm bắt trạng thái của tất cả các dự án.
 
 #### Điều kiện chấp nhận (Acceptance Criteria)
@@ -240,13 +240,15 @@ interface UserViewPreference {
 #### Project Card Detail
 ```
 ┌─────────────────────────────────────┐
-│ INV-2024-001 - Dự án A             │
+│ PRJ-2024-001 - Dự án A             │
 ├─────────────────────────────────────┤
-│ 🏛️ Dự án Chính thức                │
-│ 📊 Ngân sách: 500,000,000 VND      │
-│ 📅 Bắt đầu: 01/03/2024             │
-│ 📅 Kết thúc: 31/12/2024            │
-│ 🏷️ Loại: Dự án đầu tư              │
+│ 🏛️ Nguồn gốc: Dự án Chính thức     │
+│ 📊 TMĐT dự kiến: 500,000,000 VND   │
+│ 📊 TMĐT phê duyệt: 450,000,000 VND │
+│ 💰 Lũy kế vốn đã ứng: 200,000,000  │
+│ 💰 Vốn đã ứng năm nay: 150,000,000 │
+│ 💰 Dự kiến vốn sẽ ứng: 250,000,000 │
+│ 💰 Đề xuất năm sau: 300,000,000    │
 │ 👤 Người tạo: Nguyễn Văn A         │
 │ ⏰ Tạo: 15/02/2024                  │
 │                                     │
@@ -281,7 +283,7 @@ interface UserViewPreference {
 ┌─────────────────────────────────────┐
 │ Xác nhận thay đổi trạng thái        │
 ├─────────────────────────────────────┤
-│ Dự án: INV-2024-001 - Dự án A      │
+│ Dự án: PRJ-2024-001 - Dự án A      │
 │                                     │
 │ Từ: Chờ phê duyệt                   │
 │ Đến: Đã phê duyệt                   │
@@ -383,7 +385,7 @@ describe('Kanban Board', () => {
 #### Drag & Drop Rules
 | From Status | To Status | Allowed Roles | Validation Required |
 |-------------|-----------|---------------|-------------------|
-| draft | pending_approval | creator, manager | Yes |
+| initialized | pending_approval | creator, manager | Yes |
 | pending_approval | approved | approver | Yes |
 | pending_approval | rejected | approver | Yes |
 | approved | in_progress | manager | No |

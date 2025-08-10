@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -73,7 +73,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 |--------|-----------|---------------|------------|----------|
 | Loại dự án | projectType | ENUM | 'new' hoặc 'carryover' | ✅ |
 | Ngày bắt đầu | startDate | Date | Định dạng YYYY-MM-DD | ✅ |
-| Trạng thái dự án | status | ENUM | 'active', 'completed', 'cancelled' | ✅ |
+| Trạng thái dự án | status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ✅ |
 | Năm hiện tại | currentYear | Number | Lấy từ hệ thống | ✅ |
 
 **Logic Phân loại:**
@@ -88,7 +88,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 |--------|-----------|---------------|------------|----------|
 | project_type | ENUM | Text | 'new', 'carryover', NOT NULL | ✅ |
 | start_date | DATE | Date | NOT NULL | ✅ |
-| status | ENUM | Text | 'active', 'completed', 'cancelled' | ✅ |
+| status | ENUM | Text | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ✅ |
 
 **Quy tắc chung:**
 - Phân loại được tính toán tự động, không thể chỉnh sửa thủ công

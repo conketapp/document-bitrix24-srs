@@ -122,6 +122,88 @@
 
 ### Technical Specifications
 
+#### Validation Table
+
+##### **Bảng Validation Form Tạo Chi phí**
+
+###### **Thông tin Cơ bản**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Mã chi phí | cost_code | VARCHAR(20) | Tự động sinh CP-YYYY-XXXX | ✅ | Không cho phép chỉnh sửa |
+| Tên chi phí | cost_name | VARCHAR(500) | 3-500 ký tự, không trùng lặp | ✅ | Tên mô tả chi phí |
+| Mô tả chi phí | cost_description | TEXT | Tối đa 2000 ký tự | ❌ | Mô tả chi tiết |
+| Danh mục chi phí | cost_category | VARCHAR(100) | Chọn từ danh sách có sẵn | ✅ | Danh mục chính |
+| Danh mục con | cost_subcategory | VARCHAR(100) | Chọn từ danh mục con | ❌ | Danh mục phụ |
+
+###### **Loại Chi phí & Số tiền**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Loại chi phí | cost_type | ENUM | 'one_time', 'recurring' | ✅ | Một lần hoặc định kỳ |
+| Tổng chi phí | total_amount | DECIMAL(15,2) | > 0, định dạng tiền tệ | ✅ | Tổng số tiền chi phí |
+| Đơn vị tiền tệ | currency | VARCHAR(10) | VND, USD, EUR | ✅ | Mặc định VND |
+| Số tiền VAT | vat_amount | DECIMAL(15,2) | >= 0, <= total_amount | ❌ | Số tiền thuế VAT |
+| Tỷ lệ VAT | vat_rate | DECIMAL(5,2) | 0-100%, 2 chữ số thập phân | ❌ | Tỷ lệ thuế VAT |
+
+###### **Trường Chi phí Định kỳ** (khi cost_type = 'recurring')
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Tần suất | frequency | ENUM | 'monthly', 'quarterly', 'annually' | ✅ | Tần suất thanh toán |
+| Số kỳ | number_of_periods | INT | 1-120 kỳ | ✅ | Số lượng kỳ thanh toán |
+| Chi phí mỗi kỳ | cost_per_period | DECIMAL(15,2) | > 0, <= total_amount | ✅ | Chi phí cho mỗi kỳ |
+| Hình thức nhập | input_method | ENUM | 'same_cost', 'different_cost' | ✅ | Cùng hoặc khác chi phí |
+| Ngày bắt đầu định kỳ | recurring_start_date | DATE | >= ngày hiện tại | ✅ | Ngày bắt đầu định kỳ |
+
+###### **Thông tin Timeline**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Ngày bắt đầu dự kiến | planned_start_date | DATE | Định dạng YYYY-MM-DD | ❌ | Ngày bắt đầu dự kiến |
+| Ngày kết thúc dự kiến | planned_end_date | DATE | >= planned_start_date | ❌ | Ngày kết thúc dự kiến |
+| Ngày bắt đầu thực tế | actual_start_date | DATE | >= planned_start_date | ❌ | Ngày bắt đầu thực tế |
+| Ngày kết thúc thực tế | actual_end_date | DATE | >= actual_start_date | ❌ | Ngày kết thúc thực tế |
+
+###### **Thông tin Liên kết**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Mã dự án | project_id | INT | ID hợp lệ từ bảng projects | ❌ | Liên kết với dự án |
+| Mã gói thầu | tender_package_id | INT | ID hợp lệ từ bảng tender_packages | ❌ | Liên kết với gói thầu |
+| Mã hợp đồng | contract_id | INT | ID hợp lệ từ bảng contracts | ❌ | Liên kết với hợp đồng |
+
+###### **Thông tin Bổ sung**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Mức độ ưu tiên | priority | ENUM | 'low', 'medium', 'high', 'critical' | ✅ | Mức độ ưu tiên |
+| Mức độ rủi ro | risk_level | ENUM | 'low', 'medium', 'high' | ✅ | Mức độ rủi ro |
+| Ghi chú | notes | TEXT | Tối đa 1000 ký tự | ❌ | Ghi chú bổ sung |
+| Thẻ | tags | JSON | Mảng thẻ tối đa 10 thẻ | ❌ | Thẻ phân loại |
+
+##### **Quy tắc Validation Nghiệp vụ**
+
+###### **Validation Cross-field**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Chi phí định kỳ | cost_type = 'recurring' | Tất cả trường định kỳ bắt buộc | "Vui lòng nhập đầy đủ thông tin định kỳ" |
+| Tổng chi phí định kỳ | cost_type = 'recurring' | total_amount = cost_per_period × number_of_periods | "Tổng chi phí phải bằng chi phí mỗi kỳ × số kỳ" |
+| Ngày định kỳ | cost_type = 'recurring' | recurring_start_date <= planned_end_date | "Ngày bắt đầu định kỳ phải trước ngày kết thúc" |
+| VAT validation | vat_amount > 0 | vat_rate > 0 | "Tỷ lệ VAT phải > 0 khi có số tiền VAT" |
+| Timeline validation | planned_start_date có giá trị | planned_end_date >= planned_start_date | "Ngày kết thúc phải sau ngày bắt đầu" |
+
+###### **Validation Business Rules**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Mã chi phí | Tự động sinh | Format: CP-YYYY-XXXX | "Mã chi phí được tự động sinh" |
+| Tên chi phí | Không trùng lặp | Kiểm tra trong database | "Tên chi phí đã tồn tại" |
+| Chi phí mỗi kỳ | cost_type = 'recurring' | cost_per_period > 0 | "Chi phí mỗi kỳ phải > 0" |
+| Số kỳ hợp lệ | cost_type = 'recurring' | 1 ≤ number_of_periods ≤ 120 | "Số kỳ phải từ 1-120" |
+| Ngày định kỳ | cost_type = 'recurring' | recurring_start_date >= ngày hiện tại | "Ngày bắt đầu định kỳ không được trong quá khứ" |
+
 #### Database Schema Updates
 ```sql
 -- Bảng khoản mục chi phí chính

@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -62,13 +62,16 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
    - Mặc định hiển thị "Tất cả"
 
 3. **Hiển thị Danh sách Dự án**
+   - Mã dự án
    - Tên dự án
-   - Năm thực hiện
-   - Loại dự án
-   - Trạng thái dự án
-   - Ngày bắt đầu
-   - Ngày kết thúc dự kiến
-   - Ngân sách
+   - Nguồn gốc dự án
+   - TMĐT dự kiến theo KHV
+   - TMĐT đã được phê duyệt
+   - Lũy kế vốn đã ứng
+   - Tổng vốn đã ứng từ trong năm đến hiện tại
+   - Dự kiến vốn sẽ ứng
+   - Đề xuất kế hoạch vốn năm sau
+   - Trạng thái phê duyệt
 
 #### 3.2 Business Rules
 - Chỉ hiển thị dự án mà người dùng có quyền xem
@@ -81,35 +84,52 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 |--------|-----------|---------------|------------|----------|
 | Năm | year | Number | 4 chữ số (2024, 2025, v.v.) | ✅ |
 | Loại dự án | categoryId | Number | ID hợp lệ từ bảng project_categories | ❌ |
-| Trạng thái | status | ENUM | 'active', 'completed', 'cancelled' | ❌ |
+| Trạng thái | status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ❌ |
 
 **Validation cho Hiển thị Dự án:**
 | Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc |
 |--------|-----------|---------------|------------|----------|
+| Mã dự án | project_code | Text | Format: PRJ-YYYY-XXXX | ✅ |
 | Tên dự án | name | Text | 3-255 ký tự | ✅ |
-| Năm thực hiện | year | Number | 4 chữ số | ✅ |
-| Loại dự án | category_name | Text | Tên loại dự án hợp lệ | ✅ |
-| Trạng thái dự án | status | ENUM | 'active', 'completed', 'cancelled' | ✅ |
-| Ngày bắt đầu | start_date | Date | Định dạng YYYY-MM-DD | ❌ |
-| Ngày kết thúc | end_date | Date | Định dạng YYYY-MM-DD | ❌ |
-| Ngân sách | budget | Decimal | Số dương, định dạng tiền tệ | ❌ |
+| Nguồn gốc dự án | project_source | Text | 1-100 ký tự | ✅ |
+| TMĐT dự kiến theo KHV | planned_budget | Decimal | Số dương, định dạng tiền tệ | ❌ |
+| TMĐT đã được phê duyệt | approved_budget | Decimal | Số dương, định dạng tiền tệ | ❌ |
+| Lũy kế vốn đã ứng | total_disbursed | Decimal | Số dương, định dạng tiền tệ | ❌ |
+| Tổng vốn đã ứng từ trong năm đến hiện tại | current_year_disbursed | Decimal | Số dương, định dạng tiền tệ | ❌ |
+| Dự kiến vốn sẽ ứng | expected_disbursement | Decimal | Số dương, định dạng tiền tệ | ❌ |
+| Đề xuất kế hoạch vốn năm sau | next_year_plan | Decimal | Số dương, định dạng tiền tệ | ❌ |
+| Trạng thái phê duyệt | status | ENUM | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ✅ |
 
 **Validation cho Database:**
 | Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc |
 |--------|-----------|---------------|------------|----------|
+| project_code | VARCHAR(20) | Text | NOT NULL, UNIQUE | ✅ |
 | name | VARCHAR(255) | Text | NOT NULL | ✅ |
-| year | INT | Number | NOT NULL | ✅ |
-| category_id | INT | Number | FOREIGN KEY, NOT NULL | ✅ |
-| status | ENUM | Text | 'active', 'completed', 'cancelled' | ✅ |
-| start_date | DATE | Date | NULL | ❌ |
-| end_date | DATE | Date | NULL | ❌ |
-| budget | DECIMAL(15,2) | Decimal | NULL | ❌ |
+| project_source | VARCHAR(100) | Text | NOT NULL | ✅ |
+| planned_budget | DECIMAL(15,2) | Decimal | NULL | ❌ |
+| approved_budget | DECIMAL(15,2) | Decimal | NULL | ❌ |
+| total_disbursed | DECIMAL(15,2) | Decimal | NULL | ❌ |
+| current_year_disbursed | DECIMAL(15,2) | Decimal | NULL | ❌ |
+| expected_disbursement | DECIMAL(15,2) | Decimal | NULL | ❌ |
+| next_year_plan | DECIMAL(15,2) | Decimal | NULL | ❌ |
+| status | ENUM | Text | 'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested' | ✅ |
+
+**Mapping Trạng thái Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| initialized | Khởi tạo | Dự án mới được tạo |
+| pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
+| approved | Đã phê duyệt | Dự án đã được phê duyệt |
+| rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
+| suspended | Dừng thực hiện | Dự án tạm dừng thực hiện |
+| edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 **Quy tắc chung:**
-- Năm phải là năm hợp lệ (không được trong quá khứ xa)
-- Loại dự án phải tồn tại trong bảng project_categories
-- Ngày kết thúc phải sau ngày bắt đầu (nếu có)
-- Ngân sách phải là số dương (nếu có)
+- Mã dự án phải theo format PRJ-YYYY-XXXX và không được trùng lặp
+- Nguồn gốc dự án không được để trống
+- Tất cả các khoản vốn phải là số dương (nếu có)
+- Lũy kế vốn đã ứng không được vượt quá TMĐT đã được phê duyệt
+- Tổng vốn đã ứng từ trong năm đến hiện tại không được vượt quá lũy kế vốn đã ứng
 - Chỉ hiển thị dự án mà user có quyền xem
 
 ---
@@ -141,16 +161,18 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 -- Bảng dự án
 CREATE TABLE projects (
     id INT PRIMARY KEY AUTO_INCREMENT,
+    project_code VARCHAR(20) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
-    year INT NOT NULL,
-    category_id INT NOT NULL,
-    status ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
-    start_date DATE,
-    end_date DATE,
-    budget DECIMAL(15,2),
+    project_source VARCHAR(100) NOT NULL,
+    planned_budget DECIMAL(15,2),
+    approved_budget DECIMAL(15,2),
+    total_disbursed DECIMAL(15,2) DEFAULT 0,
+    current_year_disbursed DECIMAL(15,2) DEFAULT 0,
+    expected_disbursement DECIMAL(15,2),
+    next_year_plan DECIMAL(15,2),
+    status ENUM('initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested') DEFAULT 'initialized',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES project_categories(id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Bảng loại dự án

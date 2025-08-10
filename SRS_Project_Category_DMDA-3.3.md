@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -148,7 +148,7 @@ interface Project {
     id: number;
     project_code: string;
     name: string;
-    status: 'draft' | 'pending_approval' | 'approved' | 'edit_requested' | 'in_progress' | 'suspended' | 'completed' | 'cancelled' | 'deleted';
+    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
     approved_at?: string;
     approved_by?: number;
     approval_notes?: string;
@@ -428,7 +428,7 @@ COMMIT;
 | Khởi tạo | Không | Ẩn | Không áp dụng |
 | Chờ phê duyệt | Có | "Phê duyệt" | Có |
 | Đã phê duyệt | Không | "Đã phê duyệt" | Không áp dụng |
-| Đã gửi yêu cầu chỉnh sửa | Không | Ẩn | Không áp dụng |
+| Yêu cầu chỉnh sửa | Không | Ẩn | Không áp dụng |
 | Đang thực hiện | Không | Ẩn | Không áp dụng |
 | Dừng thực hiện | Không | Ẩn | Không áp dụng |
 | Hoàn thành | Không | Ẩn | Không áp dụng |

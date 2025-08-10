@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -129,18 +129,16 @@ ALTER TABLE project_categories ADD COLUMN code VARCHAR(3) NOT NULL UNIQUE;
 
 -- Thêm index để tối ưu query
 CREATE INDEX idx_projects_code ON projects(project_code);
-CREATE INDEX idx_projects_year_category ON projects(year, category_id);
+CREATE INDEX idx_projects_source ON projects(project_source);
 
 -- Bảng để track sequence numbers
 CREATE TABLE project_sequences (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    category_id INT NOT NULL,
     year INT NOT NULL,
     current_sequence INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_category_year (category_id, year),
-    FOREIGN KEY (category_id) REFERENCES project_categories(id)
+    UNIQUE KEY unique_year (year)
 );
 
 -- Insert default category codes
@@ -154,35 +152,33 @@ INSERT INTO project_categories (name, code, description) VALUES
 #### 5.2 Code Generation Logic
 ```typescript
 interface ProjectCodeGenerator {
-    generateCode(categoryId: number, year: number): Promise<string>;
-    getNextSequence(categoryId: number, year: number): Promise<number>;
+    generateCode(year: number): Promise<string>;
+    getNextSequence(year: number): Promise<number>;
     validateCode(code: string): boolean;
 }
 
 class ProjectCodeGeneratorImpl implements ProjectCodeGenerator {
-    async generateCode(categoryId: number, year: number): Promise<string> {
-        const category = await this.getCategory(categoryId);
-        const sequence = await this.getNextSequence(categoryId, year);
+    async generateCode(year: number): Promise<string> {
+        const sequence = await this.getNextSequence(year);
         
-        return `${category.code}-${year}-${sequence.toString().padStart(3, '0')}`;
+        return `PRJ-${year}-${sequence.toString().padStart(4, '0')}`;
     }
 
-    async getNextSequence(categoryId: number, year: number): Promise<number> {
+    async getNextSequence(year: number): Promise<number> {
         // Use database transaction to ensure atomicity
         const sequence = await this.db.transaction(async (trx) => {
             let record = await trx('project_sequences')
-                .where({ category_id: categoryId, year })
+                .where({ year })
                 .first();
 
             if (!record) {
                 record = await trx('project_sequences').insert({
-                    category_id: categoryId,
                     year,
                     current_sequence: 1
                 }).returning('*');
             } else {
                 record = await trx('project_sequences')
-                    .where({ category_id: categoryId, year })
+                    .where({ year })
                     .increment('current_sequence', 1)
                     .returning('*');
             }
@@ -194,7 +190,7 @@ class ProjectCodeGeneratorImpl implements ProjectCodeGenerator {
     }
 
     validateCode(code: string): boolean {
-        const pattern = /^[A-Z]{3}-\d{4}-\d{3}$/;
+        const pattern = /^PRJ-\d{4}-\d{4}$/;
         return pattern.test(code);
     }
 }
@@ -209,8 +205,8 @@ POST /api/projects
 GET /api/projects/{code}
 - Response: Project details by code
 
-GET /api/project-categories
-- Response: List of categories with codes
+GET /api/project-sources
+- Response: List of project sources
 
 POST /api/projects/validate-code
 - Request: { code: string }

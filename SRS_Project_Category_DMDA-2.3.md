@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -50,7 +50,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 3.1 Core Features
 1. **Xóa Dự án có Điều kiện**
-   - Chỉ cho phép xóa dự án có trạng thái: "draft", "pending_approval"
+   - Chỉ cho phép xóa dự án có trạng thái: "initialized", "pending_approval"
    - Ẩn nút xóa cho dự án đã phê duyệt
    - Validation trước khi xóa
 
@@ -69,6 +69,16 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 - Dự án đã phê duyệt không thể xóa (chỉ có thể hủy)
 - Mọi thao tác xóa phải được log với lý do
 - Xóa dự án sẽ xóa tất cả related data (edit requests, change logs)
+
+#### 3.3 Mapping Trạng thái Dự án
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| initialized | Khởi tạo | Dự án mới được tạo |
+| pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
+| approved | Đã phê duyệt | Dự án đã được phê duyệt |
+| rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
+| suspended | Dừng thực hiện | Dự án tạm dừng thực hiện |
+| edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 ---
 
@@ -152,7 +162,7 @@ interface Project {
     id: number;
     project_code: string;
     name: string;
-    status: 'draft' | 'pending_approval' | 'approved' | 'edit_requested' | 'in_progress' | 'completed' | 'cancelled' | 'deleted';
+    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
     deleted_at?: string;
     deleted_by?: number;
     delete_reason?: string;
@@ -437,7 +447,7 @@ COMMIT;
 | Deleted | No | "Khôi phục" | Yes |
 
 #### 14.2 User Role vs Deletion Permission
-| User Role | Draft | Pending | Approved | In Progress | Completed |
+| User Role | Khởi tạo | Chờ phê duyệt | Đã phê duyệt | Từ chối phê duyệt | Dừng thực hiện | Yêu cầu chỉnh sửa |
 |-----------|-------|---------|----------|-------------|-----------|
 | Creator | Delete | Delete | No | No | No |
 | Manager | Delete | Delete | No | No | No |

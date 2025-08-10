@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -100,7 +100,7 @@ ALTER TABLE projects MODIFY COLUMN status ENUM(
     'draft',           -- Khởi tạo
     'pending_approval', -- Chờ phê duyệt
     'approved',        -- Đã phê duyệt
-    'edit_requested',  -- Đã gửi yêu cầu chỉnh sửa
+    'edit_requested',  -- Yêu cầu chỉnh sửa
     'in_progress',     -- Đang thực hiện
     'suspended',       -- DỪNG THỰC HIỆN
     'completed',       -- Hoàn thành
@@ -153,7 +153,7 @@ interface Project {
     id: number;
     project_code: string;
     name: string;
-    status: 'draft' | 'pending_approval' | 'approved' | 'edit_requested' | 'in_progress' | 'suspended' | 'completed' | 'cancelled' | 'deleted';
+    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
     suspended_at?: string;
     suspended_by?: number;
     suspension_reason?: string;
@@ -340,7 +340,7 @@ describe('Dừng Thực hiện Dự án', () => {
 BEGIN;
 -- Cập nhật bảng projects với trạng thái mới
 ALTER TABLE projects MODIFY COLUMN status ENUM(
-    'draft', 'pending_approval', 'approved', 'edit_requested', 
+    'initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested', 
     'in_progress', 'suspended', 'completed', 'cancelled', 'deleted'
 ) DEFAULT 'draft';
 
@@ -438,7 +438,7 @@ COMMIT;
 | Khởi tạo | Không | Ẩn | Không áp dụng |
 | Chờ phê duyệt | Không | Ẩn | Không áp dụng |
 | Đã phê duyệt | Có | "Dừng thực hiện" | Có |
-| Đã gửi yêu cầu chỉnh sửa | Không | Ẩn | Không áp dụng |
+| Yêu cầu chỉnh sửa | Không | Ẩn | Không áp dụng |
 | Đang thực hiện | Có | "Dừng thực hiện" | Có |
 | Dừng thực hiện | Không | "Khôi phục" | Có |
 | Hoàn thành | Không | Ẩn | Không áp dụng |

@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -33,7 +33,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 - [ ] Chức năng multiselect (checkbox) hiển thị bên cạnh mỗi dự án trong danh sách
 - [ ] Có nút "Gửi Phê duyệt (đã chọn)" hoặc tương tự sau khi chọn nhiều dự án
 - [ ] Hệ thống xử lý việc gửi phê duyệt cho từng dự án đã chọn
-- [ ] Chỉ hiển thị checkbox cho dự án có thể gửi phê duyệt (draft, edit_requested)
+- [ ] Chỉ hiển thị checkbox cho dự án có thể gửi phê duyệt (initialized, edit_requested)
 - [ ] Có hộp thoại xác nhận trước khi gửi phê duyệt hàng loạt
 - [ ] Hiển thị danh sách dự án đã chọn trong hộp thoại xác nhận
 - [ ] Ghi log hành động gửi phê duyệt hàng loạt
@@ -68,7 +68,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
    - Summary report sau khi hoàn thành
 
 #### 3.2 Business Rules
-- Chỉ dự án có trạng thái "draft" hoặc "edit_requested" mới có thể được chọn
+- Chỉ dự án có trạng thái "initialized" hoặc "edit_requested" mới có thể được chọn
 - Tối đa 50 dự án có thể được gửi phê duyệt cùng lúc
 - Người phê duyệt được chọn sẽ áp dụng cho tất cả dự án
 - Mỗi dự án sẽ được xử lý riêng lẻ, không ảnh hưởng đến nhau

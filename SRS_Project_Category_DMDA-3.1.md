@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -49,13 +49,13 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 3.1 Core Features
 1. **Gửi Phê duyệt Dự án**
-   - Chỉ cho phép gửi dự án có trạng thái: "draft", "edit_requested"
+   - Chỉ cho phép gửi dự án có trạng thái: "initialized", "edit_requested"
    - Form chọn người phê duyệt
    - Validation trước khi gửi
    - Confirmation dialog
 
 2. **Quản lý Trạng thái Dự án**
-   - Chuyển trạng thái từ "draft" → "pending_approval"
+   - Chuyển trạng thái từ "initialized" → "pending_approval"
    - Chuyển trạng thái từ "edit_requested" → "pending_approval"
    - Hiển thị trạng thái "Chờ phê duyệt" rõ ràng
 
@@ -70,6 +70,16 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 - Dự án đã phê duyệt không thể gửi phê duyệt lại
 - Mỗi lần gửi phê duyệt phải chọn ít nhất một người phê duyệt
 - Người phê duyệt phải có quyền "APPROVE_PROJECT"
+
+#### 3.3 Mapping Trạng thái Dự án
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| initialized | Khởi tạo | Dự án mới được tạo |
+| pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
+| approved | Đã phê duyệt | Dự án đã được phê duyệt |
+| rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
+| suspended | Dừng thực hiện | Dự án tạm dừng thực hiện |
+| edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 ---
 
@@ -174,7 +184,7 @@ interface Project {
     id: number;
     project_code: string;
     name: string;
-    status: 'draft' | 'pending_approval' | 'approved' | 'edit_requested' | 'in_progress' | 'suspended' | 'completed' | 'cancelled' | 'deleted';
+    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
     submitted_for_approval_at?: string;
     submitted_by?: number;
     // ... other fields
@@ -432,7 +442,7 @@ COMMIT;
 ---
 
 ### 10. Tiêu chí Thành công
-- [ ] Người dùng chỉ có thể gửi phê duyệt dự án khởi tạo/đã gửi yêu cầu chỉnh sửa
+- [ ] Người dùng chỉ có thể gửi phê duyệt dự án khởi tạo/yêu cầu chỉnh sửa
 - [ ] Form gửi phê duyệt hiển thị đầy đủ thông tin
 - [ ] Bản ghi phê duyệt được tạo chính xác
 - [ ] Tích hợp thành công với Bitrix24
@@ -488,7 +498,7 @@ COMMIT;
 | Trạng thái Dự án | Có thể Gửi | Văn bản Nút | Yêu cầu Xác nhận |
 |------------------|------------|-------------|------------------|
 | Khởi tạo | Có | "Gửi Phê duyệt" | Có |
-| Đã gửi yêu cầu chỉnh sửa | Có | "Gửi Phê duyệt" | Có |
+| Yêu cầu chỉnh sửa | Có | "Gửi Phê duyệt" | Có |
 | Chờ phê duyệt | Không | "Đang chờ phê duyệt" | Không áp dụng |
 | Đã phê duyệt | Không | Ẩn | Không áp dụng |
 | Đang thực hiện | Không | Ẩn | Không áp dụng |
@@ -497,7 +507,7 @@ COMMIT;
 | Đã hủy | Không | Ẩn | Không áp dụng |
 
 #### 14.2 Vai trò Người dùng vs Quyền Gửi Phê duyệt
-| Vai trò Người dùng | Khởi tạo | Đã gửi yêu cầu chỉnh sửa | Chờ phê duyệt | Đã phê duyệt |
+| Vai trò Người dùng | Khởi tạo | Chờ phê duyệt | Đã phê duyệt | Từ chối phê duyệt | Dừng thực hiện | Yêu cầu chỉnh sửa |
 |-------------------|----------|---------------------------|----------------|-------------|
 | Người tạo | Gửi | Gửi | Xem | Không |
 | Quản lý | Gửi | Gửi | Xem | Không |

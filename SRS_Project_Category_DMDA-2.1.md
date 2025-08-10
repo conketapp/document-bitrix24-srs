@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -204,20 +204,19 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 -- Bảng dự án (đã có, cập nhật thêm)
 CREATE TABLE projects (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    project_code VARCHAR(20) NOT NULL UNIQUE, -- Tự sinh theo DMDA-1.3
+    project_code VARCHAR(20) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
-    description TEXT,
-    category_id INT NOT NULL,
-    year INT NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    budget DECIMAL(15,2),
-    status ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
-    project_type ENUM('new', 'carryover') NOT NULL, -- Tự động theo DMDA-1.2
+    project_source VARCHAR(100) NOT NULL,
+    planned_budget DECIMAL(15,2),
+    approved_budget DECIMAL(15,2),
+    total_disbursed DECIMAL(15,2) DEFAULT 0,
+    current_year_disbursed DECIMAL(15,2) DEFAULT 0,
+    expected_disbursement DECIMAL(15,2),
+    next_year_plan DECIMAL(15,2),
+    status ENUM('initialized', 'pending_approval', 'approved', 'rejected', 'suspended', 'edit_requested') DEFAULT 'initialized',
     created_by INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES project_categories(id),
     FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
@@ -237,12 +236,13 @@ CREATE TABLE project_drafts (
 POST /api/projects
 - Request: {
     name: string,
-    description?: string,
-    category_id: number,
-    year: number,
-    start_date: string,
-    end_date?: string,
-    budget?: number
+    project_source: string,
+    planned_budget?: number,
+    approved_budget?: number,
+    total_disbursed?: number,
+    current_year_disbursed?: number,
+    expected_disbursement?: number,
+    next_year_plan?: number
 }
 - Response: Project object with auto-generated fields
 
@@ -261,27 +261,27 @@ GET /api/projects/draft/{id}
 ```typescript
 interface CreateProjectRequest {
     name: string;
-    description?: string;
-    category_id: number;
-    year: number;
-    start_date: string;
-    end_date?: string;
-    budget?: number;
+    project_source: string;
+    planned_budget?: number;
+    approved_budget?: number;
+    total_disbursed?: number;
+    current_year_disbursed?: number;
+    expected_disbursement?: number;
+    next_year_plan?: number;
 }
 
 interface Project {
     id: number;
     project_code: string; // Auto-generated
     name: string;
-    description?: string;
-    category_id: number;
-    category_name: string;
-    year: number;
-    start_date: string;
-    end_date?: string;
-    budget?: number;
-    status: 'active' | 'completed' | 'cancelled';
-    project_type: 'new' | 'carryover'; // Auto-calculated
+    project_source: string;
+    planned_budget?: number;
+    approved_budget?: number;
+    total_disbursed: number;
+    current_year_disbursed: number;
+    expected_disbursement?: number;
+    next_year_plan?: number;
+    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
     created_by: number;
     created_by_name: string;
     created_at: string;
@@ -290,12 +290,13 @@ interface Project {
 
 interface ProjectFormData {
     name: string;
-    description: string;
-    category_id: number;
-    year: number;
-    start_date: string;
-    end_date: string;
-    budget: string;
+    project_source: string;
+    planned_budget: string;
+    approved_budget: string;
+    total_disbursed: string;
+    current_year_disbursed: string;
+    expected_disbursement: string;
+    next_year_plan: string;
 }
 ```
 

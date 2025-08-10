@@ -5,8 +5,8 @@
 **Epic ID:** DMDA  
 **Epic Name:** Danh mục dự án - Quản lý Danh mục Dự án  
 **Version:** 1.0  
-**Date:** 2024  
-**Author:** Development Team  
+**Date:** 07-2025  
+**Author:** Công ty Thiên Phú Digital  
 
 ### 2. Mô tả Epic
 Epic này tập trung vào việc phát triển hệ thống quản lý danh mục dự án, cho phép cán bộ quản lý dự án tổ chức và quản lý các dự án theo năm và phân loại một cách hiệu quả.
@@ -34,7 +34,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 - [ ] Khi dự án chưa được phê duyệt (trạng thái là "Khởi tạo" hoặc "Chờ phê duyệt"): Người dùng có thể trực tiếp chỉnh sửa toàn bộ thông tin dự án
 - [ ] Nút "Chỉnh sửa" hiển thị rõ ràng trên giao diện
 - [ ] Khi dự án đã được phê duyệt: Hệ thống hiển thị nút "Yêu cầu chỉnh sửa"
-- [ ] Khi người dùng gửi yêu cầu, dự án chuyển sang trạng thái "Đã gửi yêu cầu chỉnh sửa"
+- [ ] Khi người dùng gửi yêu cầu, dự án chuyển sang trạng thái "Yêu cầu chỉnh sửa"
 - [ ] Sau khi được người có thẩm quyền phê duyệt yêu cầu: Người gửi mới được chỉnh sửa thông tin
 - [ ] Mọi thay đổi phải được ghi lại trong log lịch sử dự án
 - [ ] Nếu từ chối, hệ thống thông báo lý do và không cho chỉnh sửa
@@ -65,7 +65,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
    - **Khởi tạo**: Có thể chỉnh sửa trực tiếp
    - **Chờ phê duyệt**: Có thể chỉnh sửa trực tiếp
    - **Đã phê duyệt**: Chỉ có thể yêu cầu chỉnh sửa
-   - **Đã gửi yêu cầu chỉnh sửa**: Chờ phê duyệt yêu cầu
+   - **Yêu cầu chỉnh sửa**: Chờ phê duyệt yêu cầu
    - **Đang thực hiện**: Chỉ có thể yêu cầu chỉnh sửa
    - **Hoàn thành**: Không thể chỉnh sửa
 
@@ -74,6 +74,16 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 - Mọi thay đổi phải được log lại với timestamp và user
 - Dự án đã phê duyệt cần workflow phê duyệt yêu cầu chỉnh sửa
 - Người phê duyệt yêu cầu chỉnh sửa phải có quyền "APPROVE_EDIT_REQUEST"
+
+#### 3.3 Mapping Trạng thái Dự án
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| initialized | Khởi tạo | Dự án mới được tạo |
+| pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
+| approved | Đã phê duyệt | Dự án đã được phê duyệt |
+| rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
+| suspended | Dừng thực hiện | Dự án tạm dừng thực hiện |
+| edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 ---
 
@@ -105,14 +115,13 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 ```sql
 -- Cập nhật bảng projects với trạng thái mới
 ALTER TABLE projects MODIFY COLUMN status ENUM(
-    'draft',           -- Khởi tạo
+    'initialized',     -- Khởi tạo
     'pending_approval', -- Chờ phê duyệt
     'approved',        -- Đã phê duyệt
-    'edit_requested',  -- Đã gửi yêu cầu chỉnh sửa
-    'in_progress',     -- Đang thực hiện
-    'completed',       -- Hoàn thành
-    'cancelled'        -- Đã hủy
-) DEFAULT 'draft';
+    'rejected',        -- Từ chối phê duyệt
+    'suspended',       -- Dừng thực hiện
+    'edit_requested'   -- Yêu cầu chỉnh sửa
+) DEFAULT 'initialized';
 
 -- Bảng lưu lịch sử thay đổi dự án
 CREATE TABLE project_change_logs (
@@ -198,7 +207,7 @@ interface Project {
     start_date: string;
     end_date?: string;
     budget?: number;
-    status: 'draft' | 'pending_approval' | 'approved' | 'edit_requested' | 'in_progress' | 'completed' | 'cancelled';
+    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
     created_by: number;
     created_at: string;
     updated_at: string;
@@ -465,7 +474,7 @@ COMMIT;
 
 #### 14.1 Project Status Flow
 ```
-Draft → Pending Approval → Approved → In Progress → Completed
+Khởi tạo → Chờ phê duyệt → Đã phê duyệt → Từ chối phê duyệt → Dừng thực hiện → Yêu cầu chỉnh sửa
   ↓         ↓                ↓           ↓
 Direct    Direct          Request     Request
 Edit      Edit            Edit        Edit
@@ -480,7 +489,7 @@ Notification    Approver         Requester
 ```
 
 #### 14.3 Permission Matrix
-| User Role | Draft | Pending | Approved | In Progress | Completed |
+| User Role | Khởi tạo | Chờ phê duyệt | Đã phê duyệt | Từ chối phê duyệt | Dừng thực hiện | Yêu cầu chỉnh sửa |
 |-----------|-------|---------|----------|-------------|-----------|
 | Creator | Edit | Edit | Request | Request | View Only |
 | Manager | Edit | Edit | Approve | Request | View Only |
