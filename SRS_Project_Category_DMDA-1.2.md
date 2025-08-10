@@ -175,7 +175,7 @@ interface Project {
     name: string;
     start_date: string;
     end_date?: string;
-    status: 'active' | 'completed' | 'cancelled';
+    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
     project_type: 'new' | 'carryover'; // Auto-calculated
     year: number;
     category_id: number;

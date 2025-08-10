@@ -166,7 +166,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
    - Số tiền phải là số dương và hợp lệ
 
 #### 3.2 Business Rules
-- Dự án mới mặc định có trạng thái "active"
+- Dự án mới mặc định có trạng thái "initialized"
 - Mã dự án được sinh tự động và không thể chỉnh sửa
 - Phân loại dự án được tính toán tự động
 - Người tạo dự án được ghi nhận
@@ -322,10 +322,16 @@ interface ProjectFormData {
 - Mapping fields:
   - project_code → custom field
   - name → title
-  - description → description
-  - budget → amount
-  - start_date → begin_date
-  - category → custom field
+  - project_source → custom field
+  - planned_budget → amount
+  - approved_budget → custom field
+  - total_disbursed → custom field
+  - current_year_disbursed → custom field
+  - expected_disbursement → custom field
+  - next_year_plan → custom field
+  - status → stage
+  - created_at → date_create
+  - created_by → assigned_by_id
 
 #### 6.2 Data Flow
 1. User nhấn "Tạo Dự án Mới"
@@ -342,65 +348,13 @@ interface ProjectFormData {
 ### 7. User Interface Requirements
 
 #### 7.1 Form Layout
-```
-┌─────────────────────────────────────┐
-│ Tạo Dự án Mới                      │
-├─────────────────────────────────────┤
-│ 1. Thông tin cơ bản                │
-│ Tên dự án *                        │
-│ [Input field]                      │
-│                                     │
-│ Người đầu mối QLDA *               │
-│ [Input field]                      │
-│                                     │
-│ Phòng đầu mối lập dự án *          │
-│ [Dropdown]                         │
-│                                     │
-│ Người đầu mối lập DA *             │
-│ [Input field]                      │
-│                                     │
-│ Loại dự án *                       │
-│ [Dropdown: Đầu tư, Mua sắm, ...]  │
-│                                     │
-│ 2. Thông tin bổ sung               │
-│ Nguồn vốn                          │
-│ [Dropdown]                         │
-│                                     │
-│ Thuộc đề án chiến lược             │
-│ [Checkbox]                         │
-│                                     │
-│ Đề án chiến lược                   │
-│ [Text input - hiện khi checkbox]   │
-│                                     │
-│ 3. Tổng mức đầu tư & Kế hoạch vốn │
-│ TMĐT dự kiến theo KHV *            │
-│ [Number input]                     │
-│                                     │
-│ TMĐT theo QĐ phê duyệt CTĐT       │
-│ [Number input]                     │
-│                                     │
-│ TMĐT theo QĐ phê duyệt dự án      │
-│ [Number input]                     │
-│                                     │
-│ KHV trong năm                      │
-│ [Number input]                     │
-│                                     │
-│ KHV năm sau                        │
-│ [Number input]                     │
-│                                     │
-│ 4. Các mốc phê duyệt và quyết định│
-│ Quyết định chủ trương đầu tư       │
-│ [Collapsible section]              │
-│                                     │
-│ Quyết định phê duyệt dự án         │
-│ [Collapsible section]              │
-│                                     │
-│ Quyết định quyết toán              │
-│ [Collapsible section]              │
-│                                     │
-│ [Cancel] [Tạo Dự án]              │
-└─────────────────────────────────────┘
-```
+- Form tạo dự án được chia thành 4 section chính:
+  1. **Thông tin cơ bản**: Tên dự án, người quản lý, phòng ban, loại dự án
+  2. **Thông tin bổ sung**: Nguồn vốn, đề án chiến lược
+  3. **Tổng mức đầu tư & Kế hoạch vốn**: TMĐT dự kiến, TMĐT phê duyệt, vốn đã ứng, kế hoạch vốn
+  4. **Các mốc phê duyệt và quyết định**: Quyết định chủ trương, phê duyệt dự án, quyết toán
+- Form có validation real-time và hiển thị lỗi rõ ràng
+- Responsive design cho mobile và desktop
 
 #### 7.2 Design Guidelines
 - Sử dụng Tailwind CSS cho styling
@@ -496,24 +450,30 @@ describe('Tạo Dự án', () => {
 
 ---
 
-### 11. Risks and Mitigation
+### 11. Rủi ro và Giải pháp
 
-#### 11.1 Technical Risks
-- **Risk:** Form validation complexity
-- **Mitigation:** Use form libraries và comprehensive testing
+#### 11.1 Rủi ro Kỹ thuật
+- **Rủi ro:** Độ phức tạp của validation form
+- **Giải pháp:** Sử dụng thư viện form và kiểm thử toàn diện
 
-- **Risk:** Bitrix24 sync failures
-- **Mitigation:** Implement retry logic và error handling
+- **Rủi ro:** Lỗi đồng bộ với Bitrix24
+- **Giải pháp:** Triển khai logic thử lại và xử lý lỗi
 
-- **Risk:** Concurrent project creation conflicts
-- **Mitigation:** Use database transactions và locks
+- **Rủi ro:** Xung đột khi tạo dự án đồng thời
+- **Giải pháp:** Sử dụng transaction database và khóa
 
-#### 11.2 Business Risks
-- **Risk:** User data entry errors
-- **Mitigation:** Clear validation messages và auto-save
+#### 11.2 Rủi ro Nghiệp vụ
+- **Rủi ro:** Lỗi nhập liệu từ người dùng
+- **Giải pháp:** Thông báo validation rõ ràng và tự động lưu
 
-- **Risk:** Performance issues với large forms
-- **Mitigation:** Optimize form rendering và lazy loading
+- **Rủi ro:** Vấn đề hiệu suất với form lớn
+- **Giải pháp:** Tối ưu hóa render form và lazy loading
+
+- **Rủi ro:** Mất dữ liệu khi người dùng chưa lưu
+- **Giải pháp:** Tự động lưu bản nháp và cảnh báo khi rời trang
+
+- **Rủi ro:** Người dùng không hiểu cách sử dụng form
+- **Giải pháp:** Cung cấp hướng dẫn và tooltip chi tiết
 
 ---
 
