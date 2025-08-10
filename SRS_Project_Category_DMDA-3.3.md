@@ -50,13 +50,13 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 #### 3.1 Core Features
 1. **Phê duyệt Dự án**
-   - Chỉ cho phép phê duyệt dự án có trạng thái: "pending_approval"
+   - Chỉ cho phép phê duyệt dự án có trạng thái phê duyệt: "pending_approval"
    - Form xác nhận phê duyệt với comment tùy chọn
    - Validation trước khi phê duyệt
    - Confirmation dialog
 
 2. **Quản lý Trạng thái Dự án**
-   - Chuyển trạng thái từ "pending_approval" → "approved"
+   - Chuyển trạng thái phê duyệt từ "pending_approval" → "approved"
    - Hiển thị trạng thái "Đã phê duyệt" rõ ràng
    - Cập nhật thông tin phê duyệt
 
@@ -72,6 +72,30 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 - Dự án đã phê duyệt không thể phê duyệt lại
 - Dự án chưa được gửi phê duyệt không thể phê duyệt
 - Mỗi lần phê duyệt phải ghi lại thông tin người phê duyệt và thời gian
+
+#### 3.3 Mapping Trạng thái Dự án
+
+**Trạng thái Phê duyệt Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| initialized | Khởi tạo | Dự án mới được tạo |
+| pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
+| approved | Đã phê duyệt | Dự án đã được phê duyệt |
+| rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
+
+**Trạng thái Thực hiện Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| not_started | Chưa bắt đầu | Dự án chưa triển khai |
+| in_progress | Đang thực hiện | Dự án đang được triển khai |
+| suspended | Tạm dừng | Dự án tạm dừng thực hiện |
+| completed | Hoàn thành | Dự án đã hoàn thành |
+
+**Trạng thái Yêu cầu Chỉnh sửa:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| none | Không có yêu cầu | Không có yêu cầu chỉnh sửa |
+| edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 ---
 
@@ -148,7 +172,9 @@ interface Project {
     id: number;
     project_code: string;
     name: string;
-    status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
+    approval_status: 'initialized' | 'pending_approval' | 'approved' | 'rejected';
+    execution_status: 'not_started' | 'in_progress' | 'suspended' | 'completed';
+    edit_request_status: 'none' | 'edit_requested';
     approved_at?: string;
     approved_by?: number;
     approval_notes?: string;
@@ -278,13 +304,13 @@ interface CanApproveResponse {
 ```typescript
 describe('Phê duyệt Dự án', () => {
     test('nên cho phép phê duyệt dự án đang chờ phê duyệt', () => {
-        const project = { status: 'pending_approval' };
+        const project = { approval_status: 'pending_approval' };
         const user = { permissions: ['APPROVE_PROJECT'] };
         expect(canApproveProject(project, user)).toBe(true);
     });
 
     test('không nên cho phép phê duyệt dự án đã phê duyệt', () => {
-        const project = { status: 'approved' };
+        const project = { approval_status: 'approved' };
         const user = { permissions: ['APPROVE_PROJECT'] };
         expect(canApproveProject(project, user)).toBe(false);
     });
@@ -296,7 +322,7 @@ describe('Phê duyệt Dự án', () => {
         await approveProject(projectId, approverId, notes);
         
         const project = await getProject(projectId);
-        expect(project.status).toBe('approved');
+        expect(project.approval_status).toBe('approved');
         expect(project.approval_notes).toBe(notes);
         expect(project.approved_at).toBeDefined();
     });
