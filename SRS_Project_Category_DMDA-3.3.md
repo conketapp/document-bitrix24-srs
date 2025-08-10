@@ -452,5 +452,5 @@ Người phê duyệt xác nhận → Cập nhật Trạng thái → Ghi Log →
 ---
 
 **Document Version:** 1.0  
-**Last Updated:** 2024  
+**Last Updated:** 08-2024  
 **Next Review:** Sprint 3

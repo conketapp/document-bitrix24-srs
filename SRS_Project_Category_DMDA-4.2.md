@@ -396,5 +396,5 @@ describe('Kanban Board', () => {
 ---
 
 **Document Version:** 1.0  
-**Last Updated:** 2024  
+**Last Updated:** 08-2024  
 **Next Review:** Sprint 4 

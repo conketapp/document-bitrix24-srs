@@ -58,7 +58,7 @@ Epic này tập trung vào việc phát triển hệ thống quản lý danh m�
 
 3. **Hiển thị Thông tin**
    - Badge/Label rõ ràng trong danh sách
-   - Màu sắc phân biệt (xanh cho mới, cam cho chuyển tiếp)
+   - Màu sắc phân biệt
    - Tooltip giải thích logic phân loại
 
 #### 3.2 Business Rules
@@ -365,5 +365,5 @@ COMMIT;
 ---
 
 **Document Version:** 1.0  
-**Last Updated:** 2024  
+**Last Updated:** 08-2024  
 **Next Review:** Sprint 2 
