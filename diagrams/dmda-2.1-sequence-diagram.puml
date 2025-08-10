@@ -1,106 +1,29 @@
-@startuml DMDA-2.1 Sequence Diagram
+@startuml
+title DMDA-2.1: Create New Project
 
-title DMDA-2.1: Sequence Diagram - Tạo Dự án Mới trong Danh mục
+actor User
+participant Frontend
+participant "API Gateway"
+participant "Project Service"
+participant Database
 
-actor User as U
-participant "Frontend" as F
-participant "Backend API" as B
-participant "Database" as D
-participant "Bitrix24 API" as B24
+User -> Frontend: Click Create Project
+Frontend -> Frontend: Show form
 
-U -> F: Truy cập danh mục dự án
-F -> F: Hiển thị danh sách dự án với nút "Tạo Dự án Mới"
+User -> Frontend: Enter data
+User -> Frontend: Submit
 
-U -> F: Click nút "Tạo Dự án Mới"
-F -> F: Mở form tạo dự án với đầy đủ trường
+Frontend -> "API Gateway": POST /api/projects
+"API Gateway" -> "Project Service": createProject()
 
-U -> F: Nhập thông tin cơ bản
-note right
-  Thông tin bắt buộc:
-  - Tên dự án (projectName)
-  - Người đầu mối QLDA (projectManager)
-  - Phòng đầu mối lập dự án (projectDepartment)
-  - Người đầu mối lập DA (projectCreator)
-  - Loại dự án (projectType)
-end note
+"Project Service" -> "Project Service": Validate
+"Project Service" -> "Project Service": Generate code
+"Project Service" -> Database: Save project
+Database -> "Project Service": Success
 
-U -> F: Nhập thông tin bổ sung
-note right
-  Thông tin tùy chọn:
-  - Nguồn vốn (fundingSource)
-  - Thuộc đề án chiến lược (isStrategicProject)
-  - Đề án chiến lược (strategicProject)
-end note
-
-U -> F: Nhập thông tin ngân sách
-note right
-  Thông tin ngân sách:
-  - TMĐT dự kiến theo KHV (plannedBudget) - Bắt buộc
-  - TMĐT theo QĐ phê duyệt CTĐT (investmentApprovalBudget)
-  - TMĐT theo QĐ phê duyệt dự án (projectApprovalBudget)
-  - KHV trong năm (yearlyBudget)
-  - KHV năm sau (nextYearPlan)
-end note
-
-U -> F: Nhập thông tin quyết định
-note right
-  Quyết định chủ trương đầu tư:
-  - Số quyết định (investmentDecisionNumber)
-  - Ngày quyết định (investmentDecisionDate)
-  - Số tháng thực hiện (investmentDecisionDuration)
-  - Tài liệu QĐ (investmentDecisionFile)
-  
-  Quyết định phê duyệt dự án:
-  - Số quyết định (projectApprovalNumber)
-  - Ngày quyết định (projectApprovalDate)
-  - Số tháng thực hiện (projectApprovalDuration)
-  - Tài liệu QĐ (projectApprovalFile)
-  
-  Quyết định quyết toán:
-  - Số quyết định (settlementDecisionNumber)
-  - Ngày quyết định (settlementDecisionDate)
-  - Tài liệu QĐ (settlementDecisionFile)
-end note
-
-U -> F: Submit form tạo dự án
-F -> B: POST /api/projects (không có projectCode)
-
-B -> B: Validate thông tin dự án
-
-B -> B: Tạo projectCode tự động
-note right
-  Format: Năm-Phòng-Loại-STT
-  Ví dụ: 2024-IT-INV-001
-end note
-
-B -> B: Tính toán phân loại dự án
-note right
-  Logic phân loại:
-  - Dự án Mới: start_date.year = current_year
-  - Dự án Chuyển tiếp: start_date.year < current_year 
-    AND status ≠ "completed"
-end note
-
-B -> D: INSERT projects với đầy đủ thông tin
-D -> B: Confirm insert và trả về project data
-
-B -> B24: Sync project data với Bitrix24
-note right
-  Mapping tất cả trường thông tin
-end note
-B24 -> B: Confirm sync
-
-B -> F: Response với project data bao gồm projectCode
-F -> F: Hiển thị thông báo thành công
-
-F -> F: Redirect đến trang chi tiết dự án
-F -> B: GET /api/projects/{id}
-B -> D: Query project details
-D -> B: Trả về project details với đầy đủ thông tin
-B -> F: Response với project details
-F -> F: Hiển thị dự án mới với projectCode và đầy đủ thông tin
-
-U -> F: Xem dự án mới được tạo
-F -> F: Hiển thị projectCode và tất cả thông tin dự án
+"Project Service" -> "API Gateway": Response
+"API Gateway" -> Frontend: Success
+Frontend -> Frontend: Show success
+Frontend -> User: Redirect to list
 
 @enduml

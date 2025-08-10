@@ -1,99 +1,46 @@
 @startuml DMDA-2.1 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #000000
+    FontColor #000000
+}
 
-title DMDA-2.1: Activity Diagram - Tạo Dự án Mới trong Danh mục
+title DMDA-2.1: Tạo Dự án Mới trong Danh mục
 
 start
 
-:User truy cập danh mục dự án;
+:Người dùng truy cập danh mục dự án;
 
-:User nhấn nút "Tạo Dự án Mới";
+:Click nút "Tạo Dự án Mới";
 
-:System mở form tạo dự án;
+:Hiển thị form tạo dự án;
 
-:User nhập thông tin cơ bản;
-note right
-  Thông tin bắt buộc:
-  - Tên dự án (projectName)
-  - Người đầu mối QLDA (projectManager)
-  - Phòng đầu mối lập dự án (projectDepartment)
-  - Người đầu mối lập DA (projectCreator)
-  - Loại dự án (projectType)
-end note
+:Người dùng nhập thông tin cơ bản;
 
-:User nhập thông tin bổ sung;
-note right
-  Thông tin tùy chọn:
-  - Nguồn vốn (fundingSource)
-  - Thuộc đề án chiến lược (isStrategicProject)
-  - Đề án chiến lược (strategicProject)
-end note
+:Người dùng nhập thông tin tài chính;
 
-:User nhập thông tin ngân sách;
-note right
-  Thông tin ngân sách:
-  - TMĐT dự kiến theo KHV (plannedBudget) - Bắt buộc
-  - TMĐT theo QĐ phê duyệt CTĐT (investmentApprovalBudget)
-  - TMĐT theo QĐ phê duyệt dự án (projectApprovalBudget)
-  - KHV trong năm (yearlyBudget)
-  - KHV năm sau (nextYearPlan)
-end note
+:Người dùng nhập thông tin phê duyệt;
 
-:User nhập thông tin quyết định;
-note right
-  Quyết định chủ trương đầu tư:
-  - Số quyết định (investmentDecisionNumber)
-  - Ngày quyết định (investmentDecisionDate)
-  - Số tháng thực hiện (investmentDecisionDuration)
-  - Tài liệu QĐ (investmentDecisionFile)
-  
-  Quyết định phê duyệt dự án:
-  - Số quyết định (projectApprovalNumber)
-  - Ngày quyết định (projectApprovalDate)
-  - Số tháng thực hiện (projectApprovalDuration)
-  - Tài liệu QĐ (projectApprovalFile)
-  
-  Quyết định quyết toán:
-  - Số quyết định (settlementDecisionNumber)
-  - Ngày quyết định (settlementDecisionDate)
-  - Tài liệu QĐ (settlementDecisionFile)
-end note
+:Người dùng upload tài liệu đính kèm;
 
-:User submit form tạo dự án;
+:Click "Lưu dự án";
 
-:System validate thông tin dự án;
+:Validate dữ liệu;
 
-if (Thông tin hợp lệ?) then (có)
-  :System tạo projectCode tự động;
-  note right
-    Format: Năm-Phòng-Loại-STT
-    Ví dụ: 2024-IT-INV-001
-  end note
-  
-  :System tính toán phân loại dự án;
-  note right
-    Logic phân loại:
-    - Dự án Mới: start_date.year = current_year
-    - Dự án Chuyển tiếp: start_date.year < current_year 
-      AND status ≠ "completed"
-  end note
-  
-  :System lưu dự án với đầy đủ thông tin;
-  
-  :System sync với Bitrix24;
-  
-  :System hiển thị thông báo thành công;
-  
-  :System redirect đến trang chi tiết dự án;
-  
-  :User xem dự án mới được tạo;
-  
-else (không)
-  :System hiển thị lỗi validation;
-  
-  :User sửa thông tin và thử lại;
-  :User submit form tạo dự án;
+if (Dữ liệu hợp lệ?) then (Có)
+    :Tạo mã dự án tự động;
+    :Tính toán phân loại dự án;
+    :Lưu dự án vào database;
+    :Tích hợp với Bitrix24;
+    :Hiển thị thông báo thành công;
+    :Chuyển về danh sách dự án;
+else (Không)
+    :Hiển thị lỗi validation;
+    :Yêu cầu sửa lỗi;
+    :Quay lại form;
 endif
 
 stop
-
 @enduml

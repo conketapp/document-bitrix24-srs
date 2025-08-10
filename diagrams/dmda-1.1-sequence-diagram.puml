@@ -1,61 +1,39 @@
-@startuml DMDA-1.1 Sequence Diagram
-!theme plain
-skinparam sequenceFontSize 12
-skinparam sequenceFontName Arial
+@startuml
+title DMDA-1.1: View Project List
 
-title DMDA-1.1: Sequence Diagram - Tạo Danh mục Dự án theo Năm và Phân loại
+actor User
+participant Frontend
+participant "API Gateway"
+participant "Project Service"
+participant Database
 
-actor User as U
-participant "Frontend" as F
-participant "Backend API" as B
-participant "Database" as D
+User -> Frontend: Access project list page
+Frontend -> Frontend: Show filter options
 
-U -> F: Truy cập trang Danh mục dự án
-F -> F: Hiển thị giao diện với filter
+User -> Frontend: Select year
+User -> Frontend: Select project type
+User -> Frontend: Select project source
+User -> Frontend: Select status
+User -> Frontend: Apply filters
 
-U -> F: Chọn năm từ dropdown
-note right
-  Chỉ có các năm cụ thể
-  (2024, 2025, v.v.)
-  Không có option "Tất cả"
-end note
+Frontend -> "API Gateway": GET /api/projects
+note right: year, projectType, projectSource, status
 
-U -> F: Chọn loại dự án từ dropdown
-note right
-  Có các option:
-  - Dự án đầu tư
-  - Mua sắm tài sản
-  - Thuê dịch vụ
-  - Bảo trì
-  - Tất cả
-end note
+"API Gateway" -> "Project Service": getProjects(filters)
 
-F -> B: GET /api/projects?year={year}&category_id={category_id}
-B -> D: Query projects với filter
-D -> B: Trả về danh sách dự án
-B -> F: Response với dữ liệu dự án
+"Project Service" -> Database: Query projects
+Database -> "Project Service": Project list
 
-F -> B: GET /api/project-categories
-B -> D: Query project categories
-D -> B: Trả về danh sách categories
-B -> F: Response với dữ liệu categories
+"Project Service" -> "Project Service": Apply filters
+"Project Service" -> "Project Service": Format response
 
-F -> F: Hiển thị danh sách dự án đã lọc
-note right
-  - Tên dự án
-  - Năm thực hiện
-  - Loại dự án
-  - Trạng thái
-  - Ngày bắt đầu
-  - Ngày kết thúc
-  - Ngân sách
-end note
+"Project Service" -> "API Gateway": Project list response
+"API Gateway" -> Frontend: Project data
 
-U -> F: Tương tác với danh sách
-note right
-  - Xem chi tiết
-  - Phân trang
-  - Sắp xếp
-end note
+Frontend -> Frontend: Display project list
+note right: Project code, name, budget, status
+
+User -> Frontend: View project details
+User -> Frontend: Change filters
 
 @enduml
