@@ -1,0 +1,91 @@
+@startuml TSDV-2.3 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    FontColor #000000
+}
+skinparam decision {
+    BackgroundColor #FFF3E0
+    BorderColor #F57C00
+    FontColor #000000
+}
+skinparam start {
+    BackgroundColor #4CAF50
+    BorderColor #2E7D32
+    FontColor #FFFFFF
+}
+skinparam end {
+    BackgroundColor #F44336
+    BorderColor #C62828
+    FontColor #FFFFFF
+}
+
+title TSDV-2.3: Xóa vĩnh viễn Tài sản/Dịch vụ
+
+start
+
+:Người dùng truy cập trang quản lý Tài sản/Dịch vụ;
+
+:Chọn tab "Đã xóa" hoặc "Thùng rác";
+
+:Hiển thị danh sách Tài sản/Dịch vụ đã xóa;
+
+:Chọn Tài sản/Dịch vụ cần xóa vĩnh viễn;
+
+:Click nút "Xóa vĩnh viễn";
+
+if (Kiểm tra quyền xóa vĩnh viễn?) then (có quyền)
+    :Kiểm tra thời gian xóa;
+    
+    if (Đã quá thời gian cho phép khôi phục?) then (đã quá thời gian)
+        :Hiển thị dialog cảnh báo xóa vĩnh viễn;
+        :Hiển thị thông tin chi tiết về Tài sản/Dịch vụ;
+        
+        if (Người dùng xác nhận xóa vĩnh viễn?) then (xác nhận)
+            :Kiểm tra dependencies cuối cùng;
+            
+            if (Có dependencies quan trọng?) then (có dependencies)
+                :Hiển thị cảnh báo dependencies;
+                :Yêu cầu xác nhận thêm;
+                
+                if (Người dùng vẫn muốn xóa?) then (vẫn xóa)
+                    :Tiếp tục xóa vĩnh viễn;
+                else (hủy)
+                    :Hủy thao tác xóa;
+                    stop
+                endif
+            endif
+            
+            :Tạo backup dữ liệu trước khi xóa;
+            :Xóa vĩnh viễn khỏi database;
+            :Xóa các file đính kèm;
+            :Ghi log thao tác xóa vĩnh viễn;
+            
+            if (Có thông báo cho admin?) then (có)
+                :Gửi thông báo xóa vĩnh viễn cho admin;
+            endif
+            
+            :Hiển thị thông báo xóa vĩnh viễn thành công;
+            :Cập nhật danh sách;
+            
+        else (hủy)
+            :Đóng dialog cảnh báo;
+            :Quay về trang danh sách đã xóa;
+        endif
+        
+    else (chưa quá thời gian)
+        :Hiển thị thông báo chưa đến thời gian xóa vĩnh viễn;
+        :Hiển thị thời gian còn lại;
+        :Chuyển về trang danh sách đã xóa;
+    endif
+    
+else (không có quyền)
+    :Hiển thị thông báo không có quyền xóa vĩnh viễn;
+    :Chuyển về trang danh sách;
+endif
+
+stop
+
+@enduml

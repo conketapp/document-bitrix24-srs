@@ -509,4 +509,37 @@ interface SearchFilters {
 - API documentation
 - Search engine configuration
 - Performance optimization
-- Security implementation 
+- Security implementation
+
+---
+
+### Validation Table
+
+#### **Bảng Validation Form Xuất báo cáo**
+
+##### **Thông tin Báo cáo**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Loại báo cáo | report_type | ENUM | 'summary', 'detailed', 'custom' | ✅ | Loại báo cáo |
+| Định dạng xuất | export_format | ENUM | 'pdf', 'excel', 'csv' | ✅ | Định dạng file |
+| Phạm vi dữ liệu | data_scope | ENUM | 'all', 'filtered', 'selected' | ✅ | Phạm vi dữ liệu |
+| Tên file | file_name | VARCHAR(100) | 3-100 ký tự | ✅ | Tên file xuất |
+
+##### **Thông tin Tùy chọn**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Cột hiển thị | columns | JSON | Mảng tên cột | ❌ | Cột cần xuất |
+| Sắp xếp | sort_order | JSON | {field: string, direction: string} | ❌ | Thứ tự sắp xếp |
+| Lọc dữ liệu | filters | JSON | Mảng điều kiện lọc | ❌ | Điều kiện lọc |
+
+#### **Quy tắc Validation Xuất báo cáo**
+
+##### **Validation Export**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| File name | Tên file hợp lệ | Không chứa ký tự đặc biệt | "Tên file chứa ký tự không hợp lệ" |
+| Data scope | Phạm vi hợp lệ | Có dữ liệu để xuất | "Không có dữ liệu để xuất báo cáo" |
+| Export permission | Quyền xuất báo cáo | User có quyền | "Bạn không có quyền xuất báo cáo" | 

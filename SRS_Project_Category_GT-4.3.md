@@ -523,4 +523,39 @@ interface ExportConfig {
 - API documentation
 - Excel generation details
 - Performance optimization
-- Security implementation 
+- Security implementation
+
+---
+
+### Validation Table
+
+#### **Bảng Validation Form Quản lý Quyền**
+
+##### **Thông tin Người dùng**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| User ID | user_id | INT | ID hợp lệ từ bảng users | ✅ | ID người dùng |
+| Tên người dùng | user_name | VARCHAR(100) | Tên hiển thị | ✅ | Tên người dùng |
+| Email | user_email | VARCHAR(100) | Email hợp lệ | ✅ | Email người dùng |
+| Vai trò | user_role | ENUM | 'admin', 'manager', 'user', 'viewer' | ✅ | Vai trò người dùng |
+
+##### **Thông tin Quyền**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Quyền xem | view_permission | BOOLEAN | true/false | ✅ | Quyền xem gói thầu |
+| Quyền tạo | create_permission | BOOLEAN | true/false | ✅ | Quyền tạo gói thầu |
+| Quyền chỉnh sửa | edit_permission | BOOLEAN | true/false | ✅ | Quyền chỉnh sửa |
+| Quyền xóa | delete_permission | BOOLEAN | true/false | ✅ | Quyền xóa gói thầu |
+| Quyền xuất báo cáo | export_permission | BOOLEAN | true/false | ✅ | Quyền xuất báo cáo |
+
+#### **Quy tắc Validation Quyền**
+
+##### **Validation Permission**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| User exists | Người dùng tồn tại | ID hợp lệ trong database | "Người dùng không tồn tại" |
+| Role validation | Vai trò hợp lệ | Theo quy định hệ thống | "Vai trò không hợp lệ" |
+| Permission logic | Logic quyền | view_permission >= edit_permission | "Quyền chỉnh sửa yêu cầu quyền xem" | 

@@ -31,6 +31,16 @@
 - [ ] Có thể xóa có điều kiện (chỉ xóa khi không có ràng buộc)
 - [ ] Có thể xóa hàng loạt với bộ lọc
 
+#### 2.4 Activity Diagram
+![TSDV-1.3 Activity Diagram](diagrams/TSDV-1.3%20Activity%20Diagram.png)
+
+*Activity Diagram mô tả luồng xử lý xóa Tài sản/Dịch vụ*
+
+#### 2.5 Sequence Diagram
+![TSDV-1.3 Sequence Diagram](diagrams/TSDV-1.3%20Sequence%20Diagram.png)
+
+*Sequence Diagram mô tả tương tác giữa các thành phần khi xóa Tài sản/Dịch vụ*
+
 ---
 
 ### Functional Requirements

@@ -34,6 +34,16 @@
 - [ ] Có thể thiết lập template thông báo tùy chỉnh
 - [ ] Hệ thống ghi log đầy đủ các hoạt động gửi thông báo
 
+#### 2.4 Activity Diagram
+![TSDV-3.2 Activity Diagram](diagrams/TSDV-3.2%20Activity%20Diagram.png)
+
+*Activity Diagram mô tả luồng xử lý nhắc nhở Tài sản/Dịch vụ*
+
+#### 2.5 Sequence Diagram
+![TSDV-3.2 Sequence Diagram](diagrams/TSDV-3.2%20Sequence%20Diagram.png)
+
+*Sequence Diagram mô tả tương tác giữa các thành phần khi nhắc nhở Tài sản/Dịch vụ*
+
 ---
 
 ### Functional Requirements

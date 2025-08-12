@@ -404,4 +404,76 @@ interface BitrixIntegrationService {
 - API documentation
 - Database schema documentation
 - Bitrix integration details
-- Security implementation guidelines 
+- Security implementation guidelines
+
+---
+
+### Validation Table
+
+#### **Bảng Validation Form Tạo Gói thầu**
+
+##### **Thông tin Cơ bản**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Mã gói thầu | tender_code | VARCHAR(20) | Tự động sinh GT-YYYY-XXXX | ✅ | Không cho phép chỉnh sửa |
+| Tên gói thầu | tender_name | VARCHAR(500) | 3-500 ký tự, không trùng lặp | ✅ | Tên mô tả gói thầu |
+| Mô tả gói thầu | tender_description | TEXT | Tối đa 2000 ký tự | ❌ | Mô tả chi tiết gói thầu |
+| Dự án liên quan | project_id | INT | ID hợp lệ từ bảng projects | ✅ | Chọn từ danh sách dự án |
+| Hình thức lựa chọn nhà thầu | tender_method | ENUM | 'open_bidding', 'limited_bidding', 'direct_contract', 'competitive_consultation' | ✅ | Hình thức đấu thầu |
+
+##### **Thông tin Giá trị và Ngân sách**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Giá trị dự kiến | estimated_value | DECIMAL(15,2) | > 0, định dạng tiền tệ | ✅ | Giá trị dự kiến gói thầu |
+| Đơn vị tiền tệ | currency | VARCHAR(10) | VND, USD, EUR | ✅ | Mặc định VND |
+| Mã TBMT | tbmt_code | VARCHAR(50) | Format: TBMT-XXXX-YYYY | ❌ | Mã thông báo mời thầu |
+| Số lượng nhà thầu tham gia | participant_count | INT | >= 0 | ❌ | Số lượng nhà thầu |
+
+##### **Thông tin Timeline**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Ngày bắt đầu dự kiến | planned_start_date | DATE | Định dạng YYYY-MM-DD | ✅ | Ngày bắt đầu dự kiến |
+| Ngày kết thúc dự kiến | planned_end_date | DATE | >= planned_start_date | ✅ | Ngày kết thúc dự kiến |
+| Ngày mở thầu | tender_open_date | DATE | >= planned_start_date | ❌ | Ngày mở thầu |
+| Ngày đóng thầu | tender_close_date | DATE | >= tender_open_date | ❌ | Ngày đóng thầu |
+
+##### **Thông tin Quyết định**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Quyết định phê duyệt HSMT | hsmt_approval_decision | VARCHAR(100) | Link từ Bitrix | ❌ | Quyết định phê duyệt HSMT |
+| Quyết định phê duyệt KQLCNT | kqlcnt_approval_decision | VARCHAR(100) | Link từ Bitrix | ❌ | Quyết định phê duyệt KQLCNT |
+| Giá trúng thầu | winning_bid_amount | DECIMAL(15,2) | > 0, <= estimated_value | ❌ | Giá trúng thầu |
+| Nhà thầu trúng thầu | winning_contractor | VARCHAR(200) | Link từ Bitrix | ❌ | Nhà thầu trúng thầu |
+
+##### **Thông tin Bổ sung**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Trạng thái gói thầu | tender_status | ENUM | 'draft', 'created', 'in_progress', 'completed', 'cancelled' | ✅ | Trạng thái hiện tại |
+| Mức độ ưu tiên | priority | ENUM | 'low', 'medium', 'high', 'critical' | ✅ | Mức độ ưu tiên |
+| Ghi chú | notes | TEXT | Tối đa 1000 ký tự | ❌ | Ghi chú bổ sung |
+| Thẻ | tags | JSON | Mảng thẻ tối đa 10 thẻ | ❌ | Thẻ phân loại |
+
+#### **Quy tắc Validation Nghiệp vụ**
+
+##### **Validation Cross-field**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Timeline validation | planned_start_date có giá trị | planned_end_date >= planned_start_date | "Ngày kết thúc phải sau ngày bắt đầu" |
+| Tender dates | tender_open_date có giá trị | tender_close_date >= tender_open_date | "Ngày đóng thầu phải sau ngày mở thầu" |
+| Project validation | project_id có giá trị | Project phải tồn tại và active | "Dự án không tồn tại hoặc không hoạt động" |
+| Winning bid | winning_bid_amount có giá trị | winning_bid_amount <= estimated_value | "Giá trúng thầu không được vượt quá giá dự kiến" |
+
+##### **Validation Business Rules**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Mã gói thầu | Tự động sinh | Format: GT-YYYY-XXXX | "Mã gói thầu được tự động sinh" |
+| Tên gói thầu | Không trùng lặp | Kiểm tra trong database | "Tên gói thầu đã tồn tại" |
+| TBMT code | Format validation | TBMT-XXXX-YYYY | "Mã TBMT không đúng định dạng" |
+| Participant count | Số lượng hợp lệ | >= 0 | "Số lượng nhà thầu phải >= 0" | 

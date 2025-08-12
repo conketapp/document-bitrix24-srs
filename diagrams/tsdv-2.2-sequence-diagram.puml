@@ -1,0 +1,97 @@
+@startuml TSDV-2.2 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1976D2
+    ActorBorderColor #1976D2
+    LifeLineBorderColor #1976D2
+    LifeLineBackgroundColor #E3F2FD
+    ParticipantBorderColor #1976D2
+    ParticipantBackgroundColor #E3F2FD
+    ParticipantFontColor #000000
+    ActorBackgroundColor #E3F2FD
+    ActorFontColor #000000
+}
+
+title TSDV-2.2: Khôi phục Tài sản/Dịch vụ đã xóa
+
+actor "Người dùng" as User
+participant "UI Controller" as UI
+participant "AssetServiceController" as Controller
+participant "AssetServiceService" as Service
+participant "PermissionService" as Permission
+participant "ConflictService" as Conflict
+participant "NotificationService" as Notification
+database "Database" as DB
+participant "AuditService" as Audit
+
+User -> UI: Truy cập trang quản lý Tài sản/Dịch vụ
+User -> UI: Chọn tab "Đã xóa"
+UI -> Controller: getDeletedAssetServices()
+Controller -> Service: getDeletedAssetServices()
+Service -> DB: SELECT * FROM assets_services WHERE status = 'deleted'
+DB --> Service: Deleted AssetService list
+Service --> Controller: Deleted AssetService list
+Controller --> UI: Deleted AssetService list
+UI --> User: Hiển thị danh sách đã xóa
+
+User -> UI: Chọn Tài sản/Dịch vụ cần khôi phục
+User -> UI: Click nút "Khôi phục"
+UI -> Controller: checkRestorePermission(assetServiceId)
+Controller -> Permission: checkRestorePermission(userId, assetServiceId)
+Permission --> Controller: Permission result
+
+alt Có quyền khôi phục
+    Controller -> Service: checkRestoreTimeLimit(assetServiceId)
+    Service -> DB: SELECT deleted_at FROM assets_services WHERE id = ?
+    DB --> Service: Deleted timestamp
+    Service --> Controller: Time limit check result
+    
+    alt Trong thời gian cho phép
+        Controller --> UI: Permission granted
+        UI --> User: Hiển thị dialog xác nhận khôi phục
+        
+        User -> UI: Xác nhận khôi phục
+        UI -> Controller: restoreAssetService(assetServiceId)
+        Controller -> Conflict: checkDataConflicts(assetServiceId)
+        Conflict -> DB: SELECT * FROM assets_services WHERE code = ? AND status = 'active'
+        DB --> Conflict: Conflict check result
+        Conflict --> Controller: Conflict result
+        
+        alt Có xung đột dữ liệu
+            Controller --> UI: Conflicts found
+            UI --> User: Hiển thị cảnh báo xung đột
+            
+            User -> UI: Chọn cách xử lý (ghi đè/giữ nguyên)
+            UI -> Controller: restoreAssetServiceWithConflict(assetServiceId, conflictResolution)
+        end
+        
+        Controller -> Service: restoreAssetService(assetServiceId)
+        Service -> DB: UPDATE assets_services SET status = 'active', restored_at = NOW() WHERE id = ?
+        DB --> Service: Restore result
+        Service --> Controller: Restore result
+        
+        Controller -> Audit: logAssetServiceRestoration(userId, assetServiceId)
+        Audit -> DB: INSERT INTO audit_logs (...)
+        DB --> Audit: Log result
+        Audit --> Controller: Log result
+        
+        Controller -> Notification: notifyAssetServiceRestoration(assetServiceId)
+        Notification -> DB: INSERT INTO notifications (...)
+        DB --> Notification: Notification result
+        Notification --> Controller: Notification result
+        
+        Controller --> UI: Success response
+        UI --> User: Hiển thị thông báo khôi phục thành công
+        
+    else Quá thời gian
+        Controller --> UI: Time limit exceeded
+        UI --> User: Hiển thị thông báo quá thời gian khôi phục
+    end
+    
+else Không có quyền
+    Controller --> UI: Permission denied
+    UI --> User: Hiển thị thông báo không có quyền khôi phục
+end
+
+@enduml

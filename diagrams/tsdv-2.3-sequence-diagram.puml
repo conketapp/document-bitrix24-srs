@@ -1,0 +1,109 @@
+@startuml TSDV-2.3 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1976D2
+    ActorBorderColor #1976D2
+    LifeLineBorderColor #1976D2
+    LifeLineBackgroundColor #E3F2FD
+    ParticipantBorderColor #1976D2
+    ParticipantBackgroundColor #E3F2FD
+    ParticipantFontColor #000000
+    ActorBackgroundColor #E3F2FD
+    ActorFontColor #000000
+}
+
+title TSDV-2.3: Xóa vĩnh viễn Tài sản/Dịch vụ
+
+actor "Người dùng" as User
+participant "UI Controller" as UI
+participant "AssetServiceController" as Controller
+participant "AssetServiceService" as Service
+participant "PermissionService" as Permission
+participant "DependencyService" as Dependency
+participant "BackupService" as Backup
+participant "FileService" as FileService
+participant "NotificationService" as Notification
+database "Database" as DB
+participant "AuditService" as Audit
+
+User -> UI: Truy cập trang quản lý Tài sản/Dịch vụ
+User -> UI: Chọn tab "Đã xóa"
+UI -> Controller: getDeletedAssetServices()
+Controller -> Service: getDeletedAssetServices()
+Service -> DB: SELECT * FROM assets_services WHERE status = 'deleted'
+DB --> Service: Deleted AssetService list
+Service --> Controller: Deleted AssetService list
+Controller --> UI: Deleted AssetService list
+UI --> User: Hiển thị danh sách đã xóa
+
+User -> UI: Chọn Tài sản/Dịch vụ cần xóa vĩnh viễn
+User -> UI: Click nút "Xóa vĩnh viễn"
+UI -> Controller: checkPermanentDeletePermission(assetServiceId)
+Controller -> Permission: checkPermanentDeletePermission(userId, assetServiceId)
+Permission --> Controller: Permission result
+
+alt Có quyền xóa vĩnh viễn
+    Controller -> Service: checkPermanentDeleteTimeLimit(assetServiceId)
+    Service -> DB: SELECT deleted_at FROM assets_services WHERE id = ?
+    DB --> Service: Deleted timestamp
+    Service --> Controller: Time limit check result
+    
+    alt Đã quá thời gian cho phép khôi phục
+        Controller --> UI: Permission granted
+        UI --> User: Hiển thị dialog cảnh báo xóa vĩnh viễn
+        
+        User -> UI: Xác nhận xóa vĩnh viễn
+        UI -> Controller: permanentDeleteAssetService(assetServiceId)
+        Controller -> Dependency: checkFinalDependencies(assetServiceId)
+        Dependency -> DB: SELECT * FROM dependencies WHERE asset_service_id = ?
+        DB --> Dependency: Dependencies list
+        Dependency --> Controller: Dependencies result
+        
+        alt Có dependencies quan trọng
+            Controller --> UI: Important dependencies found
+            UI --> User: Hiển thị cảnh báo dependencies
+            
+            User -> UI: Xác nhận vẫn muốn xóa
+            UI -> Controller: confirmPermanentDeleteWithDependencies(assetServiceId)
+        end
+        
+        Controller -> Backup: createBackupBeforePermanentDelete(assetServiceId)
+        Backup -> DB: INSERT INTO backup_logs (...)
+        DB --> Backup: Backup result
+        Backup --> Controller: Backup result
+        
+        Controller -> Service: permanentDeleteAssetService(assetServiceId)
+        Service -> DB: DELETE FROM assets_services WHERE id = ?
+        DB --> Service: Delete result
+        Service --> Controller: Delete result
+        
+        Controller -> FileService: deleteAttachedFiles(assetServiceId)
+        FileService -> DB: DELETE FROM asset_service_files WHERE asset_service_id = ?
+        DB --> FileService: File deletion result
+        FileService --> Controller: File deletion result
+        
+        Controller -> Audit: logPermanentAssetServiceDeletion(userId, assetServiceId)
+        Audit -> DB: INSERT INTO audit_logs (...)
+        DB --> Audit: Log result
+        Audit --> Controller: Log result
+        
+        Controller -> Notification: notifyPermanentDeletionToAdmin(assetServiceId)
+        Notification -> DB: INSERT INTO notifications (...)
+        DB --> Notification: Notification result
+        Notification --> Controller: Notification result
+        
+        Controller --> UI: Success response
+        UI --> User: Hiển thị thông báo xóa vĩnh viễn thành công
+        
+    else Chưa quá thời gian
+        Controller --> UI: Time limit not reached
+        UI --> User: Hiển thị thông báo chưa đến thời gian xóa vĩnh viễn
+    end
+    
+else Không có quyền
+    Controller --> UI: Permission denied
+    UI --> User: Hiển thị thông báo không có quyền xóa vĩnh viễn
+end
+
+@enduml

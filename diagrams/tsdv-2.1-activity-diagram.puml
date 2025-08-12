@@ -1,0 +1,97 @@
+@startuml TSDV-2.1 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    FontColor #000000
+}
+skinparam decision {
+    BackgroundColor #FFF3E0
+    BorderColor #F57C00
+    FontColor #000000
+}
+skinparam start {
+    BackgroundColor #4CAF50
+    BorderColor #2E7D32
+    FontColor #FFFFFF
+}
+skinparam end {
+    BackgroundColor #F44336
+    BorderColor #C62828
+    FontColor #FFFFFF
+}
+
+title TSDV-2.1: Tìm kiếm & Lọc danh sách Tài sản/Dịch vụ đa tiêu chí
+
+start
+
+:Người dùng truy cập trang quản lý Tài sản/Dịch vụ;
+
+:Hiển thị giao diện tìm kiếm và lọc;
+
+:Người dùng nhập từ khóa tìm kiếm;
+
+:Người dùng chọn các tiêu chí lọc;
+
+if (Có tiêu chí tìm kiếm?) then (có)
+    :Thực hiện tìm kiếm theo từ khóa;
+    
+    if (Có tiêu chí lọc?) then (có)
+        :Áp dụng bộ lọc cho kết quả tìm kiếm;
+    endif
+    
+    :Kiểm tra quyền truy cập dữ liệu;
+    
+    if (Có quyền truy cập?) then (có)
+        :Thực hiện truy vấn database;
+        :Lọc kết quả theo quyền người dùng;
+        
+        if (Có kết quả?) then (có)
+            :Hiển thị danh sách kết quả;
+            :Hiển thị thông tin phân trang;
+            
+            if (Người dùng muốn sắp xếp?) then (có)
+                :Áp dụng sắp xếp theo tiêu chí;
+                :Cập nhật hiển thị kết quả;
+            endif
+            
+            if (Người dùng muốn xuất kết quả?) then (có)
+                :Tạo file xuất (Excel/PDF);
+                :Tải xuống file;
+            endif
+            
+            if (Người dùng muốn lưu bộ lọc?) then (có)
+                :Lưu bộ lọc với tên;
+                :Thêm vào danh sách bộ lọc đã lưu;
+            endif
+            
+        else (không có kết quả)
+            :Hiển thị thông báo không tìm thấy;
+            :Đề xuất từ khóa tìm kiếm khác;
+        endif
+        
+    else (không có quyền)
+        :Hiển thị thông báo không có quyền truy cập;
+    endif
+    
+else (không có tiêu chí)
+    :Hiển thị toàn bộ danh sách (có phân trang);
+    
+    if (Có tiêu chí lọc?) then (có)
+        :Áp dụng bộ lọc cho toàn bộ danh sách;
+    endif
+endif
+
+:Người dùng có thể thay đổi tiêu chí tìm kiếm/lọc;
+
+if (Người dùng thay đổi tiêu chí?) then (có)
+    :Cập nhật kết quả theo tiêu chí mới;
+    :Quay lại bước tìm kiếm;
+else (không)
+    :Kết thúc tìm kiếm;
+endif
+
+stop
+
+@enduml

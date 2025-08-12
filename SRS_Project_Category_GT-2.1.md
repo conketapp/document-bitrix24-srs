@@ -412,4 +412,62 @@ interface ChangeNotificationComponent {
 - API documentation
 - Database schema
 - Security implementation
-- Performance optimization 
+- Performance optimization
+
+---
+
+### Validation Table
+
+#### **Bảng Validation Form Chỉnh sửa**
+
+##### **Thông tin Cơ bản (Có thể chỉnh sửa)**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Chỉnh sửa được |
+|--------|-----------|---------------|------------|----------|----------------|
+| Tên gói thầu | tender_name | VARCHAR(500) | 3-500 ký tự, không trùng lặp | ✅ | ✅ |
+| Mô tả gói thầu | tender_description | TEXT | Tối đa 2000 ký tự | ❌ | ✅ |
+| Dự án liên quan | project_id | INT | ID hợp lệ từ bảng projects | ✅ | ✅ |
+| Hình thức lựa chọn nhà thầu | tender_method | ENUM | 'open_bidding', 'limited_bidding', 'direct_contract', 'competitive_consultation' | ✅ | ✅ |
+
+##### **Thông tin Giá trị (Có thể chỉnh sửa)**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Chỉnh sửa được |
+|--------|-----------|---------------|------------|----------|----------------|
+| Giá trị dự kiến | estimated_value | DECIMAL(15,2) | > 0, định dạng tiền tệ | ✅ | ✅ |
+| Mã TBMT | tbmt_code | VARCHAR(50) | Format: TBMT-XXXX-YYYY | ❌ | ✅ |
+| Số lượng nhà thầu tham gia | participant_count | INT | >= 0 | ❌ | ✅ |
+
+##### **Thông tin Timeline (Có thể chỉnh sửa)**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Chỉnh sửa được |
+|--------|-----------|---------------|------------|----------|----------------|
+| Ngày bắt đầu dự kiến | planned_start_date | DATE | Định dạng YYYY-MM-DD | ✅ | ✅ |
+| Ngày kết thúc dự kiến | planned_end_date | DATE | >= planned_start_date | ✅ | ✅ |
+| Ngày mở thầu | tender_open_date | DATE | >= planned_start_date | ❌ | ✅ |
+| Ngày đóng thầu | tender_close_date | DATE | >= tender_open_date | ❌ | ✅ |
+
+##### **Thông tin Không thể chỉnh sửa**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Chỉnh sửa được |
+|--------|-----------|---------------|------------|----------|----------------|
+| Mã gói thầu | tender_code | VARCHAR(20) | GT-YYYY-XXXX | ✅ | ❌ |
+| Ngày tạo | created_date | TIMESTAMP | Tự động | ✅ | ❌ |
+| Người tạo | created_by | INT | User ID | ✅ | ❌ |
+
+#### **Quy tắc Validation Chỉnh sửa**
+
+##### **Validation Permission**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Edit permission | User có quyền | Role-based access | "Bạn không có quyền chỉnh sửa gói thầu này" |
+| Status validation | Trạng thái cho phép | Không phải 'completed' | "Không thể chỉnh sửa gói thầu đã hoàn thành" |
+| Time limit | Trong thời gian cho phép | 24h sau khi tạo | "Đã quá thời gian cho phép chỉnh sửa" |
+
+##### **Validation Business Rules**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Timeline consistency | Ngày hợp lệ | planned_end_date >= planned_start_date | "Ngày kết thúc phải sau ngày bắt đầu" |
+| Project validation | Dự án tồn tại | Project active và accessible | "Dự án không tồn tại hoặc không truy cập được" |
+| Tender method | Hình thức hợp lệ | Theo quy định đấu thầu | "Hình thức lựa chọn nhà thầu không hợp lệ" | 

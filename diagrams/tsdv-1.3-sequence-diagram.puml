@@ -1,0 +1,85 @@
+@startuml TSDV-1.3 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1976D2
+    ActorBorderColor #1976D2
+    LifeLineBorderColor #1976D2
+    LifeLineBackgroundColor #E3F2FD
+    ParticipantBorderColor #1976D2
+    ParticipantBackgroundColor #E3F2FD
+    ParticipantFontColor #000000
+    ActorBackgroundColor #E3F2FD
+    ActorFontColor #000000
+}
+
+title TSDV-1.3: Xóa Tài sản/Dịch vụ
+
+actor "Người dùng" as User
+participant "UI Controller" as UI
+participant "AssetServiceController" as Controller
+participant "AssetServiceService" as Service
+participant "PermissionService" as Permission
+participant "DependencyService" as Dependency
+participant "NotificationService" as Notification
+database "Database" as DB
+participant "AuditService" as Audit
+
+User -> UI: Truy cập danh sách Tài sản/Dịch vụ
+UI -> Controller: getAssetServiceList()
+Controller -> Service: getAllAssetServices()
+Service -> DB: SELECT * FROM assets_services WHERE status != 'deleted'
+DB --> Service: AssetService list
+Service --> Controller: AssetService list
+Controller --> UI: AssetService list
+UI --> User: Hiển thị danh sách
+
+User -> UI: Chọn Tài sản/Dịch vụ cần xóa
+User -> UI: Click nút "Xóa"
+UI -> Controller: checkDeletePermission(assetServiceId)
+Controller -> Permission: checkDeletePermission(userId, assetServiceId)
+Permission --> Controller: Permission result
+
+alt Có quyền xóa
+    Controller --> UI: Permission granted
+    UI --> User: Hiển thị dialog xác nhận xóa
+    
+    User -> UI: Xác nhận xóa
+    UI -> Controller: deleteAssetService(assetServiceId)
+    Controller -> Dependency: checkDependencies(assetServiceId)
+    Dependency -> DB: SELECT * FROM dependencies WHERE asset_service_id = ?
+    DB --> Dependency: Dependencies list
+    Dependency --> Controller: Dependencies result
+    
+    alt Có dependencies
+        Controller --> UI: Dependencies found
+        UI --> User: Hiển thị danh sách dependencies và cảnh báo
+        
+        User -> UI: Xác nhận vẫn muốn xóa
+        UI -> Controller: confirmDeleteWithDependencies(assetServiceId)
+    end
+    
+    Controller -> Service: deleteAssetService(assetServiceId)
+    Service -> DB: UPDATE assets_services SET status = 'deleted', deleted_at = NOW() WHERE id = ?
+    DB --> Service: Delete result
+    Service --> Controller: Delete result
+    
+    Controller -> Audit: logAssetServiceDeletion(userId, assetServiceId)
+    Audit -> DB: INSERT INTO audit_logs (...)
+    DB --> Audit: Log result
+    Audit --> Controller: Log result
+    
+    Controller -> Notification: notifyAssetServiceDeletion(assetServiceId)
+    Notification -> DB: INSERT INTO notifications (...)
+    DB --> Notification: Notification result
+    Notification --> Controller: Notification result
+    
+    Controller --> UI: Success response
+    UI --> User: Hiển thị thông báo xóa thành công
+    
+else Không có quyền
+    Controller --> UI: Permission denied
+    UI --> User: Hiển thị thông báo không có quyền xóa
+end
+
+@enduml

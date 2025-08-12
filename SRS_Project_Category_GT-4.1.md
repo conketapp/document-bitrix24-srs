@@ -494,4 +494,38 @@ interface LogStatisticsComponent {
 - API documentation
 - Database schema
 - Security implementation
-- Performance optimization 
+- Performance optimization
+
+---
+
+### Validation Table
+
+#### **Bảng Validation Form Tìm kiếm**
+
+##### **Thông tin Tìm kiếm Cơ bản**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Từ khóa tìm kiếm | search_keyword | VARCHAR(100) | 1-100 ký tự | ❌ | Từ khóa tìm kiếm |
+| Mã gói thầu | tender_code | VARCHAR(20) | GT-YYYY-XXXX | ❌ | Mã gói thầu |
+| Tên gói thầu | tender_name | VARCHAR(200) | 1-200 ký tự | ❌ | Tên gói thầu |
+| Dự án liên quan | project_id | INT | ID hợp lệ | ❌ | Dự án liên quan |
+
+##### **Thông tin Lọc Nâng cao**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Trạng thái gói thầu | tender_status | ENUM | 'draft', 'created', 'in_progress', 'completed', 'cancelled' | ❌ | Trạng thái |
+| Hình thức lựa chọn | tender_method | ENUM | 'open_bidding', 'limited_bidding', 'direct_contract', 'competitive_consultation' | ❌ | Hình thức |
+| Khoảng giá trị | value_range | JSON | {min: number, max: number} | ❌ | Khoảng giá trị |
+| Khoảng thời gian | date_range | JSON | {start: date, end: date} | ❌ | Khoảng thời gian |
+
+#### **Quy tắc Validation Tìm kiếm**
+
+##### **Validation Input**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Search keyword | Từ khóa hợp lệ | Không chứa SQL injection | "Từ khóa tìm kiếm không hợp lệ" |
+| Date range | Khoảng thời gian | start_date <= end_date | "Ngày bắt đầu phải trước ngày kết thúc" |
+| Value range | Khoảng giá trị | min_value <= max_value | "Giá trị tối thiểu phải <= giá trị tối đa" | 

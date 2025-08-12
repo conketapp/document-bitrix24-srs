@@ -18,7 +18,7 @@
 **Để** tôi có thể dễ dàng nhận biết và quản lý các dự án đã được cấp phép và chịu trách nhiệm chính thức của ngân hàng, phục vụ đúng mục đích quản lý.
 
 #### Điều kiện chấp nhận (Acceptance Criteria)
-- [ ] Chỉ các dự án có trạng thái "Đã phê duyệt" (thông qua quy trình tùy chỉnh của Module Dự án) mới xuất hiện trong danh sách chính của Module Dự án này
+- [ ] Chỉ các dự án có trạng thái phê duyệt "Đã phê duyệt" (thông qua quy trình tùy chỉnh của Module Dự án) mới xuất hiện trong danh sách chính của Module Dự án này
 - [ ] Các dự án chính thức có thể được hiển thị với biểu tượng đặc biệt hoặc nằm trong một phần riêng biệt của giao diện để dễ nhận diện
 - [ ] Có thể lọc và hiển thị riêng biệt dự án chính thức và dự án Bitrix24
 - [ ] Dự án chính thức có badge hoặc indicator đặc biệt
@@ -58,6 +58,30 @@
 - Dự án chính thức phải có đầy đủ thông tin phê duyệt
 - Dự án Bitrix24 tự do không được hiển thị trong danh sách chính thức
 - Dự án chính thức có thể được quản lý và báo cáo riêng biệt
+
+#### Mapping Trạng thái Dự án
+
+**Trạng thái Phê duyệt Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| initialized | Khởi tạo | Dự án mới được tạo |
+| pending_approval | Chờ phê duyệt | Dự án đã gửi chờ phê duyệt |
+| approved | Đã phê duyệt | Dự án đã được phê duyệt |
+| rejected | Từ chối phê duyệt | Dự án bị từ chối phê duyệt |
+
+**Trạng thái Thực hiện Dự án:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| not_started | Chưa bắt đầu | Dự án chưa triển khai |
+| in_progress | Đang thực hiện | Dự án đang được triển khai |
+| suspended | Tạm dừng | Dự án tạm dừng thực hiện |
+| completed | Hoàn thành | Dự án đã hoàn thành |
+
+**Trạng thái Yêu cầu Chỉnh sửa:**
+| Key (Database) | Label (Hiển thị) | Mô tả |
+|----------------|-------------------|-------|
+| none | Không có yêu cầu | Không có yêu cầu chỉnh sửa |
+| edit_requested | Yêu cầu chỉnh sửa | Dự án yêu cầu chỉnh sửa |
 
 ---
 
@@ -135,7 +159,9 @@ interface OfficialProject {
     id: number;
     project_code: string;
     name: string;
-    status: 'approved';
+    approval_status: 'approved';
+    execution_status: 'not_started' | 'in_progress' | 'suspended' | 'completed';
+    edit_request_status: 'none' | 'edit_requested';
     is_official: true;
     official_approval_date: string;
     official_approver: User;

@@ -31,6 +31,16 @@
 - [ ] Có thể xem lịch sử nhập liệu và kết quả
 - [ ] Có thể rollback nhập liệu nếu cần thiết
 
+#### 2.4 Activity Diagram
+![TSDV-2.3 Activity Diagram](diagrams/TSDV-2.3%20Activity%20Diagram.png)
+
+*Activity Diagram mô tả luồng xử lý nhập Tài sản/Dịch vụ hàng loạt*
+
+#### 2.5 Sequence Diagram
+![TSDV-2.3 Sequence Diagram](diagrams/TSDV-2.3%20Sequence%20Diagram.png)
+
+*Sequence Diagram mô tả tương tác giữa các thành phần khi nhập Tài sản/Dịch vụ hàng loạt*
+
 ---
 
 ### Functional Requirements

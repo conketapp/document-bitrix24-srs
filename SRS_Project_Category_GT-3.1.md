@@ -457,4 +457,48 @@ interface FileUploadProgress {
 - API documentation
 - Storage configuration
 - Security implementation
-- Performance optimization 
+- Performance optimization
+
+---
+
+### Validation Table
+
+#### **Bảng Validation Form Upload Tài liệu**
+
+##### **Thông tin File Upload**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| File tài liệu | document_file | FILE | PDF, DOC, DOCX, XLS, XLSX, JPG, PNG | ✅ | File tài liệu |
+| Tên tài liệu | document_name | VARCHAR(200) | 3-200 ký tự | ✅ | Tên hiển thị tài liệu |
+| Loại tài liệu | document_type | ENUM | 'hsmt', 'tbmt', 'contract', 'report', 'other' | ✅ | Phân loại tài liệu |
+| Mô tả | document_description | TEXT | Tối đa 500 ký tự | ❌ | Mô tả tài liệu |
+| Phiên bản | document_version | VARCHAR(20) | Format: v1.0, v2.1 | ❌ | Phiên bản tài liệu |
+
+##### **Thông tin Metadata**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Kích thước file | file_size | BIGINT | <= 50MB | ✅ | Kích thước file |
+| Định dạng file | file_extension | VARCHAR(10) | Các định dạng cho phép | ✅ | Định dạng file |
+| Checksum | file_checksum | VARCHAR(64) | SHA-256 hash | ✅ | Checksum file |
+| Ngày upload | upload_date | TIMESTAMP | Tự động | ✅ | Thời gian upload |
+
+#### **Quy tắc Validation Upload**
+
+##### **Validation File**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| File size | Kích thước hợp lệ | <= 50MB | "File quá lớn, tối đa 50MB" |
+| File type | Định dạng cho phép | PDF, DOC, DOCX, XLS, XLSX, JPG, PNG | "Định dạng file không được hỗ trợ" |
+| File content | Nội dung hợp lệ | Không chứa virus | "File có thể chứa nội dung độc hại" |
+| File name | Tên hợp lệ | Không chứa ký tự đặc biệt | "Tên file chứa ký tự không hợp lệ" |
+
+##### **Validation Business Rules**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Document type | Loại tài liệu | Theo quy định | "Loại tài liệu không hợp lệ" |
+| Version format | Định dạng phiên bản | vX.Y format | "Định dạng phiên bản không hợp lệ" |
+| Duplicate check | Trùng lặp tên | Kiểm tra trong database | "Tên tài liệu đã tồn tại" | 

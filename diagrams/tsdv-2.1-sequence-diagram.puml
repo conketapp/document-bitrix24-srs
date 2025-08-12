@@ -1,0 +1,90 @@
+@startuml TSDV-2.1 Sequence Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1976D2
+    ActorBorderColor #1976D2
+    LifeLineBorderColor #1976D2
+    LifeLineBackgroundColor #E3F2FD
+    ParticipantBorderColor #1976D2
+    ParticipantBackgroundColor #E3F2FD
+    ParticipantFontColor #000000
+    ActorBackgroundColor #E3F2FD
+    ActorFontColor #000000
+}
+
+title TSDV-2.1: Tìm kiếm & Lọc danh sách Tài sản/Dịch vụ đa tiêu chí
+
+actor "Người dùng" as User
+participant "UI Controller" as UI
+participant "AssetServiceController" as Controller
+participant "AssetServiceService" as Service
+participant "SearchService" as Search
+participant "FilterService" as Filter
+participant "PermissionService" as Permission
+participant "ExportService" as Export
+database "Database" as DB
+
+User -> UI: Truy cập trang quản lý Tài sản/Dịch vụ
+UI -> Controller: getAssetServiceList()
+Controller -> Service: getAllAssetServices()
+Service -> DB: SELECT * FROM assets_services WHERE status != 'deleted'
+DB --> Service: AssetService list
+Service --> Controller: AssetService list
+Controller --> UI: AssetService list
+UI --> User: Hiển thị giao diện tìm kiếm và lọc
+
+User -> UI: Nhập từ khóa tìm kiếm
+User -> UI: Chọn tiêu chí lọc
+User -> UI: Click nút "Tìm kiếm"
+UI -> Controller: searchAssetServices(searchCriteria, filters)
+Controller -> Search: performSearch(searchCriteria)
+Search -> Search: validateSearchCriteria(searchCriteria)
+Search -> DB: SELECT * FROM assets_services WHERE (name LIKE ? OR description LIKE ? OR code LIKE ?)
+DB --> Search: Search results
+Search --> Controller: Search results
+
+Controller -> Filter: applyFilters(searchResults, filters)
+Filter -> Filter: validateFilters(filters)
+Filter -> DB: SELECT * FROM assets_services WHERE status = ? AND category = ? AND type = ?
+DB --> Filter: Filtered results
+Filter --> Controller: Filtered results
+
+Controller -> Permission: filterByUserPermissions(userId, filteredResults)
+Permission -> DB: SELECT * FROM user_permissions WHERE user_id = ?
+DB --> Permission: User permissions
+Permission --> Controller: Permission-filtered results
+
+Controller --> UI: Search results with pagination
+UI --> User: Hiển thị danh sách kết quả
+
+alt Người dùng muốn sắp xếp
+    User -> UI: Chọn tiêu chí sắp xếp
+    UI -> Controller: sortResults(sortCriteria)
+    Controller -> Service: sortAssetServices(results, sortCriteria)
+    Service --> Controller: Sorted results
+    Controller --> UI: Sorted results
+    UI --> User: Cập nhật hiển thị kết quả
+end
+
+alt Người dùng muốn xuất kết quả
+    User -> UI: Click nút "Xuất Excel/PDF"
+    UI -> Controller: exportResults(format)
+    Controller -> Export: generateExport(results, format)
+    Export -> DB: SELECT * FROM assets_services WHERE id IN (...)
+    DB --> Export: Export data
+    Export --> Controller: Export file
+    Controller --> UI: Download file
+    UI --> User: Tải xuống file
+end
+
+alt Người dùng muốn lưu bộ lọc
+    User -> UI: Click nút "Lưu bộ lọc"
+    UI -> Controller: saveFilter(filterName, filters)
+    Controller -> DB: INSERT INTO saved_filters (user_id, name, filters)
+    DB --> Controller: Filter saved
+    Controller --> UI: Filter saved confirmation
+    UI --> User: Thông báo lưu bộ lọc thành công
+end
+
+@enduml

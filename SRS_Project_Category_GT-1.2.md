@@ -421,4 +421,46 @@ interface ApiConnectionStatus {
 - API integration details
 - Data mapping specifications
 - Security implementation
-- Performance optimization 
+- Performance optimization
+
+---
+
+### Validation Table
+
+#### **Bảng Validation Form Kết nối API**
+
+##### **Thông tin Kết nối**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| URL gói thầu | tender_url | VARCHAR(500) | URL hợp lệ muasamcong.mpi.gov.vn | ✅ | URL gói thầu trên Cổng |
+| Mã ID gói thầu | tender_id | VARCHAR(50) | Format: số hoặc chuỗi hợp lệ | ❌ | Mã ID gói thầu |
+| API Key | api_key | VARCHAR(100) | Key hợp lệ cho API | ✅ | API key xác thực |
+| Timeout | timeout | INT | 10-300 giây | ❌ | Thời gian timeout |
+
+##### **Thông tin Xử lý**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Trạng thái kết nối | connection_status | ENUM | 'connecting', 'success', 'failed', 'timeout' | ✅ | Trạng thái kết nối |
+| Thời gian kết nối | connection_time | TIMESTAMP | Tự động ghi | ✅ | Thời gian thực hiện |
+| Số lần thử | retry_count | INT | 0-5 lần | ❌ | Số lần thử lại |
+| Lỗi kết nối | error_message | TEXT | Tối đa 500 ký tự | ❌ | Thông báo lỗi |
+
+#### **Quy tắc Validation API**
+
+##### **Validation URL và ID**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| URL format | URL hợp lệ | muasamcong.mpi.gov.vn domain | "URL không hợp lệ hoặc không phải Cổng thông tin đấu thầu" |
+| Tender ID | ID hợp lệ | Format: số hoặc chuỗi | "Mã ID gói thầu không hợp lệ" |
+| API Key | Key hợp lệ | Định dạng và độ dài | "API Key không hợp lệ" |
+
+##### **Validation Response Data**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Response format | JSON hợp lệ | Parse được JSON | "Dữ liệu phản hồi không hợp lệ" |
+| Required fields | Các trường bắt buộc | Tồn tại trong response | "Thiếu thông tin bắt buộc từ API" |
+| Data mapping | Map được dữ liệu | Tương thích với form | "Không thể map dữ liệu từ API" | 

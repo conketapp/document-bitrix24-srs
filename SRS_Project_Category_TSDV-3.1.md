@@ -31,6 +31,16 @@
 - [ ] Có thể tính toán tổng chi phí bảo dưỡng, sửa chữa theo thời gian
 - [ ] Có thể xem báo cáo thống kê về tình trạng tài sản
 
+#### 2.4 Activity Diagram
+![TSDV-3.1 Activity Diagram](diagrams/TSDV-3.1%20Activity%20Diagram.png)
+
+*Activity Diagram mô tả luồng xử lý theo dõi lịch sử Tài sản*
+
+#### 2.5 Sequence Diagram
+![TSDV-3.1 Sequence Diagram](diagrams/TSDV-3.1%20Sequence%20Diagram.png)
+
+*Sequence Diagram mô tả tương tác giữa các thành phần khi theo dõi lịch sử Tài sản*
+
 ---
 
 ### Functional Requirements

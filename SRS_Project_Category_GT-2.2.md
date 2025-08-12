@@ -411,4 +411,46 @@ interface DeleteLogComponent {
 - API documentation
 - Database schema
 - Security implementation
-- Performance optimization 
+- Performance optimization
+
+---
+
+### Validation Table
+
+#### **Bảng Validation Form Xóa**
+
+##### **Thông tin Xác nhận Xóa**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Mã gói thầu | tender_code | VARCHAR(20) | GT-YYYY-XXXX | ✅ | Mã gói thầu cần xóa |
+| Lý do xóa | delete_reason | TEXT | 10-500 ký tự | ✅ | Lý do xóa gói thầu |
+| Xác nhận xóa | confirm_delete | BOOLEAN | true/false | ✅ | Checkbox xác nhận |
+| Người xóa | deleted_by | INT | User ID | ✅ | Người thực hiện xóa |
+
+##### **Thông tin Kiểm tra Dependencies**
+
+| Trường | Tên Field | Kiểu dữ liệu | Validation | Bắt buộc | Mô tả |
+|--------|-----------|---------------|------------|----------|-------|
+| Số hợp đồng liên quan | related_contracts | INT | >= 0 | ✅ | Số hợp đồng đã tạo |
+| Số chi phí liên quan | related_costs | INT | >= 0 | ✅ | Số chi phí đã tạo |
+| Số tài liệu đính kèm | related_documents | INT | >= 0 | ✅ | Số tài liệu đính kèm |
+| Trạng thái gói thầu | tender_status | ENUM | 'draft', 'created', 'in_progress', 'completed', 'cancelled' | ✅ | Trạng thái hiện tại |
+
+#### **Quy tắc Validation Xóa**
+
+##### **Validation Permission và Status**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Delete permission | User có quyền | Role-based access | "Bạn không có quyền xóa gói thầu" |
+| Status validation | Trạng thái cho phép | Chỉ 'draft' hoặc 'created' | "Chỉ có thể xóa gói thầu ở trạng thái nháp hoặc đã tạo" |
+| Dependencies check | Không có dependencies | related_contracts = 0 | "Không thể xóa gói thầu đã có hợp đồng liên quan" |
+
+##### **Validation Business Rules**
+
+| Quy tắc | Điều kiện | Validation | Thông báo lỗi |
+|---------|-----------|------------|---------------|
+| Reason required | Lý do xóa | Ít nhất 10 ký tự | "Vui lòng nhập lý do xóa (ít nhất 10 ký tự)" |
+| Confirmation | Xác nhận xóa | confirm_delete = true | "Vui lòng xác nhận việc xóa gói thầu" |
+| Soft delete | Xóa mềm | Chỉ đánh dấu deleted | "Gói thầu sẽ được đánh dấu xóa thay vì xóa hoàn toàn" | 

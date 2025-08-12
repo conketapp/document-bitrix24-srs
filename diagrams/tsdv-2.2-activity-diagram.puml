@@ -1,0 +1,88 @@
+@startuml TSDV-2.2 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    FontColor #000000
+}
+skinparam decision {
+    BackgroundColor #FFF3E0
+    BorderColor #F57C00
+    FontColor #000000
+}
+skinparam start {
+    BackgroundColor #4CAF50
+    BorderColor #2E7D32
+    FontColor #FFFFFF
+}
+skinparam end {
+    BackgroundColor #F44336
+    BorderColor #C62828
+    FontColor #FFFFFF
+}
+
+title TSDV-2.2: Khôi phục Tài sản/Dịch vụ đã xóa
+
+start
+
+:Người dùng truy cập trang quản lý Tài sản/Dịch vụ;
+
+:Chọn tab "Đã xóa" hoặc "Thùng rác";
+
+:Hiển thị danh sách Tài sản/Dịch vụ đã xóa;
+
+:Chọn Tài sản/Dịch vụ cần khôi phục;
+
+:Click nút "Khôi phục";
+
+if (Kiểm tra quyền khôi phục?) then (có quyền)
+    :Kiểm tra thời gian xóa;
+    
+    if (Trong thời gian cho phép khôi phục?) then (trong thời gian)
+        :Hiển thị dialog xác nhận khôi phục;
+        
+        if (Người dùng xác nhận khôi phục?) then (xác nhận)
+            :Kiểm tra xung đột dữ liệu;
+            
+            if (Có xung đột dữ liệu?) then (có xung đột)
+                :Hiển thị cảnh báo xung đột;
+                :Cho phép người dùng chọn cách xử lý;
+                
+                if (Người dùng chọn ghi đè?) then (ghi đè)
+                    :Khôi phục với ghi đè dữ liệu;
+                else (giữ nguyên)
+                    :Khôi phục với giữ nguyên dữ liệu hiện tại;
+                endif
+            else (không xung đột)
+                :Khôi phục bình thường;
+            endif
+            
+            :Cập nhật trạng thái thành "active";
+            :Ghi log thao tác khôi phục;
+            
+            if (Có thông báo cho stakeholders?) then (có)
+                :Gửi thông báo khôi phục cho stakeholders;
+            endif
+            
+            :Hiển thị thông báo khôi phục thành công;
+            :Cập nhật danh sách;
+            
+        else (hủy)
+            :Đóng dialog xác nhận;
+            :Quay về trang danh sách đã xóa;
+        endif
+        
+    else (quá thời gian)
+        :Hiển thị thông báo quá thời gian khôi phục;
+        :Chuyển về trang danh sách đã xóa;
+    endif
+    
+else (không có quyền)
+    :Hiển thị thông báo không có quyền khôi phục;
+    :Chuyển về trang danh sách;
+endif
+
+stop
+
+@enduml

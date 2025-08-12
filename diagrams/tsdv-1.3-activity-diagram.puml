@@ -1,0 +1,76 @@
+@startuml TSDV-1.3 Activity Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    FontColor #000000
+}
+skinparam decision {
+    BackgroundColor #FFF3E0
+    BorderColor #F57C00
+    FontColor #000000
+}
+skinparam start {
+    BackgroundColor #4CAF50
+    BorderColor #2E7D32
+    FontColor #FFFFFF
+}
+skinparam end {
+    BackgroundColor #F44336
+    BorderColor #C62828
+    FontColor #FFFFFF
+}
+
+title TSDV-1.3: Xóa Tài sản/Dịch vụ
+
+start
+
+:Người dùng truy cập danh sách Tài sản/Dịch vụ;
+
+:Chọn Tài sản/Dịch vụ cần xóa;
+
+:Click nút "Xóa";
+
+if (Kiểm tra quyền xóa?) then (có quyền)
+    :Hiển thị dialog xác nhận xóa;
+    
+    if (Người dùng xác nhận xóa?) then (xác nhận)
+        :Kiểm tra dependencies;
+        
+        if (Có dependencies?) then (có)
+            :Hiển thị danh sách dependencies;
+            :Cảnh báo về ảnh hưởng;
+            
+            if (Người dùng vẫn muốn xóa?) then (vẫn xóa)
+                :Tiếp tục quá trình xóa;
+            else (hủy)
+                :Hủy thao tác xóa;
+                stop
+            endif
+        endif
+        
+        :Thực hiện soft delete;
+        :Cập nhật trạng thái thành "deleted";
+        :Ghi log thao tác xóa;
+        
+        if (Có thông báo cho stakeholders?) then (có)
+            :Gửi thông báo xóa cho stakeholders;
+        endif
+        
+        :Hiển thị thông báo xóa thành công;
+        :Cập nhật danh sách;
+        
+    else (hủy)
+        :Đóng dialog xác nhận;
+        :Quay về trang danh sách;
+    endif
+    
+else (không có quyền)
+    :Hiển thị thông báo không có quyền xóa;
+    :Chuyển về trang danh sách;
+endif
+
+stop
+
+@enduml

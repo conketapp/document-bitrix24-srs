@@ -31,6 +31,16 @@
 - [ ] Có thể tạo nhiều tài sản/dịch vụ cùng lúc từ một dự án
 - [ ] Có thể import danh sách tài sản/dịch vụ từ file Excel
 
+#### 2.4 Activity Diagram
+![TSDV-1.1 Activity Diagram](diagrams/TSDV-1.1%20Activity%20Diagram.png)
+
+*Activity Diagram mô tả luồng xử lý tạo mới Tài sản/Dịch vụ*
+
+#### 2.5 Sequence Diagram
+![TSDV-1.1 Sequence Diagram](diagrams/TSDV-1.1%20Sequence%20Diagram.png)
+
+*Sequence Diagram mô tả tương tác giữa các thành phần khi tạo mới Tài sản/Dịch vụ*
+
 ---
 
 ### Functional Requirements

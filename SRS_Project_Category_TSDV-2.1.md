@@ -31,6 +31,16 @@
 - [ ] Có thể xem kết quả dạng danh sách hoặc dạng lưới
 - [ ] Có thể tìm kiếm nâng cao với các toán tử logic (AND, OR, NOT)
 
+#### 2.4 Activity Diagram
+![TSDV-2.1 Activity Diagram](diagrams/TSDV-2.1%20Activity%20Diagram.png)
+
+*Activity Diagram mô tả luồng xử lý tìm kiếm và lọc Tài sản/Dịch vụ*
+
+#### 2.5 Sequence Diagram
+![TSDV-2.1 Sequence Diagram](diagrams/TSDV-2.1%20Sequence%20Diagram.png)
+
+*Sequence Diagram mô tả tương tác giữa các thành phần khi tìm kiếm và lọc Tài sản/Dịch vụ*
+
 ---
 
 ### Functional Requirements

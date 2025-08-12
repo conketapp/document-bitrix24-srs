@@ -29,6 +29,16 @@
 - [ ] Có thể chia sẻ file xuất qua email hoặc link
 - [ ] Có thể xem lịch sử xuất file và tải lại
 
+#### 2.4 Activity Diagram
+![TSDV-2.2 Activity Diagram](diagrams/TSDV-2.2%20Activity%20Diagram.png)
+
+*Activity Diagram mô tả luồng xử lý xuất danh sách Tài sản/Dịch vụ*
+
+#### 2.5 Sequence Diagram
+![TSDV-2.2 Sequence Diagram](diagrams/TSDV-2.2%20Sequence%20Diagram.png)
+
+*Sequence Diagram mô tả tương tác giữa các thành phần khi xuất danh sách Tài sản/Dịch vụ*
+
 ---
 
 ### Functional Requirements

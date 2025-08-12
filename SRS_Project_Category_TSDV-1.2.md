@@ -31,6 +31,16 @@
 - [ ] Có thể xuất thông tin đã chỉnh sửa
 - [ ] Có thể gửi thông báo khi có thay đổi quan trọng
 
+#### 2.4 Activity Diagram
+![TSDV-1.2 Activity Diagram](diagrams/TSDV-1.2%20Activity%20Diagram.png)
+
+*Activity Diagram mô tả luồng xử lý chỉnh sửa Tài sản/Dịch vụ*
+
+#### 2.5 Sequence Diagram
+![TSDV-1.2 Sequence Diagram](diagrams/TSDV-1.2%20Sequence%20Diagram.png)
+
+*Sequence Diagram mô tả tương tác giữa các thành phần khi chỉnh sửa Tài sản/Dịch vụ*
+
 ---
 
 ### Functional Requirements
