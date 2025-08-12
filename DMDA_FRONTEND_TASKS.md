@@ -20,14 +20,14 @@
 **Description:**  
 - Tạo layout responsive cho trang danh mục dự án
 - Implement header với navigation và user menu
-- Tạo sidebar cho filters và actions
+- Tạo sidebar cho filters và actions (không có hover effects)
 - Implement main content area với grid layout
 - Responsive design cho mobile/tablet/desktop
 
 **Acceptance Criteria:**
 - Layout hiển thị đúng trên tất cả thiết bị
 - Header có logo, navigation, user profile
-- Sidebar có thể collapse trên mobile
+- Sidebar có thể collapse trên mobile (không có hover effects)
 - Main area có grid layout linh hoạt
 - Loading states và error handling
 
