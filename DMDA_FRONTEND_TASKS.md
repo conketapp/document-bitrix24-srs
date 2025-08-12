@@ -39,6 +39,108 @@
 
 ---
 
+#### **FE-DMDA-001.5: Tạo Component StatusBadge cho trạng thái dự án**
+**Priority:** Critical  
+**Story Points:** 3  
+**Description:**  
+- Tạo component StatusBadge với design modern
+- Implement dot indicator + text layout
+- Tạo color scheme cho 6 trạng thái dự án
+- Responsive design và accessibility
+- TypeScript interface cho props
+
+**Acceptance Criteria:**
+- Design modern với dot indicator + text
+- Rounded-full style với subtle background
+- Color scheme: Khởi tạo (blue), Chờ phê duyệt (amber), Đã phê duyệt (emerald), Từ chối (red), Dừng (orange), Yêu cầu chỉnh sửa (purple)
+- Hover effects và transitions
+- Accessibility: ARIA labels, keyboard navigation
+- TypeScript interface với status enum
+
+**Tech Stack:**
+- React Component với TypeScript
+- Shadcn/ui Badge component
+- Tailwind CSS cho styling
+- Framer Motion cho animations
+
+**Code Example:**
+```tsx
+import { Badge } from "@/components/ui/badge";
+
+interface StatusBadgeProps {
+  status: 'initialized' | 'pending_approval' | 'approved' | 'rejected' | 'suspended' | 'edit_requested';
+  className?: string;
+}
+
+const StatusBadge = ({ status, className }: StatusBadgeProps) => {
+  const statusConfig = {
+    initialized: {
+      label: 'Khởi tạo',
+      color: 'blue',
+      bgColor: 'bg-blue-600/10 dark:bg-blue-600/20',
+      textColor: 'text-blue-500',
+      borderColor: 'border-blue-600/60',
+      dotColor: 'bg-blue-500'
+    },
+    pending_approval: {
+      label: 'Chờ phê duyệt',
+      color: 'amber',
+      bgColor: 'bg-amber-600/10 dark:bg-amber-600/20',
+      textColor: 'text-amber-500',
+      borderColor: 'border-amber-600/60',
+      dotColor: 'bg-amber-500'
+    },
+    approved: {
+      label: 'Đã phê duyệt',
+      color: 'emerald',
+      bgColor: 'bg-emerald-600/10 dark:bg-emerald-600/20',
+      textColor: 'text-emerald-500',
+      borderColor: 'border-emerald-600/60',
+      dotColor: 'bg-emerald-500'
+    },
+    rejected: {
+      label: 'Từ chối phê duyệt',
+      color: 'red',
+      bgColor: 'bg-red-600/10 dark:bg-red-600/20',
+      textColor: 'text-red-500',
+      borderColor: 'border-red-600/60',
+      dotColor: 'bg-red-500'
+    },
+    suspended: {
+      label: 'Dừng thực hiện',
+      color: 'orange',
+      bgColor: 'bg-orange-600/10 dark:bg-orange-600/20',
+      textColor: 'text-orange-500',
+      borderColor: 'border-orange-600/60',
+      dotColor: 'bg-orange-500'
+    },
+    edit_requested: {
+      label: 'Yêu cầu chỉnh sửa',
+      color: 'purple',
+      bgColor: 'bg-purple-600/10 dark:bg-purple-600/20',
+      textColor: 'text-purple-500',
+      borderColor: 'border-purple-600/60',
+      dotColor: 'bg-purple-500'
+    }
+  };
+
+  const config = statusConfig[status];
+
+  return (
+    <Badge 
+      className={`${config.bgColor} hover:${config.bgColor} ${config.textColor} ${config.borderColor} shadow-none rounded-full ${className}`}
+    >
+      <div className={`h-1.5 w-1.5 rounded-full ${config.dotColor} mr-2`} />
+      {config.label}
+    </Badge>
+  );
+};
+
+export default StatusBadge;
+```
+
+---
+
 #### **FE-DMDA-002: Tạo Component ProjectCard cho hiển thị dự án**
 **Priority:** Critical  
 **Story Points:** 8  
@@ -51,7 +153,8 @@
 
 **Acceptance Criteria:**
 - Hiển thị: Mã dự án, Tên dự án, Nguồn gốc, TMĐT dự kiến, TMĐT phê duyệt, Lũy kế vốn, Vốn năm hiện tại, Dự kiến vốn, Đề xuất năm sau, Trạng thái
-- Status badges với màu sắc: Khởi tạo (xanh), Chờ phê duyệt (vàng), Đã phê duyệt (xanh lá), Từ chối (đỏ), Dừng (cam), Yêu cầu chỉnh sửa (tím)
+- Status badges với design modern: dot indicator + text, rounded-full, subtle background
+- Màu sắc status: Khởi tạo (blue), Chờ phê duyệt (amber), Đã phê duyệt (emerald), Từ chối (red), Dừng (orange), Yêu cầu chỉnh sửa (purple)
 - Action buttons theo quyền người dùng
 - Responsive design
 - Loading skeleton
@@ -59,6 +162,7 @@
 **Tech Stack:**
 - React Component với TypeScript
 - Tailwind CSS cho styling
+- Shadcn/ui Badge component
 - Lucide React cho icons
 - Framer Motion cho animations
 
@@ -491,20 +595,20 @@
 ## 📊 **Task Summary**
 
 ### **Priority Distribution:**
-- **Critical:** 4 tasks (FE-DMDA-001, 002, 003, 006)
+- **Critical:** 5 tasks (FE-DMDA-001, 001.5, 002, 003, 006)
 - **High:** 4 tasks (FE-DMDA-004, 005, 007, 009)
 - **Medium:** 6 tasks (FE-DMDA-008, 010, 011, 012, 015, 016, 017)
 - **Low:** 4 tasks (FE-DMDA-013, 014, 018)
 
 ### **Story Points Distribution:**
-- **Total Story Points:** 120+
-- **Critical:** 31 points
+- **Total Story Points:** 123+
+- **Critical:** 34 points
 - **High:** 31 points
 - **Medium:** 45 points
 - **Low:** 23 points
 
 ### **Estimated Timeline:**
-- **Sprint 1 (2 weeks):** Critical tasks (31 points)
+- **Sprint 1 (2 weeks):** Critical tasks (34 points)
 - **Sprint 2 (2 weeks):** High priority tasks (31 points)
 - **Sprint 3 (3 weeks):** Medium priority tasks (45 points)
 - **Sprint 4 (2 weeks):** Low priority tasks + polish (23 points)
